@@ -14,16 +14,326 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      agendamentos: {
+        Row: {
+          created_at: string | null
+          data: string
+          faixa_etaria: Database["public"]["Enums"]["faixa_etaria"]
+          id: string
+          instituicao_id: string
+          observacoes: string | null
+          quantidade_alunos: number
+          quantidade_professores: number
+          status: Database["public"]["Enums"]["status_agendamento"] | null
+          transporte_status:
+            | Database["public"]["Enums"]["transporte_status"]
+            | null
+          turno: Database["public"]["Enums"]["turno"]
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          data: string
+          faixa_etaria: Database["public"]["Enums"]["faixa_etaria"]
+          id?: string
+          instituicao_id: string
+          observacoes?: string | null
+          quantidade_alunos: number
+          quantidade_professores: number
+          status?: Database["public"]["Enums"]["status_agendamento"] | null
+          transporte_status?:
+            | Database["public"]["Enums"]["transporte_status"]
+            | null
+          turno: Database["public"]["Enums"]["turno"]
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          data?: string
+          faixa_etaria?: Database["public"]["Enums"]["faixa_etaria"]
+          id?: string
+          instituicao_id?: string
+          observacoes?: string | null
+          quantidade_alunos?: number
+          quantidade_professores?: number
+          status?: Database["public"]["Enums"]["status_agendamento"] | null
+          transporte_status?:
+            | Database["public"]["Enums"]["transporte_status"]
+            | null
+          turno?: Database["public"]["Enums"]["turno"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agendamentos_instituicao_id_fkey"
+            columns: ["instituicao_id"]
+            isOneToOne: false
+            referencedRelation: "instituicoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      certificados: {
+        Row: {
+          created_at: string | null
+          enviado_para: string | null
+          id: string
+          instituicao_id: string
+          lista_alunos: string | null
+          status: Database["public"]["Enums"]["status_certificado"] | null
+          tipo: Database["public"]["Enums"]["tipo_certificado"]
+          updated_at: string | null
+          visita_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          enviado_para?: string | null
+          id?: string
+          instituicao_id: string
+          lista_alunos?: string | null
+          status?: Database["public"]["Enums"]["status_certificado"] | null
+          tipo: Database["public"]["Enums"]["tipo_certificado"]
+          updated_at?: string | null
+          visita_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          enviado_para?: string | null
+          id?: string
+          instituicao_id?: string
+          lista_alunos?: string | null
+          status?: Database["public"]["Enums"]["status_certificado"] | null
+          tipo?: Database["public"]["Enums"]["tipo_certificado"]
+          updated_at?: string | null
+          visita_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificados_instituicao_id_fkey"
+            columns: ["instituicao_id"]
+            isOneToOne: false
+            referencedRelation: "instituicoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificados_visita_id_fkey"
+            columns: ["visita_id"]
+            isOneToOne: false
+            referencedRelation: "visitas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      instituicoes: {
+        Row: {
+          bairro: string | null
+          cidade: string
+          created_at: string | null
+          email: string | null
+          endereco: string | null
+          id: string
+          nome: string
+          responsavel: string | null
+          telefone: string | null
+          tipo: Database["public"]["Enums"]["tipo_instituicao"]
+        }
+        Insert: {
+          bairro?: string | null
+          cidade: string
+          created_at?: string | null
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          nome: string
+          responsavel?: string | null
+          telefone?: string | null
+          tipo?: Database["public"]["Enums"]["tipo_instituicao"]
+        }
+        Update: {
+          bairro?: string | null
+          cidade?: string
+          created_at?: string | null
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          nome?: string
+          responsavel?: string | null
+          telefone?: string | null
+          tipo?: Database["public"]["Enums"]["tipo_instituicao"]
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          id: string
+          instituicao_id: string | null
+          nome: string
+          telefone: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id: string
+          instituicao_id?: string | null
+          nome: string
+          telefone?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          instituicao_id?: string | null
+          nome?: string
+          telefone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_instituicao_id_fkey"
+            columns: ["instituicao_id"]
+            isOneToOne: false
+            referencedRelation: "instituicoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      satisfacao: {
+        Row: {
+          avaliacao_agendamento: number | null
+          avaliacao_educadores: number | null
+          avaliacao_evento: number | null
+          avaliacao_instalacoes: number | null
+          avaliacao_recepcao: number | null
+          avaliacao_transporte: number | null
+          comentarios: string | null
+          created_at: string | null
+          id: string
+          visita_id: string
+        }
+        Insert: {
+          avaliacao_agendamento?: number | null
+          avaliacao_educadores?: number | null
+          avaliacao_evento?: number | null
+          avaliacao_instalacoes?: number | null
+          avaliacao_recepcao?: number | null
+          avaliacao_transporte?: number | null
+          comentarios?: string | null
+          created_at?: string | null
+          id?: string
+          visita_id: string
+        }
+        Update: {
+          avaliacao_agendamento?: number | null
+          avaliacao_educadores?: number | null
+          avaliacao_evento?: number | null
+          avaliacao_instalacoes?: number | null
+          avaliacao_recepcao?: number | null
+          avaliacao_transporte?: number | null
+          comentarios?: string | null
+          created_at?: string | null
+          id?: string
+          visita_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "satisfacao_visita_id_fkey"
+            columns: ["visita_id"]
+            isOneToOne: false
+            referencedRelation: "visitas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      visitas: {
+        Row: {
+          acompanhantes: number | null
+          agendamento_id: string
+          confirmado_por_admin: boolean | null
+          created_at: string | null
+          id: string
+          pcds: number | null
+          rede: Database["public"]["Enums"]["rede"] | null
+          total: number | null
+          updated_at: string | null
+          visitantes: number | null
+        }
+        Insert: {
+          acompanhantes?: number | null
+          agendamento_id: string
+          confirmado_por_admin?: boolean | null
+          created_at?: string | null
+          id?: string
+          pcds?: number | null
+          rede?: Database["public"]["Enums"]["rede"] | null
+          total?: number | null
+          updated_at?: string | null
+          visitantes?: number | null
+        }
+        Update: {
+          acompanhantes?: number | null
+          agendamento_id?: string
+          confirmado_por_admin?: boolean | null
+          created_at?: string | null
+          id?: string
+          pcds?: number | null
+          rede?: Database["public"]["Enums"]["rede"] | null
+          total?: number | null
+          updated_at?: string | null
+          visitantes?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visitas_agendamento_id_fkey"
+            columns: ["agendamento_id"]
+            isOneToOne: false
+            referencedRelation: "agendamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_instituicao_id: {
+        Args: { _user_id: string }
+        Returns: string
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "instituicao"
+      faixa_etaria: "criancas" | "adolescentes" | "adultos" | "idosos"
+      rede: "publica" | "privada" | "outra"
+      status_agendamento: "pendente" | "confirmado" | "cancelado" | "realizado"
+      status_certificado: "pendente" | "enviado"
+      tipo_certificado: "escola_amiga" | "carteirinhas"
+      tipo_instituicao: "escola" | "empresa" | "orgao_publico" | "outros"
+      transporte_status: "onibus_detran" | "proprio"
+      turno: "manha" | "tarde"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +460,16 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "instituicao"],
+      faixa_etaria: ["criancas", "adolescentes", "adultos", "idosos"],
+      rede: ["publica", "privada", "outra"],
+      status_agendamento: ["pendente", "confirmado", "cancelado", "realizado"],
+      status_certificado: ["pendente", "enviado"],
+      tipo_certificado: ["escola_amiga", "carteirinhas"],
+      tipo_instituicao: ["escola", "empresa", "orgao_publico", "outros"],
+      transporte_status: ["onibus_detran", "proprio"],
+      turno: ["manha", "tarde"],
+    },
   },
 } as const
