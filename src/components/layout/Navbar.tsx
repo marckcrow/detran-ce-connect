@@ -4,8 +4,14 @@ import { School, Calendar, LayoutDashboard, LogIn } from "lucide-react";
 
 export const Navbar = () => {
   return (
-    <nav className="border-b bg-card shadow-sm sticky top-0 z-50">
-      <div className="container mx-auto px-4">
+    <nav className="border-b bg-card shadow-sm sticky top-0 z-50 relative overflow-hidden">
+      {/* Faixas geométricas diagonais - identidade Gov. Ceará */}
+      <div className="absolute top-0 right-0 h-full w-1/2 pointer-events-none overflow-hidden">
+        <div className="absolute top-0 right-0 h-full w-32 bg-primary/10 -skew-x-[20deg] origin-top-right translate-x-16" />
+        <div className="absolute top-0 right-16 h-full w-20 bg-teal/15 -skew-x-[20deg] origin-top-right translate-x-12" />
+        <div className="absolute top-0 right-32 h-full w-12 bg-accent/20 -skew-x-[20deg] origin-top-right translate-x-8" />
+      </div>
+      <div className="container mx-auto px-4 relative z-10">
         <div className="flex items-center justify-between h-16">
           <Link to="/" className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-lg bg-gradient-hero flex items-center justify-center">
