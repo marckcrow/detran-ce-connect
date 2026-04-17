@@ -9,51 +9,58 @@ All colors MUST be HSL.
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 213 31% 20%;
+    --foreground: 150 20% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 213 31% 20%;
+    --card-foreground: 150 20% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 213 31% 20%;
+    --popover-foreground: 150 20% 12%;
 
-    /* Azul Detran - institucional */
-    --primary: 213 94% 38%;
+    /* Verde institucional Governo do Ceará - #0E8C3A */
+    --primary: 138 82% 30%;
     --primary-foreground: 0 0% 100%;
-    
+    --primary-glow: 142 60% 45%;
+
+    /* Teal/verde-água - faixas decorativas */
+    --teal: 172 48% 48%;
+    --teal-foreground: 0 0% 100%;
+
+    /* Laranja vibrante - acento/CTA - #F26B1F */
+    --accent: 21 89% 53%;
+    --accent-foreground: 0 0% 100%;
+
     /* Verde Trânsito - sucesso */
     --success: 142 76% 36%;
     --success-foreground: 0 0% 100%;
-    
+
     /* Amarelo Sinalização - avisos */
     --warning: 48 96% 53%;
-    --warning-foreground: 213 31% 20%;
+    --warning-foreground: 150 20% 12%;
 
-    --secondary: 213 20% 95%;
-    --secondary-foreground: 213 31% 20%;
+    --secondary: 138 30% 95%;
+    --secondary-foreground: 138 82% 22%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 213 94% 45%;
-    --accent-foreground: 0 0% 100%;
+    --muted: 138 20% 96%;
+    --muted-foreground: 150 12% 40%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 213 94% 38%;
+    --border: 138 20% 88%;
+    --input: 138 20% 88%;
+    --ring: 138 82% 30%;
 
     --radius: 0.5rem;
-    
-    /* Gradientes institucionais */
-    --gradient-hero: linear-gradient(135deg, hsl(213 94% 38%), hsl(213 94% 28%));
-    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(213 20% 98%));
-    
+
+    /* Gradientes institucionais Ceará: verde -> teal */
+    --gradient-hero: linear-gradient(135deg, hsl(138 82% 28%) 0%, hsl(150 70% 35%) 50%, hsl(172 48% 48%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(138 30% 98%));
+    --gradient-accent: linear-gradient(90deg, hsl(21 89% 53%), hsl(32 95% 55%));
+
     /* Sombras elegantes */
-    --shadow-card: 0 2px 8px hsl(213 94% 38% / 0.08);
-    --shadow-elevated: 0 8px 24px hsl(213 94% 38% / 0.12);
+    --shadow-card: 0 2px 8px hsl(138 82% 30% / 0.08);
+    --shadow-elevated: 0 8px 24px hsl(138 82% 30% / 0.15);
   }
 }
 
