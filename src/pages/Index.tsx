@@ -1,5 +1,7 @@
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { AvailabilitySection } from "@/components/home/AvailabilitySection";
+import { NewsSection } from "@/components/home/NewsSection";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin, Calendar, Users, Award, Shield, GraduationCap } from "lucide-react";
@@ -100,6 +102,12 @@ export default function Index() {
           </div>
         </div>
       </section>
+
+      {/* Disponibilidade */}
+      <AvailabilitySection />
+
+      {/* Notícias */}
+      <NewsSection />
 
       {/* Units */}
       <section className="py-16 px-4">
