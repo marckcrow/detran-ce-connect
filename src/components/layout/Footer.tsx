@@ -2,8 +2,19 @@ import { School, Mail, Phone, MapPin } from "lucide-react";
 
 export const Footer = () => {
   return (
-    <footer className="bg-gradient-hero text-primary-foreground mt-auto">
-      <div className="container mx-auto px-4 py-12">
+    <footer className="bg-gradient-hero text-primary-foreground mt-auto relative overflow-hidden">
+      {/* Faixas geométricas diagonais superiores */}
+      <div className="absolute top-0 left-0 right-0 h-3 flex pointer-events-none">
+        <div className="flex-1 bg-[hsl(var(--teal))] -skew-x-[20deg] -ml-4" />
+        <div className="w-1/3 bg-[hsl(var(--accent))] -skew-x-[20deg]" />
+        <div className="w-1/4 bg-[hsl(var(--primary-glow))] -skew-x-[20deg] -mr-4" />
+      </div>
+      {/* Faixas decorativas inferiores */}
+      <div className="absolute bottom-0 right-0 w-2/3 h-24 pointer-events-none overflow-hidden opacity-20">
+        <div className="absolute bottom-0 right-0 h-full w-64 bg-[hsl(var(--teal))] -skew-x-[20deg] origin-bottom-right translate-x-20" />
+        <div className="absolute bottom-0 right-32 h-full w-40 bg-[hsl(var(--accent))] -skew-x-[20deg] origin-bottom-right translate-x-12" />
+      </div>
+      <div className="container mx-auto px-4 py-12 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
             <div className="flex items-center gap-3 mb-4">
