@@ -33,6 +33,9 @@ export const Navbar = () => {
             <Link to="/minha-escola" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
               Minha Escola
             </Link>
+            <Link to="/perfil" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+              Meu Perfil
+            </Link>
             <Link to="/admin" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
               Admin
             </Link>
