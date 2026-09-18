@@ -43,7 +43,7 @@ const agendamentoSchema = z.object({
   observacoes: z.string().max(500, "Máximo 500 caracteres").optional(),
 }).refine(
   (d) => d.quantidade_alunos + d.quantidade_professores <= MAX_PESSOAS,
-  { message: `O total de alunos + professores não pode exceder ${MAX_PESSOAS}`, path: ["quantidade_alunos"] }
+  { message: `Capacidade do ônibus excedida: o total de alunos + professores não pode passar de ${MAX_PESSOAS} pessoas`, path: ["quantidade_alunos"] }
 );
 
 type AgendamentoForm = z.infer<typeof agendamentoSchema>;
