@@ -173,6 +173,7 @@ export default function Agendar() {
                   </Button>
                 </div>
               )}
+              <SugestaoIA cidadeAtual={cidadeAtual} onAplicar={aplicarSugestao} />
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                   {/* Data */}
