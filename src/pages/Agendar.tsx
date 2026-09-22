@@ -80,7 +80,8 @@ export default function Agendar() {
 
   const onSubmit = async (values: AgendamentoForm) => {
     if (!instituicaoId) {
-      toast({ title: "Perfil incompleto", description: "Vincule sua instituição antes de agendar.", variant: "destructive" });
+      toast({ title: "Perfil incompleto", description: "Cadastre sua instituição no Meu Perfil antes de agendar.", variant: "destructive" });
+      navigate("/perfil");
       return;
     }
 
@@ -143,6 +144,14 @@ export default function Agendar() {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {!instituicaoId && (
+                <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
+                  <span>Você ainda não escolheu a instituição que fará a visita.</span>
+                  <Button variant="outline" size="sm" onClick={() => navigate("/perfil")}>
+                    Definir instituição
+                  </Button>
+                </div>
+              )}
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                   {/* Data */}
