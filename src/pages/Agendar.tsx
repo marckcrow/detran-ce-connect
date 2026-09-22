@@ -20,6 +20,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { SugestaoIA, type SugestaoVisita } from "@/components/agendar/SugestaoIA";
 import { toast } from "@/hooks/use-toast";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -53,6 +54,7 @@ export default function Agendar() {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [instituicaoId, setInstituicaoId] = useState<string | null>(null);
+  const [cidadeAtual, setCidadeAtual] = useState<string | null>(null);
 
   const form = useForm<AgendamentoForm>({
     resolver: zodResolver(agendamentoSchema),
@@ -71,12 +73,31 @@ export default function Agendar() {
   }, [user, authLoading, navigate]);
 
   useEffect(() => {
-    if (user) {
-      supabase.from("profiles").select("instituicao_id").eq("id", user.id).single().then(({ data }) => {
-        if (data?.instituicao_id) setInstituicaoId(data.instituicao_id);
-      });
-    }
+    if (!user) return;
+    (async () => {
+      const { data } = await supabase.from("profiles").select("instituicao_id").eq("id", user.id).maybeSingle();
+      if (!data?.instituicao_id) return;
+      setInstituicaoId(data.instituicao_id);
+      const { data: inst } = await supabase
+        .from("instituicoes")
+        .select("cidade")
+        .eq("id", data.instituicao_id)
+        .maybeSingle();
+      if (inst?.cidade) setCidadeAtual(inst.cidade);
+    })();
   }, [user]);
+
+  const aplicarSugestao = (sugestao: SugestaoVisita, data?: Date) => {
+    form.setValue("turno", sugestao.turno, { shouldValidate: true });
+    form.setValue("faixa_etaria", sugestao.faixa_etaria, { shouldValidate: true });
+    form.setValue("transporte_status", sugestao.transporte_status, { shouldValidate: true });
+    form.setValue("quantidade_alunos", sugestao.quantidade_alunos, { shouldValidate: true });
+    form.setValue("quantidade_professores", sugestao.quantidade_professores, { shouldValidate: true });
+    if (sugestao.observacoes) form.setValue("observacoes", sugestao.observacoes.slice(0, 500));
+    if (data) form.setValue("data", data, { shouldValidate: true });
+    toast({ title: "Formulário preenchido", description: "Revise os dados antes de enviar a solicitação." });
+  };
+
 
   const onSubmit = async (values: AgendamentoForm) => {
     if (!instituicaoId) {
@@ -152,6 +173,7 @@ export default function Agendar() {
                   </Button>
                 </div>
               )}
+              <SugestaoIA cidadeAtual={cidadeAtual} onAplicar={aplicarSugestao} />
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                   {/* Data */}
