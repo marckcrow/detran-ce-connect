@@ -72,12 +72,31 @@ export default function Agendar() {
   }, [user, authLoading, navigate]);
 
   useEffect(() => {
-    if (user) {
-      supabase.from("profiles").select("instituicao_id").eq("id", user.id).single().then(({ data }) => {
-        if (data?.instituicao_id) setInstituicaoId(data.instituicao_id);
-      });
-    }
+    if (!user) return;
+    (async () => {
+      const { data } = await supabase.from("profiles").select("instituicao_id").eq("id", user.id).maybeSingle();
+      if (!data?.instituicao_id) return;
+      setInstituicaoId(data.instituicao_id);
+      const { data: inst } = await supabase
+        .from("instituicoes")
+        .select("cidade")
+        .eq("id", data.instituicao_id)
+        .maybeSingle();
+      if (inst?.cidade) setCidadeAtual(inst.cidade);
+    })();
   }, [user]);
+
+  const aplicarSugestao = (sugestao: SugestaoVisita, data?: Date) => {
+    form.setValue("turno", sugestao.turno, { shouldValidate: true });
+    form.setValue("faixa_etaria", sugestao.faixa_etaria, { shouldValidate: true });
+    form.setValue("transporte_status", sugestao.transporte_status, { shouldValidate: true });
+    form.setValue("quantidade_alunos", sugestao.quantidade_alunos, { shouldValidate: true });
+    form.setValue("quantidade_professores", sugestao.quantidade_professores, { shouldValidate: true });
+    if (sugestao.observacoes) form.setValue("observacoes", sugestao.observacoes.slice(0, 500));
+    if (data) form.setValue("data", data, { shouldValidate: true });
+    toast({ title: "Formulário preenchido", description: "Revise os dados antes de enviar a solicitação." });
+  };
+
 
   const onSubmit = async (values: AgendamentoForm) => {
     if (!instituicaoId) {
