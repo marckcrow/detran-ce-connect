@@ -54,6 +54,7 @@ export default function Agendar() {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [instituicaoId, setInstituicaoId] = useState<string | null>(null);
+  const [cidadeAtual, setCidadeAtual] = useState<string | null>(null);
 
   const form = useForm<AgendamentoForm>({
     resolver: zodResolver(agendamentoSchema),
