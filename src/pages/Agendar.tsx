@@ -22,6 +22,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { SugestaoIA, type SugestaoVisita } from "@/components/agendar/SugestaoIA";
 import { toast } from "@/hooks/use-toast";
+import { Checkbox } from "@/components/ui/checkbox";
+import { PCD_TIPOS } from "@/lib/operacao";
 import type { Database } from "@/integrations/supabase/types";
 
 type FaixaEtaria = Database["public"]["Enums"]["faixa_etaria"];
@@ -324,6 +326,93 @@ export default function Agendar() {
                       )}
                     />
                   </div>
+
+                  <FormField control={form.control} name="quantidade_acompanhantes" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Qtd. Acompanhantes</FormLabel>
+                      <FormControl><Input type="number" min={0} max={MAX_PESSOAS} {...field} /></FormControl>
+                      <FormDescription>Alunos + professores + acompanhantes: máximo {MAX_PESSOAS}.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <FormField control={form.control} name="responsavel_nome" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Responsável pela escola</FormLabel>
+                        <FormControl><Input maxLength={100} {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="responsavel_whatsapp" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Telefone / WhatsApp</FormLabel>
+                        <FormControl><Input placeholder="(85) 99999-9999" maxLength={20} {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
+
+                  {/* PCD */}
+                  <div className="space-y-4 rounded-lg border p-4">
+                    <FormField control={form.control} name="possui_pcd" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>A turma possui aluno(s) PCD?</FormLabel>
+                        <div className="flex gap-2">
+                          {(["sim", "nao"] as const).map((v) => (
+                            <Button key={v} type="button" variant={field.value === v ? "default" : "outline"} size="sm" onClick={() => field.onChange(v)}>
+                              {v === "sim" ? "Sim" : "Não"}
+                            </Button>
+                          ))}
+                        </div>
+                      </FormItem>
+                    )} />
+                    {form.watch("possui_pcd") === "sim" && (
+                      <>
+                        <FormField control={form.control} name="pcd_tipos" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Tipos (pode marcar mais de um)</FormLabel>
+                            <div className="grid gap-2 sm:grid-cols-2">
+                              {PCD_TIPOS.map((t) => (
+                                <label key={t} className="flex items-center gap-2 text-sm">
+                                  <Checkbox
+                                    checked={field.value.includes(t)}
+                                    onCheckedChange={(c) => field.onChange(c ? [...field.value, t] : field.value.filter((x) => x !== t))}
+                                  />
+                                  {t}
+                                </label>
+                              ))}
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                        {form.watch("pcd_tipos").includes("Outros") && (
+                          <FormField control={form.control} name="pcd_outros" render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Descreva "Outros"</FormLabel>
+                              <FormControl><Input maxLength={200} {...field} /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )} />
+                        )}
+                        <FormField control={form.control} name="pcd_quantidade" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Quantidade de alunos PCD</FormLabel>
+                            <FormControl><Input type="number" min={0} max={MAX_PESSOAS} {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                      </>
+                    )}
+                  </div>
+
+                  <FormField control={form.control} name="necessidades_especiais" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Necessidades especiais da turma</FormLabel>
+                      <FormControl><Textarea className="resize-none" maxLength={500} {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
 
                   {/* Transporte */}
                   <FormField
