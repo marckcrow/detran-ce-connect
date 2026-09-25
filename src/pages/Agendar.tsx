@@ -42,10 +42,22 @@ const agendamentoSchema = z.object({
   quantidade_professores: z.coerce.number().int().min(1, "Mínimo 1 professor"),
   transporte_status: z.enum(["onibus_detran", "proprio"] as const, { required_error: "Selecione o transporte" }),
   observacoes: z.string().max(500, "Máximo 500 caracteres").optional(),
+  responsavel_nome: z.string().trim().min(3, "Informe o responsável").max(100),
+  responsavel_whatsapp: z.string().trim().refine((v) => v.replace(/\D/g, "").length >= 10, "Telefone/WhatsApp inválido"),
+  quantidade_acompanhantes: z.coerce.number().int().min(0).max(MAX_PESSOAS),
+  necessidades_especiais: z.string().max(500).optional(),
+  possui_pcd: z.enum(["sim", "nao"]),
+  pcd_tipos: z.array(z.string()),
+  pcd_outros: z.string().max(200).optional(),
+  pcd_quantidade: z.coerce.number().int().min(0).max(MAX_PESSOAS),
 }).refine(
-  (d) => d.quantidade_alunos + d.quantidade_professores <= MAX_PESSOAS,
-  { message: `Capacidade do ônibus excedida: o total de alunos + professores não pode passar de ${MAX_PESSOAS} pessoas`, path: ["quantidade_alunos"] }
-);
+  (d) => d.quantidade_alunos + d.quantidade_professores + d.quantidade_acompanhantes <= MAX_PESSOAS,
+  { message: `Capacidade do ônibus excedida: alunos + professores + acompanhantes não pode passar de ${MAX_PESSOAS} pessoas`, path: ["quantidade_alunos"] }
+).refine((d) => d.possui_pcd === "nao" || (d.pcd_tipos.length > 0 && d.pcd_quantidade > 0), {
+  message: "Selecione ao menos um tipo e informe a quantidade de alunos PCD", path: ["pcd_tipos"],
+}).refine((d) => !d.pcd_tipos.includes("Outros") || (d.pcd_outros ?? "").trim().length > 0, {
+  message: "Descreva o tipo em \"Outros\"", path: ["pcd_outros"],
+});
 
 type AgendamentoForm = z.infer<typeof agendamentoSchema>;
 
@@ -61,8 +73,16 @@ export default function Agendar() {
     defaultValues: {
       quantidade_alunos: 20,
       quantidade_professores: 2,
+      quantidade_acompanhantes: 0,
       transporte_status: "onibus_detran",
       observacoes: "",
+      responsavel_nome: "",
+      responsavel_whatsapp: "",
+      necessidades_especiais: "",
+      possui_pcd: "nao",
+      pcd_tipos: [],
+      pcd_outros: "",
+      pcd_quantidade: 0,
     },
   });
 
@@ -107,15 +127,25 @@ export default function Agendar() {
     }
 
     setSubmitting(true);
+    const pcd = values.possui_pcd === "sim";
     const { error } = await supabase.from("agendamentos").insert({
       instituicao_id: instituicaoId,
       data: format(values.data, "yyyy-MM-dd"),
       turno: values.turno,
+      horario: values.turno === "manha" ? "07:00" : "13:00",
       faixa_etaria: values.faixa_etaria,
       quantidade_alunos: values.quantidade_alunos,
       quantidade_professores: values.quantidade_professores,
+      quantidade_acompanhantes: values.quantidade_acompanhantes,
       transporte_status: values.transporte_status,
       observacoes: values.observacoes || null,
+      responsavel_nome: values.responsavel_nome,
+      responsavel_whatsapp: values.responsavel_whatsapp,
+      necessidades_especiais: values.necessidades_especiais || null,
+      possui_pcd: pcd,
+      pcd_tipos: pcd ? values.pcd_tipos : [],
+      pcd_outros: pcd && values.pcd_tipos.includes("Outros") ? values.pcd_outros || null : null,
+      pcd_quantidade: pcd ? values.pcd_quantidade : 0,
     });
     setSubmitting(false);
 
