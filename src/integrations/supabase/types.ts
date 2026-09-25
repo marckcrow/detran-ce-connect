@@ -19,11 +19,20 @@ export type Database = {
           created_at: string | null
           data: string
           faixa_etaria: Database["public"]["Enums"]["faixa_etaria"]
+          horario: string | null
           id: string
           instituicao_id: string
+          necessidades_especiais: string | null
           observacoes: string | null
+          pcd_outros: string | null
+          pcd_quantidade: number
+          pcd_tipos: string[]
+          possui_pcd: boolean
+          quantidade_acompanhantes: number
           quantidade_alunos: number
           quantidade_professores: number
+          responsavel_nome: string | null
+          responsavel_whatsapp: string | null
           status: Database["public"]["Enums"]["status_agendamento"] | null
           transporte_status:
             | Database["public"]["Enums"]["transporte_status"]
@@ -35,11 +44,20 @@ export type Database = {
           created_at?: string | null
           data: string
           faixa_etaria: Database["public"]["Enums"]["faixa_etaria"]
+          horario?: string | null
           id?: string
           instituicao_id: string
+          necessidades_especiais?: string | null
           observacoes?: string | null
+          pcd_outros?: string | null
+          pcd_quantidade?: number
+          pcd_tipos?: string[]
+          possui_pcd?: boolean
+          quantidade_acompanhantes?: number
           quantidade_alunos: number
           quantidade_professores: number
+          responsavel_nome?: string | null
+          responsavel_whatsapp?: string | null
           status?: Database["public"]["Enums"]["status_agendamento"] | null
           transporte_status?:
             | Database["public"]["Enums"]["transporte_status"]
@@ -51,11 +69,20 @@ export type Database = {
           created_at?: string | null
           data?: string
           faixa_etaria?: Database["public"]["Enums"]["faixa_etaria"]
+          horario?: string | null
           id?: string
           instituicao_id?: string
+          necessidades_especiais?: string | null
           observacoes?: string | null
+          pcd_outros?: string | null
+          pcd_quantidade?: number
+          pcd_tipos?: string[]
+          possui_pcd?: boolean
+          quantidade_acompanhantes?: number
           quantidade_alunos?: number
           quantidade_professores?: number
+          responsavel_nome?: string | null
+          responsavel_whatsapp?: string | null
           status?: Database["public"]["Enums"]["status_agendamento"] | null
           transporte_status?:
             | Database["public"]["Enums"]["transporte_status"]
@@ -69,6 +96,121 @@ export type Database = {
             columns: ["instituicao_id"]
             isOneToOne: false
             referencedRelation: "instituicoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      atendimentos: {
+        Row: {
+          acompanhantes: number
+          agendamento_id: string
+          alunos_atendidos: number
+          alunos_previstos: number
+          created_at: string
+          data_efetiva: string
+          faixa_etaria: string | null
+          hora_efetiva: string | null
+          id: string
+          instituicao_id: string
+          lanche_entregue: boolean
+          lanche_motivo: string | null
+          lanches_previstos: number
+          lanches_qtd: number
+          lanches_restantes: number
+          observacoes: string | null
+          os_id: string
+          pcd_quantidade: number
+          pcd_tipos: string[]
+          professores_atendidos: number
+          professores_previstos: number
+          registrado_por: string | null
+          registrado_por_nome: string | null
+          revistas_devolvidas: number
+          revistas_entregues: boolean
+          revistas_previstas: number
+          revistas_qtd: number
+          total_visitantes: number
+        }
+        Insert: {
+          acompanhantes?: number
+          agendamento_id: string
+          alunos_atendidos: number
+          alunos_previstos: number
+          created_at?: string
+          data_efetiva: string
+          faixa_etaria?: string | null
+          hora_efetiva?: string | null
+          id?: string
+          instituicao_id: string
+          lanche_entregue?: boolean
+          lanche_motivo?: string | null
+          lanches_previstos?: number
+          lanches_qtd?: number
+          lanches_restantes?: number
+          observacoes?: string | null
+          os_id: string
+          pcd_quantidade?: number
+          pcd_tipos?: string[]
+          professores_atendidos: number
+          professores_previstos: number
+          registrado_por?: string | null
+          registrado_por_nome?: string | null
+          revistas_devolvidas?: number
+          revistas_entregues?: boolean
+          revistas_previstas?: number
+          revistas_qtd?: number
+          total_visitantes: number
+        }
+        Update: {
+          acompanhantes?: number
+          agendamento_id?: string
+          alunos_atendidos?: number
+          alunos_previstos?: number
+          created_at?: string
+          data_efetiva?: string
+          faixa_etaria?: string | null
+          hora_efetiva?: string | null
+          id?: string
+          instituicao_id?: string
+          lanche_entregue?: boolean
+          lanche_motivo?: string | null
+          lanches_previstos?: number
+          lanches_qtd?: number
+          lanches_restantes?: number
+          observacoes?: string | null
+          os_id?: string
+          pcd_quantidade?: number
+          pcd_tipos?: string[]
+          professores_atendidos?: number
+          professores_previstos?: number
+          registrado_por?: string | null
+          registrado_por_nome?: string | null
+          revistas_devolvidas?: number
+          revistas_entregues?: boolean
+          revistas_previstas?: number
+          revistas_qtd?: number
+          total_visitantes?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "atendimentos_agendamento_id_fkey"
+            columns: ["agendamento_id"]
+            isOneToOne: false
+            referencedRelation: "agendamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atendimentos_instituicao_id_fkey"
+            columns: ["instituicao_id"]
+            isOneToOne: false
+            referencedRelation: "instituicoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atendimentos_os_id_fkey"
+            columns: ["os_id"]
+            isOneToOne: true
+            referencedRelation: "ordens_servico"
             referencedColumns: ["id"]
           },
         ]
@@ -124,44 +266,311 @@ export type Database = {
           },
         ]
       }
-      instituicoes: {
+      config_sistema: {
         Row: {
-          bairro: string | null
-          cidade: string
-          created_at: string | null
-          email: string | null
-          endereco: string | null
+          id: number
+          limite_km: number
+          ponto_saida: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          limite_km?: number
+          ponto_saida?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          limite_km?: number
+          ponto_saida?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      estoque_itens: {
+        Row: {
           id: string
           nome: string
+          quantidade: number
+        }
+        Insert: {
+          id: string
+          nome: string
+          quantidade?: number
+        }
+        Update: {
+          id?: string
+          nome?: string
+          quantidade?: number
+        }
+        Relationships: []
+      }
+      estoque_movimentos: {
+        Row: {
+          atendimento_id: string | null
+          created_at: string
+          id: string
+          item_id: string
+          motivo: string
+          quantidade: number
+          saldo_apos: number | null
+          tipo: string
+          usuario_id: string | null
+        }
+        Insert: {
+          atendimento_id?: string | null
+          created_at?: string
+          id?: string
+          item_id: string
+          motivo: string
+          quantidade: number
+          saldo_apos?: number | null
+          tipo: string
+          usuario_id?: string | null
+        }
+        Update: {
+          atendimento_id?: string | null
+          created_at?: string
+          id?: string
+          item_id?: string
+          motivo?: string
+          quantidade?: number
+          saldo_apos?: number | null
+          tipo?: string
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estoque_movimentos_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "estoque_itens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      importacoes_escolas: {
+        Row: {
+          arquivo: string
+          com_erro: number
+          created_at: string
+          duplicadas: number
+          id: string
+          importadas: number
+          total_linhas: number
+          usuario_id: string
+        }
+        Insert: {
+          arquivo: string
+          com_erro?: number
+          created_at?: string
+          duplicadas?: number
+          id?: string
+          importadas?: number
+          total_linhas?: number
+          usuario_id?: string
+        }
+        Update: {
+          arquivo?: string
+          com_erro?: number
+          created_at?: string
+          duplicadas?: number
+          id?: string
+          importadas?: number
+          total_linhas?: number
+          usuario_id?: string
+        }
+        Relationships: []
+      }
+      instituicoes: {
+        Row: {
+          alunos_estimados: number | null
+          ativa: boolean
+          bairro: string | null
+          cep: string | null
+          cidade: string
+          cnpj: string | null
+          codigo: string | null
+          created_at: string | null
+          distancia_km: number | null
+          email: string | null
+          endereco: string | null
+          estado: string | null
+          id: string
+          importacao_id: string | null
+          nome: string
+          observacoes: string | null
+          rede: Database["public"]["Enums"]["rede"] | null
           responsavel: string | null
+          responsavel_telefone: string | null
           telefone: string | null
           tipo: Database["public"]["Enums"]["tipo_instituicao"]
         }
         Insert: {
+          alunos_estimados?: number | null
+          ativa?: boolean
           bairro?: string | null
+          cep?: string | null
           cidade: string
+          cnpj?: string | null
+          codigo?: string | null
           created_at?: string | null
+          distancia_km?: number | null
           email?: string | null
           endereco?: string | null
+          estado?: string | null
           id?: string
+          importacao_id?: string | null
           nome: string
+          observacoes?: string | null
+          rede?: Database["public"]["Enums"]["rede"] | null
           responsavel?: string | null
+          responsavel_telefone?: string | null
           telefone?: string | null
           tipo?: Database["public"]["Enums"]["tipo_instituicao"]
         }
         Update: {
+          alunos_estimados?: number | null
+          ativa?: boolean
           bairro?: string | null
+          cep?: string | null
           cidade?: string
+          cnpj?: string | null
+          codigo?: string | null
           created_at?: string | null
+          distancia_km?: number | null
           email?: string | null
           endereco?: string | null
+          estado?: string | null
           id?: string
+          importacao_id?: string | null
           nome?: string
+          observacoes?: string | null
+          rede?: Database["public"]["Enums"]["rede"] | null
           responsavel?: string | null
+          responsavel_telefone?: string | null
           telefone?: string | null
           tipo?: Database["public"]["Enums"]["tipo_instituicao"]
         }
         Relationships: []
+      }
+      ordens_servico: {
+        Row: {
+          agendamento_id: string
+          ano: number
+          created_at: string
+          created_by: string | null
+          destino: string | null
+          distancia_km: number | null
+          excede_limite: boolean
+          id: string
+          logistica_status: string
+          motorista: string | null
+          numero: number | null
+          observacoes: string | null
+          origem: string | null
+          status: Database["public"]["Enums"]["os_status"]
+          ultimo_motivo: string | null
+          updated_at: string
+          veiculo: string | null
+          whatsapp_envios: number
+          whatsapp_ultimo_envio: string | null
+        }
+        Insert: {
+          agendamento_id: string
+          ano?: number
+          created_at?: string
+          created_by?: string | null
+          destino?: string | null
+          distancia_km?: number | null
+          excede_limite?: boolean
+          id?: string
+          logistica_status?: string
+          motorista?: string | null
+          numero?: number | null
+          observacoes?: string | null
+          origem?: string | null
+          status?: Database["public"]["Enums"]["os_status"]
+          ultimo_motivo?: string | null
+          updated_at?: string
+          veiculo?: string | null
+          whatsapp_envios?: number
+          whatsapp_ultimo_envio?: string | null
+        }
+        Update: {
+          agendamento_id?: string
+          ano?: number
+          created_at?: string
+          created_by?: string | null
+          destino?: string | null
+          distancia_km?: number | null
+          excede_limite?: boolean
+          id?: string
+          logistica_status?: string
+          motorista?: string | null
+          numero?: number | null
+          observacoes?: string | null
+          origem?: string | null
+          status?: Database["public"]["Enums"]["os_status"]
+          ultimo_motivo?: string | null
+          updated_at?: string
+          veiculo?: string | null
+          whatsapp_envios?: number
+          whatsapp_ultimo_envio?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ordens_servico_agendamento_id_fkey"
+            columns: ["agendamento_id"]
+            isOneToOne: true
+            referencedRelation: "agendamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      os_historico: {
+        Row: {
+          campo: string
+          created_at: string
+          id: string
+          motivo: string | null
+          os_id: string
+          usuario_id: string | null
+          usuario_nome: string | null
+          valor_anterior: string | null
+          valor_novo: string | null
+        }
+        Insert: {
+          campo: string
+          created_at?: string
+          id?: string
+          motivo?: string | null
+          os_id: string
+          usuario_id?: string | null
+          usuario_nome?: string | null
+          valor_anterior?: string | null
+          valor_novo?: string | null
+        }
+        Update: {
+          campo?: string
+          created_at?: string
+          id?: string
+          motivo?: string | null
+          os_id?: string
+          usuario_id?: string | null
+          usuario_nome?: string | null
+          valor_anterior?: string | null
+          valor_novo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "os_historico_os_id_fkey"
+            columns: ["os_id"]
+            isOneToOne: false
+            referencedRelation: "ordens_servico"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -307,6 +716,41 @@ export type Database = {
           },
         ]
       }
+      whatsapp_envios: {
+        Row: {
+          created_at: string
+          id: string
+          mensagem: string
+          os_id: string
+          telefone: string | null
+          usuario_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mensagem: string
+          os_id: string
+          telefone?: string | null
+          usuario_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mensagem?: string
+          os_id?: string
+          telefone?: string | null
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_envios_os_id_fkey"
+            columns: ["os_id"]
+            isOneToOne: false
+            referencedRelation: "ordens_servico"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -320,10 +764,23 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_logistica: { Args: { _uid: string }; Returns: boolean }
+      is_operador: { Args: { _uid: string }; Returns: boolean }
+      is_staff: { Args: { _uid: string }; Returns: boolean }
+      registrar_atendimento: { Args: { p: Json }; Returns: string }
     }
     Enums: {
-      app_role: "admin" | "instituicao"
+      app_role: "admin" | "instituicao" | "operador" | "logistica" | "consulta"
       faixa_etaria: "criancas" | "adolescentes" | "adultos" | "idosos"
+      os_status:
+        | "rascunho"
+        | "solicitado"
+        | "confirmado"
+        | "programado"
+        | "em_andamento"
+        | "realizado"
+        | "cancelado"
+        | "nao_realizado"
       rede: "publica" | "privada" | "outra"
       status_agendamento: "pendente" | "confirmado" | "cancelado" | "realizado"
       status_certificado: "pendente" | "enviado"
@@ -458,8 +915,18 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "instituicao"],
+      app_role: ["admin", "instituicao", "operador", "logistica", "consulta"],
       faixa_etaria: ["criancas", "adolescentes", "adultos", "idosos"],
+      os_status: [
+        "rascunho",
+        "solicitado",
+        "confirmado",
+        "programado",
+        "em_andamento",
+        "realizado",
+        "cancelado",
+        "nao_realizado",
+      ],
       rede: ["publica", "privada", "outra"],
       status_agendamento: ["pendente", "confirmado", "cancelado", "realizado"],
       status_certificado: ["pendente", "enviado"],
