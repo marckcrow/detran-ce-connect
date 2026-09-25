@@ -22,6 +22,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { SugestaoIA, type SugestaoVisita } from "@/components/agendar/SugestaoIA";
 import { toast } from "@/hooks/use-toast";
+import { Checkbox } from "@/components/ui/checkbox";
+import { PCD_TIPOS } from "@/lib/operacao";
 import type { Database } from "@/integrations/supabase/types";
 
 type FaixaEtaria = Database["public"]["Enums"]["faixa_etaria"];
@@ -42,10 +44,22 @@ const agendamentoSchema = z.object({
   quantidade_professores: z.coerce.number().int().min(1, "Mínimo 1 professor"),
   transporte_status: z.enum(["onibus_detran", "proprio"] as const, { required_error: "Selecione o transporte" }),
   observacoes: z.string().max(500, "Máximo 500 caracteres").optional(),
+  responsavel_nome: z.string().trim().min(3, "Informe o responsável").max(100),
+  responsavel_whatsapp: z.string().trim().refine((v) => v.replace(/\D/g, "").length >= 10, "Telefone/WhatsApp inválido"),
+  quantidade_acompanhantes: z.coerce.number().int().min(0).max(MAX_PESSOAS),
+  necessidades_especiais: z.string().max(500).optional(),
+  possui_pcd: z.enum(["sim", "nao"]),
+  pcd_tipos: z.array(z.string()),
+  pcd_outros: z.string().max(200).optional(),
+  pcd_quantidade: z.coerce.number().int().min(0).max(MAX_PESSOAS),
 }).refine(
-  (d) => d.quantidade_alunos + d.quantidade_professores <= MAX_PESSOAS,
-  { message: `Capacidade do ônibus excedida: o total de alunos + professores não pode passar de ${MAX_PESSOAS} pessoas`, path: ["quantidade_alunos"] }
-);
+  (d) => d.quantidade_alunos + d.quantidade_professores + d.quantidade_acompanhantes <= MAX_PESSOAS,
+  { message: `Capacidade do ônibus excedida: alunos + professores + acompanhantes não pode passar de ${MAX_PESSOAS} pessoas`, path: ["quantidade_alunos"] }
+).refine((d) => d.possui_pcd === "nao" || (d.pcd_tipos.length > 0 && d.pcd_quantidade > 0), {
+  message: "Selecione ao menos um tipo e informe a quantidade de alunos PCD", path: ["pcd_tipos"],
+}).refine((d) => !d.pcd_tipos.includes("Outros") || (d.pcd_outros ?? "").trim().length > 0, {
+  message: "Descreva o tipo em \"Outros\"", path: ["pcd_outros"],
+});
 
 type AgendamentoForm = z.infer<typeof agendamentoSchema>;
 
@@ -61,8 +75,16 @@ export default function Agendar() {
     defaultValues: {
       quantidade_alunos: 20,
       quantidade_professores: 2,
+      quantidade_acompanhantes: 0,
       transporte_status: "onibus_detran",
       observacoes: "",
+      responsavel_nome: "",
+      responsavel_whatsapp: "",
+      necessidades_especiais: "",
+      possui_pcd: "nao",
+      pcd_tipos: [],
+      pcd_outros: "",
+      pcd_quantidade: 0,
     },
   });
 
@@ -107,15 +129,25 @@ export default function Agendar() {
     }
 
     setSubmitting(true);
+    const pcd = values.possui_pcd === "sim";
     const { error } = await supabase.from("agendamentos").insert({
       instituicao_id: instituicaoId,
       data: format(values.data, "yyyy-MM-dd"),
       turno: values.turno,
+      horario: values.turno === "manha" ? "07:00" : "13:00",
       faixa_etaria: values.faixa_etaria,
       quantidade_alunos: values.quantidade_alunos,
       quantidade_professores: values.quantidade_professores,
+      quantidade_acompanhantes: values.quantidade_acompanhantes,
       transporte_status: values.transporte_status,
       observacoes: values.observacoes || null,
+      responsavel_nome: values.responsavel_nome,
+      responsavel_whatsapp: values.responsavel_whatsapp,
+      necessidades_especiais: values.necessidades_especiais || null,
+      possui_pcd: pcd,
+      pcd_tipos: pcd ? values.pcd_tipos : [],
+      pcd_outros: pcd && values.pcd_tipos.includes("Outros") ? values.pcd_outros || null : null,
+      pcd_quantidade: pcd ? values.pcd_quantidade : 0,
     });
     setSubmitting(false);
 
@@ -294,6 +326,93 @@ export default function Agendar() {
                       )}
                     />
                   </div>
+
+                  <FormField control={form.control} name="quantidade_acompanhantes" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Qtd. Acompanhantes</FormLabel>
+                      <FormControl><Input type="number" min={0} max={MAX_PESSOAS} {...field} /></FormControl>
+                      <FormDescription>Alunos + professores + acompanhantes: máximo {MAX_PESSOAS}.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <FormField control={form.control} name="responsavel_nome" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Responsável pela escola</FormLabel>
+                        <FormControl><Input maxLength={100} {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="responsavel_whatsapp" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Telefone / WhatsApp</FormLabel>
+                        <FormControl><Input placeholder="(85) 99999-9999" maxLength={20} {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
+
+                  {/* PCD */}
+                  <div className="space-y-4 rounded-lg border p-4">
+                    <FormField control={form.control} name="possui_pcd" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>A turma possui aluno(s) PCD?</FormLabel>
+                        <div className="flex gap-2">
+                          {(["sim", "nao"] as const).map((v) => (
+                            <Button key={v} type="button" variant={field.value === v ? "default" : "outline"} size="sm" onClick={() => field.onChange(v)}>
+                              {v === "sim" ? "Sim" : "Não"}
+                            </Button>
+                          ))}
+                        </div>
+                      </FormItem>
+                    )} />
+                    {form.watch("possui_pcd") === "sim" && (
+                      <>
+                        <FormField control={form.control} name="pcd_tipos" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Tipos (pode marcar mais de um)</FormLabel>
+                            <div className="grid gap-2 sm:grid-cols-2">
+                              {PCD_TIPOS.map((t) => (
+                                <label key={t} className="flex items-center gap-2 text-sm">
+                                  <Checkbox
+                                    checked={field.value.includes(t)}
+                                    onCheckedChange={(c) => field.onChange(c ? [...field.value, t] : field.value.filter((x) => x !== t))}
+                                  />
+                                  {t}
+                                </label>
+                              ))}
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                        {form.watch("pcd_tipos").includes("Outros") && (
+                          <FormField control={form.control} name="pcd_outros" render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Descreva "Outros"</FormLabel>
+                              <FormControl><Input maxLength={200} {...field} /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )} />
+                        )}
+                        <FormField control={form.control} name="pcd_quantidade" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Quantidade de alunos PCD</FormLabel>
+                            <FormControl><Input type="number" min={0} max={MAX_PESSOAS} {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                      </>
+                    )}
+                  </div>
+
+                  <FormField control={form.control} name="necessidades_especiais" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Necessidades especiais da turma</FormLabel>
+                      <FormControl><Textarea className="resize-none" maxLength={500} {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
 
                   {/* Transporte */}
                   <FormField
