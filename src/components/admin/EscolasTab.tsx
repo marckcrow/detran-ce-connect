@@ -208,8 +208,8 @@ function ImportarDialog({ existentes, onClose, onDone }: { existentes: any[]; on
         <Input type="file" accept=".xlsx,.xls,.csv" onChange={(e) => e.target.files?.[0] && ler(e.target.files[0])} />
         {linhas.length > 0 && <>
           <div className="flex flex-wrap gap-3 text-sm">
-            <Badge variant="success" as any>{validas.length} válidas</Badge>
-            <Badge variant="warning" as any>{linhas.filter((l) => l.duplicada).length} duplicadas</Badge>
+            <Badge variant={"success" as any}>{validas.length} válidas</Badge>
+            <Badge variant={"warning" as any}>{linhas.filter((l) => l.duplicada).length} duplicadas</Badge>
             <Badge variant="destructive">{linhas.filter((l) => l.erros.length).length} com erro</Badge>
           </div>
           <div className="max-h-96 overflow-auto">
