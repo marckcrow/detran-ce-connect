@@ -34,15 +34,7 @@ export const Footer = () => {
             <ul className="space-y-2 text-sm opacity-90">
               <li className="flex items-start gap-2">
                 <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                <span>Centro Interativo de Fortaleza</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                <span>Centro Interativo de Sobral</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                <span>Centro Interativo do Cariri</span>
+                <span>Centro Integrativo de Fortaleza</span>
               </li>
             </ul>
           </div>
@@ -52,11 +44,15 @@ export const Footer = () => {
             <ul className="space-y-2 text-sm opacity-90">
               <li className="flex items-center gap-2">
                 <Phone className="h-4 w-4" />
-                <span>(85) 3101-7000</span>
+                <span>(85) 98135-9276 (WhatsApp)</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <Phone className="h-4 w-4" />
+                <span>(85) 3106-4711 (Fixo)</span>
               </li>
               <li className="flex items-center gap-2">
                 <Mail className="h-4 w-4" />
-                <span>escolatransito@detran.ce.gov.br</span>
+                <span>escoladetransito@detran.ce.gov.br</span>
               </li>
             </ul>
           </div>

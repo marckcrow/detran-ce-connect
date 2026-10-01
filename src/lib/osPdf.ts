@@ -31,7 +31,8 @@ export type DadosOS = {
   contrato?: string;
 };
 
-const VERDE: [number, number, number] = [14, 140, 58];
+const VERDE: [number, number, number] = [0, 104, 55]; // DETRAN green #006837
+const VERDE_CLARO: [number, number, number] = [0, 140, 75];
 const CINZA: [number, number, number] = [90, 90, 90];
 
 const HORARIO: Record<string, string> = { manha: "07h", tarde: "13h" };
@@ -49,42 +50,69 @@ export function gerarOSPdf(d: DadosOS) {
   const contrato = d.contrato ?? import.meta.env.VITE_OS_CONTRATO ?? "178/2025";
 
   const cabecalho = () => {
+    // Barra verde superior
     doc.setFillColor(...VERDE);
     doc.rect(0, 0, W, 6, "F");
+
+    // Logo DETRAN-CE (texto estilizado à esquerda)
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(12);
-    doc.setTextColor(20, 20, 20);
-    doc.text("DETRAN-CE", M, 40);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8.5);
-    doc.setTextColor(...CINZA);
-    doc.text("GOVERNO DO ESTADO DO CEARÁ • SECRETARIA DA INFRAESTRUTURA", M, 53);
-    doc.text("Núcleo Pedagógico de Educação para o Trânsito – NUPET", M, 64);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(9);
+    doc.setFontSize(14);
     doc.setTextColor(...VERDE);
-    doc.text(`O.S. N° ${d.numero}/${d.ano}`, W - M, 40, { align: "right" });
+    doc.text("DETRAN-CE", M, 28);
+
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8.5);
     doc.setTextColor(...CINZA);
-    doc.text(d.unidade.toUpperCase(), W - M, 53, { align: "right" });
+    doc.text("GOVERNO DO ESTADO DO CEARÁ", M, 40);
+    doc.text("Diretoria de Educação para o Trânsito – DIET/NUPET", M, 52);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.text("Escola de Trânsito", M, 63);
+
+    // OS number à direita
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(...VERDE);
+    doc.text(`O.S. N° ${d.numero}/${d.ano}`, W - M, 36, { align: "right" });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    doc.setTextColor(...CINZA);
+    doc.text(d.unidade.toUpperCase(), W - M, 50, { align: "right" });
+
+    // Linha separadora verde
     doc.setDrawColor(...VERDE);
-    doc.setLineWidth(0.8);
+    doc.setLineWidth(1);
     doc.line(M, 72, W - M, 72);
   };
 
   const rodape = () => {
-    const y = H - 58;
-    doc.setDrawColor(200, 200, 200);
-    doc.setLineWidth(0.6);
+    const y = H - 72;
+    // Linha separadora
+    doc.setDrawColor(...VERDE);
+    doc.setLineWidth(0.8);
     doc.line(M, y, W - M, y);
+
+    // Footer esquerdo - identidade DETRAN
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(...VERDE);
+    doc.text("Escola de Trânsito / Detran Ceará", M, y + 14);
+
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7.5);
     doc.setTextColor(...CINZA);
-    doc.text("Av. Godofredo Maciel, 2900 - Maraponga • CEP 60710-903 • Fortaleza/CE", M, y + 14);
-    doc.text("Fone: (85) 3195.2300 • Funcionamento SEDE: 08h às 15h (Seg-Sex)", M, y + 25);
+    doc.text("Unidade: Centro Integrativo de Fortaleza", M, y + 25);
+    doc.text("Contato: (85) 98135-9276 (WhatsApp) / (85) 3106-4711 (Fixo)", M, y + 36);
+    doc.text("E-mail: escoladetransito@detran.ce.gov.br", M, y + 47);
+
+    // Número da página à direita
     const page = doc.getNumberOfPages();
-    doc.text(`Página ${doc.getCurrentPageInfo().pageNumber} de ${page}`, W - M, y + 25, { align: "right" });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.setTextColor(...CINZA);
+    doc.text(`Página ${doc.getCurrentPageInfo().pageNumber} de ${page}`, W - M, y + 47, { align: "right" });
+
+    // Barra verde inferior
     doc.setFillColor(...VERDE);
     doc.rect(0, H - 6, W, 6, "F");
   };
