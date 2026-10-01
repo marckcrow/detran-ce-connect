@@ -14,6 +14,7 @@ import { EscolasTab } from "@/components/admin/EscolasTab";
 import { EstoqueTab } from "@/components/admin/EstoqueTab";
 import { RelatoriosTab } from "@/components/admin/RelatoriosTab";
 import { UsuariosTab } from "@/components/admin/UsuariosTab";
+import { DisponibilidadeTab } from "@/components/admin/DisponibilidadeTab";
 
 export default function Admin() {
   const { user, loading, isAdmin, isOperador, isLogistica, isStaff, roles } = useRoles();
@@ -53,6 +54,7 @@ export default function Admin() {
             <TabsList className="h-auto flex-wrap">
               <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
               <TabsTrigger value="agendamentos">Agendamentos</TabsTrigger>
+              <TabsTrigger value="disponibilidade">Disponibilidade</TabsTrigger>
               <TabsTrigger value="os">Ordens de Serviço</TabsTrigger>
               <TabsTrigger value="transporte">OS da empresa de ônibus</TabsTrigger>
               <TabsTrigger value="escolas">Instituições</TabsTrigger>
@@ -62,6 +64,7 @@ export default function Admin() {
             </TabsList>
             <TabsContent value="dashboard" className="mt-4"><DashboardTab /></TabsContent>
             <TabsContent value="agendamentos" className="mt-4"><AgendamentosTab podeEditar={isOperador} /></TabsContent>
+            <TabsContent value="disponibilidade" className="mt-4"><DisponibilidadeTab /></TabsContent>
             <TabsContent value="os" className="mt-4"><OrdensTab podeOperar={isOperador} podeLogistica={isLogistica} /></TabsContent>
             <TabsContent value="transporte" className="mt-4"><OSTransporteTab podeEditar={isLogistica} /></TabsContent>
             <TabsContent value="escolas" className="mt-4"><EscolasTab podeEditar={isOperador} /></TabsContent>
