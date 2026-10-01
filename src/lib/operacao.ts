@@ -120,3 +120,13 @@ export const waLink = (tel: string, msg: string) => {
   if (d && !d.startsWith("55")) d = "55" + d;
   return `https://wa.me/${d}?text=${encodeURIComponent(msg)}`;
 };
+
+export const TIPO_PUBLICO: Record<string, string> = {
+  escola: "Escola",
+  universidade: "Universidade",
+  empresa: "Empresa",
+  ong: "ONG",
+  igreja: "Igreja",
+  orgao_publico: "Órgão público",
+  outros: "Outros",
+};
