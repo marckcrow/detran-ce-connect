@@ -183,7 +183,8 @@ export default function Agendar() {
         .single();
       if (inst?.tipo !== "escola" || inst?.rede !== "publica") {
         toast({
-          title: "Ônibus indisponível",\n          description: "O ônibus do DETRAN está disponível apenas para escolas da rede pública. Selecione 'Transporte Próprio'.",
+          title: "Ônibus indisponível",
+          description: "O ônibus do DETRAN está disponível apenas para escolas da rede pública. Selecione 'Transporte Próprio'.",
           variant: "destructive"
         });
         return;
@@ -309,7 +310,6 @@ export default function Agendar() {
                                   date.getDay() === 6
                                 );
                               }}
-                              }
                               locale={ptBR}
                               initialFocus
                             />
