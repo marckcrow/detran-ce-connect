@@ -35,7 +35,7 @@ const ALIAS: Record<string, string> = {
   nome: "nome", escola: "nome", nomedaescola: "nome", cnpj: "cnpj", codigo: "codigo", inep: "codigo", codigoinep: "codigo",
   endereco: "endereco", logradouro: "endereco", bairro: "bairro", cidade: "cidade", municipio: "cidade", estado: "estado", uf: "estado",
   cep: "cep", telefone: "telefone", fone: "telefone", email: "email", responsavel: "responsavel", diretor: "responsavel",
-  contatoresponsavel: "responsavel_telefone", telefoneresponsavel: "responsavel_telefone", tipo: "rede", rede: "rede",
+  contatoresponsavel: "responsavel_telefone", telefoneresponsavel: "responsavel_telefone", tipo: "tipo", tiporede: "rede", rede: "rede",
   alunos: "alunos_estimados", alunosestimados: "alunos_estimados", quantidadealunos: "alunos_estimados", distancia: "distancia_km", km: "distancia_km",
   observacoes: "observacoes", publico: "tipo", tipopublico: "tipo", segmento: "tipo",
 };
