@@ -86,7 +86,7 @@ export default function MinhaEscola() {
   }, [user, authLoading, navigate]);
 
   const load = useCallback(async () => {
-    if (!user) return;
+    if (!user || !supabase) return;
     setLoading(true);
     const { data: profile } = await supabase
       .from("profiles")
@@ -130,7 +130,7 @@ export default function MinhaEscola() {
   };
 
   const confirmCancel = async () => {
-    if (!cancelTarget) return;
+    if (!cancelTarget || !supabase) return;
     setCancelling(true);
     const { error } = await supabase
       .from("agendamentos")
@@ -279,6 +279,18 @@ export default function MinhaEscola() {
               <div>
                 <div className="text-muted-foreground">Professores</div>
                 <div className="font-medium">{selected.quantidade_professores}</div>
+              </div>
+              {selected.acompanhantes ? (
+                <div>
+                  <div className="text-muted-foreground">Acompanhantes</div>
+                  <div className="font-medium">{selected.acompanhantes}</div>
+                </div>
+              ) : null}
+              <div>
+                <div className="text-muted-foreground">Total de pessoas</div>
+                <div className="font-medium font-bold text-primary">
+                  {(selected.quantidade_alunos || 0) + (selected.quantidade_professores || 0) + (selected.acompanhantes || 0)}
+                </div>
               </div>
               <div>
                 <div className="text-muted-foreground">Status</div>

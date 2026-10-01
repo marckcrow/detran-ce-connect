@@ -1,8 +1,18 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { School, Calendar, LayoutDashboard, LogIn } from "lucide-react";
+import { Calendar, LayoutDashboard, LogIn, LogOut, User } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export const Navbar = () => {
+  const { user, signOut, loading: authLoading } = useAuth();
+
   return (
     <nav className="border-b bg-card shadow-sm sticky top-0 z-50 relative overflow-hidden">
       {/* Faixas geométricas diagonais - identidade Gov. Ceará */}
@@ -40,18 +50,46 @@ export const Navbar = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            <Button asChild variant="outline" size="sm">
-              <Link to="/auth">
-                <LogIn className="h-4 w-4 mr-2" />
-                Entrar
-              </Link>
-            </Button>
-            <Button asChild size="sm" className="bg-gradient-hero">
-              <Link to="/agendar">
-                <Calendar className="h-4 w-4 mr-2" />
-                Agendar
-              </Link>
-            </Button>
+            {authLoading ? (
+              <div className="h-8 w-20 animate-pulse rounded bg-muted" />
+            ) : user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <User className="h-4 w-4" />
+                    <span className="max-w-[120px] truncate">{user.user_metadata?.nome || user.email?.split("@")[0]}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild>
+                    <Link to="/perfil">Meu Perfil</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/admin">Painel Admin</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={signOut} className="text-destructive cursor-pointer">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sair
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <>
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/auth">
+                    <LogIn className="h-4 w-4 mr-2" />
+                    Entrar
+                  </Link>
+                </Button>
+                <Button asChild size="sm" className="bg-gradient-hero">
+                  <Link to="/agendar">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Agendar
+                  </Link>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>

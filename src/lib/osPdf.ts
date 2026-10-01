@@ -42,11 +42,11 @@ export function gerarOSPdf(d: DadosOS) {
   const H = doc.internal.pageSize.getHeight();
   const M = 48;
 
-  const empresa = d.empresa ?? "JR SERVIÇOS DE TRANSPORTES EIRELI";
-  const empresaEndereco = d.empresaEndereco ?? "Rua Padre Macedo, 542, Centro, Crateús/CE";
-  const empresaCnpj = d.empresaCnpj ?? "08.269.988/0001-09";
-  const empresaFone = d.empresaFone ?? "(88) 3692-3636";
-  const contrato = d.contrato ?? "178/2025";
+  const empresa = d.empresa ?? import.meta.env.VITE_OS_EMPRESA ?? "JR SERVIÇOS DE TRANSPORTES EIRELI";
+  const empresaEndereco = d.empresaEndereco ?? import.meta.env.VITE_OS_ENDERECO ?? "Rua Padre Macedo, 542, Centro, Crateús/CE";
+  const empresaCnpj = d.empresaCnpj ?? import.meta.env.VITE_OS_CNPJ ?? "08.269.988/0001-09";
+  const empresaFone = d.empresaFone ?? import.meta.env.VITE_OS_FONE ?? "(88) 3692-3636";
+  const contrato = d.contrato ?? import.meta.env.VITE_OS_CONTRATO ?? "178/2025";
 
   const cabecalho = () => {
     doc.setFillColor(...VERDE);

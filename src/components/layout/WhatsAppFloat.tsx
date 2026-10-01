@@ -1,6 +1,6 @@
 import { MessageCircle } from "lucide-react";
 
-const WHATSAPP_NUMBER = "5585310170000"; // Detran-CE (placeholder)
+const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER || "5585985035473";
 const DEFAULT_MESSAGE = "Olá! Gostaria de informações sobre a Escola de Trânsito do Detran Ceará.";
 
 export const WhatsAppFloat = () => {

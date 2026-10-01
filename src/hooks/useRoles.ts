@@ -11,6 +11,10 @@ export function useRoles() {
       if (!authLoading) setRoles([]);
       return;
     }
+    if (!supabase) {
+      setRoles([]);
+      return;
+    }
     supabase
       .from("user_roles")
       .select("role")

@@ -28,6 +28,7 @@ export function useAuth() {
   }, []);
 
   const signOut = async () => {
+    if (!supabase) return;
     await supabase.auth.signOut();
   };
 
