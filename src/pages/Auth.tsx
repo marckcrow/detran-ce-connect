@@ -70,12 +70,16 @@ export default function Auth() {
 
       if (!instErr && inst) {
         await supabase.from("profiles").update({ instituicao_id: inst.id, telefone }).eq("id", data.user.id);
-        toast({ title: "Cadastro realizado!", description: "Sua instituição foi vinculada ao seu perfil." });
-      } else {
-        toast({ title: "Cadastro realizado!", description: "Perfil criado. Vincule sua instituição em Meu Perfil.", variant: "destructive" });
       }
+      toast({
+        title: "Cadastro realizado!",
+        description: "Sua solicitação de acesso foi enviada para análise. Você receberá um e-mail quando aprovada.",
+      });
     } else {
-      toast({ title: "Cadastro realizado!", description: "Verifique seu e-mail para confirmar a conta." });
+      toast({
+        title: "Cadastro realizado!",
+        description: "Verifique seu e-mail para confirmar a conta. Sua solicitação de acesso será enviada após a confirmação.",
+      });
     }
 
     setIsLoading(false);

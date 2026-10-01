@@ -23,6 +23,8 @@ export function useRoles() {
   }, [user, authLoading]);
 
   const has = (...r: string[]) => !!roles?.some((x) => r.includes(x));
+  const isInstituicao = has("instituicao");
+  const isPendingUser = isInstituicao && !has("admin", "operador", "logistica", "consulta");
   return {
     user,
     loading: authLoading || roles === null,
@@ -31,5 +33,7 @@ export function useRoles() {
     isOperador: has("admin", "operador"),
     isLogistica: has("admin", "operador", "logistica"),
     isStaff: has("admin", "operador", "logistica", "consulta"),
+    isInstituicao,
+    isPendingUser,
   };
 }

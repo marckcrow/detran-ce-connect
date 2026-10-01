@@ -17,9 +17,10 @@ import { UsuariosTab } from "@/components/admin/UsuariosTab";
 import { DisponibilidadeTab } from "@/components/admin/DisponibilidadeTab";
 import { NoticiasTab } from "@/components/admin/NoticiasTab";
 import { LogsTab } from "@/components/admin/LogsTab";
+import { AccessRequestsTab } from "@/components/admin/AccessRequestsTab";
 
 export default function Admin() {
-  const { user, loading, isAdmin, isOperador, isLogistica, isStaff, roles } = useRoles();
+  const { user, loading, isAdmin, isOperador, isLogistica, isStaff, isPendingUser, roles } = useRoles();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -52,6 +53,11 @@ export default function Admin() {
             <h1 className="text-3xl font-bold tracking-tight">Painel Administrativo</h1>
             <p className="text-muted-foreground">Perfil: {perfil}</p>
           </div>
+          {isPendingUser && (
+            <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-yellow-800 dark:border-yellow-800 dark:bg-yellow-950 dark:text-yellow-200">
+              <strong>Atenção:</strong> Seu cadastro está em análise. Aguarde aprovação para acessar o painel administrativo.
+            </div>
+          )
           <Tabs defaultValue="dashboard">
             <TabsList className="h-auto flex-wrap">
               <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
@@ -64,6 +70,7 @@ export default function Admin() {
               <TabsTrigger value="escolas">Instituições</TabsTrigger>
               <TabsTrigger value="estoque">Estoque</TabsTrigger>
               <TabsTrigger value="relatorios">Relatórios</TabsTrigger>
+              {isAdmin && <TabsTrigger value="solicitacoes">Solicitações de Acesso</TabsTrigger>}
               {isAdmin && <TabsTrigger value="usuarios">Usuários e config.</TabsTrigger>}
             </TabsList>
             <TabsContent value="dashboard" className="mt-4"><DashboardTab /></TabsContent>
@@ -76,6 +83,7 @@ export default function Admin() {
             <TabsContent value="escolas" className="mt-4"><EscolasTab podeEditar={isOperador} /></TabsContent>
             <TabsContent value="estoque" className="mt-4"><EstoqueTab podeEditar={isOperador} /></TabsContent>
             <TabsContent value="relatorios" className="mt-4"><RelatoriosTab /></TabsContent>
+            {isAdmin && <TabsContent value="solicitacoes" className="mt-4"><AccessRequestsTab /></TabsContent>}
             {isAdmin && <TabsContent value="usuarios" className="mt-4"><UsuariosTab meuId={user?.id} /></TabsContent>}
           </Tabs>
         </div>

@@ -29,10 +29,41 @@ export function UsuariosTab({ meuId }: { meuId?: string }) {
 
   const toggle = async (uid: string, role: string, tem: boolean) => {
     if (uid === meuId && role === "admin" && tem) return toast({ title: "Você não pode remover seu próprio acesso de administrador", variant: "destructive" });
+
+    // Prevent removing last admin
+    if (tem && role === "admin") {
+      const { data: adminRoles } = await db.from("user_roles").select("user_id").eq("role", "admin");
+      const adminCount = (adminRoles ?? []).filter((a: any) => a.user_id === uid).length;
+      if (adminCount >= 1) {
+        const { data: allAdminRoles } = await db.from("user_roles").select("user_id").eq("role", "admin");
+        if ((allAdminRoles ?? []).length <= 1) {
+          return toast({ title: "Não é possível remover o último administrador", variant: "destructive" });
+        }
+      }
+    }
+
+    const targetUser = users.find((u) => u.id === uid);
+    const targetUserName = targetUser?.nome ?? uid;
+
     const { error } = tem
       ? await db.from("user_roles").delete().eq("user_id", uid).eq("role", role)
       : await db.from("user_roles").insert({ user_id: uid, role });
-    if (error) toast({ title: "Erro", description: error.message, variant: "destructive" }); else load();
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      return;
+    }
+
+    // Audit log
+    await db.from("logs_sistema").insert({
+      usuario_id: meuId,
+      usuario_nome: "Admin",
+      acao: tem ? "revogou_perfil" : "atribuiu_perfil",
+      tabela: "user_roles",
+      registro_id: uid,
+      detalhes: { usuario_alvo: targetUserName, perfil: role },
+    });
+
+    load();
   };
 
   const salvarCfg = async () => {
