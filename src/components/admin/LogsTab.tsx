@@ -127,10 +127,10 @@ export function LogsTab() {
             </div>
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground">Tabela</Label>
-              <Select value={fTabela} onValueChange={(v) => { setFTabela(v); setPage(0); }}>
+              <Select value={fTabela || "__all"} onValueChange={(v) => { setFTabela(v === "__all" ? "" : v); setPage(0); }}>
                 <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas</SelectItem>
+                  <SelectItem value="__all">Todas</SelectItem>
                   {TABLE_OPTIONS.slice(1).map((t) => (
                     <SelectItem key={t} value={t}>{t}</SelectItem>
                   ))}
@@ -139,10 +139,10 @@ export function LogsTab() {
             </div>
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground">Ação</Label>
-              <Select value={fAcao} onValueChange={(v) => { setFAcao(v); setPage(0); }}>
+              <Select value={fAcao || "__all"} onValueChange={(v) => { setFAcao(v === "__all" ? "" : v); setPage(0); }}>
                 <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas</SelectItem>
+                  <SelectItem value="__all">Todas</SelectItem>
                   {ACAO_OPTIONS.slice(1).map((a) => (
                     <SelectItem key={a} value={a}>{a}</SelectItem>
                   ))}
