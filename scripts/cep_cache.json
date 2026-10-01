@@ -82,5 +82,61 @@
     "logradouro": "Vitoriano Borges",
     "cidade": "Fortaleza",
     "source": "api_address"
+  },
+  "fortaleza_passaré_escola de ensino infantil e fundamental clubinho do saber": {
+    "cep": "60533170",
+    "bairro": "Passaré",
+    "logradouro": "1084",
+    "cidade": "Fortaleza",
+    "source": "api_address"
+  },
+  "fortaleza_vila velha_escola monteiro lobato": {
+    "cep": "60346251",
+    "bairro": "Vila Velha",
+    "logradouro": "Rosinha Sampaio",
+    "cidade": "Fortaleza",
+    "source": "api_address"
+  },
+  "fortaleza_genibaú_escola municipal manoel caetano de souza": {
+    "cep": "60526410",
+    "bairro": "Genibaú",
+    "logradouro": "Lúcia",
+    "cidade": "Fortaleza",
+    "source": "api_address"
+  },
+  "fortaleza_nossa senhora das graças_escola nossa senhora das graças": {
+    "cep": "60335015",
+    "bairro": "Nossa Senhora das Graças",
+    "logradouro": "Enida Presidente Castelo Branco",
+    "cidade": "Fortaleza",
+    "source": "api_address"
+  },
+  "maracanaú_maracanaú_faculdade maurício de nassau - maracanaú": {
+    "cep": "61900175",
+    "bairro": "Maracanaú",
+    "logradouro": "Yolanda Pontes Vidal Queiroz",
+    "cidade": "Maracanaú",
+    "source": "api_address"
+  },
+  "fortaleza_siqueira_policia militra do ceará": {
+    "cep": "60540008",
+    "bairro": "Siqueira",
+    "logradouro": "Jardim do Éden",
+    "cidade": "Fortaleza",
+    "source": "api_address"
+  },
+  "fortaleza_sabiaguaba_top lanches": {
+    "cep": "60834853",
+    "bairro": "Sabiaguaba",
+    "logradouro": "Sabiaguaba",
+    "cidade": "Fortaleza",
+    "source": "api_address"
+  },
+  "fortaleza_demócrito rocha_unip fafor": {
+    "cep": "60442013",
+    "bairro": "Demócrito Rocha",
+    "logradouro": "José Bastos",
+    "cidade": "Fortaleza",
+    "source": "api_address"
   }
 }

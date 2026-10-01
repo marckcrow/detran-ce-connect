@@ -53,6 +53,7 @@ export function LogsTab() {
   const [logs, setLogs] = useState<Log[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
+  const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 50;
 
@@ -80,9 +81,17 @@ export function LogsTab() {
     q = q.order("created_at", { ascending: false }).range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
     const { data, count, error } = await q;
-    if (error) console.error(error);
+    if (error) {
+      console.error(error);
+      setLogs([]);
+      setTotal(0);
+      setError(error.message || "Erro ao carregar logs");
+      setLoading(false);
+      return;
+    }
     setLogs(data ?? []);
     setTotal(count ?? 0);
+    setError(null);
     setLoading(false);
   }, [page, fDataInicio, fDataFim, fTabela, fAcao, fUsuario]);
 
@@ -165,8 +174,12 @@ export function LogsTab() {
           {/* Tabela */}
           {loading ? (
             <Loader2 className="mx-auto h-6 w-6 animate-spin" />
+          ) : error ? (
+            <div className="py-12 text-center space-y-2">
+              <p className="text-muted-foreground">Tabela de logs não disponível. Execute a migration SQL para criar a tabela.</p>
+              <p className="text-xs text-muted-foreground">Arquivo: supabase/migrations/20261001_fix_policies_rls_v2.sql</p>
+            </div>
           ) : (
-            <>
               <div className="overflow-x-auto border rounded-md">
                 <Table>
                   <TableHeader>

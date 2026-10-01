@@ -1,10 +1,10 @@
 ======================================================================
 RELATÓRIO DE IMPORTAÇÃO - BASE DE ESCOLAS DETRAN-CE
-Data: 2026-10-01 13:50:56
+Data: 2026-10-01 13:53:56
 ======================================================================
 
 Total de registros:     400
-Com CEP:                 13 (3%)
+Com CEP:                 24 (6%)
 Com Endereço:            390 (97%)
 Com Telefone:            400 (100%)
 Com E-mail:              400 (100%)
@@ -13,16 +13,16 @@ Com Responsável:         400 (100%)
 ----------------------------------------------------------------------
 POR CIDADE:
   Aratuba: 2 escolas (2 com CEP)
-  Baturité: 1 escolas (0 com CEP)
+  Baturité: 1 escolas (1 com CEP)
   Caucaia: 30 escolas (0 com CEP)
   Desconhecida: 4 escolas (4 com CEP)
   Eusébio: 4 escolas (1 com CEP)
-  Fortaleza: 294 escolas (3 com CEP)
+  Fortaleza: 294 escolas (12 com CEP)
   Fortaleza [12]: 1 escolas (0 com CEP)
   Guaiúba: 5 escolas (0 com CEP)
   Itaitinga: 1 escolas (0 com CEP)
   Itapipoca: 1 escolas (0 com CEP)
-  Maracanaú: 30 escolas (1 com CEP)
+  Maracanaú: 30 escolas (2 com CEP)
   Maranguape: 17 escolas (2 com CEP)
   Maranguape, Próximo do Maracanã: 1 escolas (0 com CEP)
   Novo Maranguape: 1 escolas (0 com CEP)
@@ -40,7 +40,7 @@ POR UNIDADE DETRAN MAIS PRÓXIMA:
     Distância média: 104.5km | Min: 104.5km | Max: 104.5km
 
 ----------------------------------------------------------------------
-ESCOLAS SEM CEP (387):
+ESCOLAS SEM CEP (376):
   [1] Abc Bom Jardim - Fortaleza / Granja Lisboa - End: Três Corações,762
   [2] Acflor- Instituto de Defesa da Cidadania Social - Fortaleza / Floresta - End: Luis Guimarães, 642
   [3] Adauto Ferreira Lima - Maracanaú / Timbo - End: Contorno Leste S/N
@@ -224,7 +224,6 @@ ESCOLAS SEM CEP (387):
   [193] Em Prof Jacinto Botelho - Fortaleza / Mondubim - End: Dr Rodrigo Codes Sandoval 347
   [194] Em Rosa Amaro Cavalcante - Fortaleza / None - End: Alfredo Mamede, 1064Conjunto Esperança
   [195] Em Rosa Amaro Cavalcante Unidade Ii - Fortaleza / Parque Santana - End: Um,1169 Parque Santana
-  [196] Em Sagrado Coração - Fortaleza / Maraponga - End: Holanda
   [197] Emti Educação Bilíngue Francisco Suderland Bastos Amota - Fortaleza / Parque Dois Irmãos - End: Enida Bernardo Manuel 9970-A
   [198] Emti Educação Bilíngue Francisco Suderland Bastos Mota - Fortaleza / Parque Dois Irmaos - End: Enida Bernardo Manuel 9970 A
   [199] Emti Francisca Fernandes Magalhaes - Fortaleza / Bonsucesso - End: Oliveira Sobrinho, 1031
@@ -238,8 +237,6 @@ ESCOLAS SEM CEP (387):
   [207] Emti Walney do Carmo Lopes - Pacatuba / Pq. Quandú - End: Faustino Albuquerque 15533
   [208] Em Tomaz Muniz - Fortaleza / Siqueira - End: Dra Vanda Cidade, 185
   [209] Emtti Eunice Weaver - Maranguape, Próximo do Maracanã / Conego Raimundo- Maranguape - End: Rod. Sen. Almir Pinto Km 15
-  [210] Enel - Baturité / Centro - End: Newton Prado
-  [211] Ensino Médio Incompleto - Fortaleza / Parangaba - End: Vitoriano Borges
   [212] Esc Mun Dom Aloisio Lorscheider - Fortaleza / Praia do Futuro - End: Julio Silva 450
   [213] Esc Municipal Frei Tito - Fortaleza / None - End: Enida Dioguinho 5925Praia do Futuro
   [214] Escola Abc Infantil - Fortaleza / Cambeba - End: Nenê Gonçalves Barreira 67
@@ -260,7 +257,6 @@ ESCOLAS SEM CEP (387):
   [229] Escola de Ensino Fundamental Geraldo Batista de Lima - Itaitinga / Antônio Miguel - End: Miguel Soares Cavalcante N⁰ 120
   [230] Escola de Ensino Fundamental Municipal Jornalista Demócrito Dummar - Fortaleza / Canindezinho - End: Enida Euclides Paulino Barroso 2505
   [231] Escola de Ensino Fundamental Raio de Luz - Fortaleza / Granja Portugal - End: Primeiro de Maio 2612
-  [232] Escola de Ensino Infantil e Fundamental Clubinho do Saber - Fortaleza / Passaré - End: 1084
   [233] Escola de Trânsito - Fortaleza / None - End: Godofredo Maciel, 2900Maraponga
   [234] Escola El Shammah - Fortaleza / Siqueira - End: Maciel Bezerra , 982
   [235] Escola Espaço Cultural Mundo do Mickey - Fortaleza / Passaré - End: Argentina Pinheiro Torres 1786
@@ -283,7 +279,6 @@ ESCOLAS SEM CEP (387):
   [252] Escola Minicipal Adroaldo Teixeira Castelo - Fortaleza / Pici - End: Alagoas 2267
   [253] Escola Moacir Pinheiro - Caucaia / Poço Verde - End: Br 020 Km 26 S/N Poço Verde Comunidade
   [254] Escola Moacir Pinheiro de Sousa - Caucaia / Poço Verde - End: Br 020 Km 26, S/N.
-  [255] Escola Monteiro Lobato - Fortaleza / Vila Velha - End: Rosinha Sampaio
   [256] Escola Muncipal Francisco Edmilson Pinheiro - Fortaleza / Conjunto Ceará - End: Enida H, 2115 - 4ª Etapa
   [257] Escola Municipal Adalberto Studart Filho - Fortaleza / Planalto Ayrton Senna - End: Do Campo,25
   [258] Escola Municipal Adalberto Studart Filho - Fortaleza / Planlto Ayrton Senna - End: Do Campo ,25
@@ -314,7 +309,6 @@ ESCOLAS SEM CEP (387):
   [283] Escola Municipal Jornalista Durval Ayres - Fortaleza / Planalto Ayton Senna - End: Do Sol 1. 522 - Planalto Ayrton Senna - Cep: 60766-160
   [284] Escola Municipal José Nauri Braga - Fortaleza / Bela Vista - End: R. Lilian Abreu, 231 - Bela Vista, Fortaleza - Ce, 60442-521
   [285] Escola Municipal Lorhan Marques Medeiros - Fortaleza / Jardim Guanabara - End: Creuza Rocha 255
-  [286] Escola Municipal Manoel Caetano de Souza - Fortaleza / Genibaú - End: Lúcia
   [287] Escola Municipal Manoel Cordeiro - Maranguape / Umarizeiras - End: Enida Luiz Cordeiro Sobrinho S/N
   [288] Escola Municipal Manoel Malveira Maia - Fortaleza / Granja Lisboa - End: Manoel Galdino 2980
   [289] Escola Municipal Maria Luiza do Vale Forte - Caucaia / Carrapicho - End: Célio Cândido, S/N Br 020 Km 10 Bairro Carrapicho, Caucaia Ce
@@ -337,7 +331,6 @@ ESCOLAS SEM CEP (387):
   [306] Escola Municipal Waldemar Barroso - Fortaleza / Serrinha - End: Cônego Lima Sucupira,410
   [307] Escola Municpal Adalberto Studart Filho - Fortaleza / Planalto Ayrton Senna - End: Do Campo, 25
   [308] Escola Nilo Pinheiro Campelo - Maranguape / Novo Parque Iracema - End: Nilo Campelo 48
-  [309] Escola Nossa Senhora das Graças - Fortaleza / Nossa Senhora das Graças - End: Enida Presidente Castelo Branco
   [310] Escola Nova Geração - Fortaleza / Parangaba - End: Cônego de Castro, 1324
   [311] Escola Nova Geração - Maracanaú / None - End: 18, N 40 - Santo Sátiro Santo Sátiro
   [312] Escola Nova Geração Ii - Maracanaú / Santo Sátiro - End: 18, Nº 40
@@ -358,7 +351,6 @@ ESCOLAS SEM CEP (387):
   [327] Espaço Social Dias Macêdo - Fortaleza / Dias Macêdo - End: Boaventura 767
   [328] Espaço Viva Gente - Fortaleza / Passaré - End: Maria Mirtes Pereira, 1010
   [329] Estevão Ferreira da Rocha - Caucaia / Caraubas - End: Principal da Lagoa do Banana S/N Caraúbas
-  [330] Faculdade Maurício de Nassau - Maracanaú - Maracanaú / Maracanaú - End: Yolanda Pontes Vidal Queiroz
   [331] Firmino Soares de Moura - Caucaia / Urucutuba - End: Raimundo Ferreira Rocha Sn
   [332] Flávio Portela Marcílio - Caucaia / Itambé - End: Samira Borges, 180 B
   [333] Fundação Erico Mota - Fortaleza / Bom Jardim - End: Nova Conquista 2671
@@ -404,7 +396,6 @@ ESCOLAS SEM CEP (387):
   [374] Paulo Sarapate - Maranguape / Outra Banda - End: Doutor Argeu Gurgel Braga Herster, 883
   [375] Paulo Sarapate - Maranguape / Outra Banda, Maranguape - End: Doutor Argeu Gurgel Braga Herbster, 883. Outra Banda. Maranguape - Ceará
   [376] Poeta Patativa do Assaré - Fortaleza / None - End: Descartes Braga, 4269Granja Lisboa
-  [377] Policia Militra do Ceará - Fortaleza / Siqueira - End: Jardim do Éden
   [378] Presidente - Fortaleza / José Walter - End: Pau Brasil, N°100, Cidade Jardim I
   [379] Professora Maria José Macário Coelho - Fortaleza / Passare - End: Banabuiú 45
   [380] Prof Maria Guiomar Bastos Cavalcante - Pacatuba / Velho Timbó - End: Topázio, 331
@@ -423,9 +414,7 @@ ESCOLAS SEM CEP (387):
   [393] Teste - Fortaleza / Teste - End: Teste
   [394] Teste Escola - Fortaleza / Maraponga - End: Enida Godofredo Maciel 2900
   [395] Tico Cell - Fortaleza / Floresta - End: Buenos Aires Número 180
-  [396] Top Lanches - Fortaleza / Sabiaguaba - End: Sabiaguaba
   [397] Transcleber Transportes - Eusébio / Santa Clara - End: Rod Quarto Anel Viario, 3003 H
-  [398] Unip Fafor - Fortaleza / Demócrito Rocha - End: José Bastos
   [399] Universo Menino Jesus - Fortaleza / Jacarecanga - End: Dom Quintino 928
   [400] Ws Gesso e Reformas - Fortaleza / Joaquim Távora - End: João Cordeiro 3314
 

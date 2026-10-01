@@ -97,21 +97,25 @@ export function mensagemWhatsApp(os: any) {
   const inst = ag.instituicoes ?? {};
   const data = ag.data ? ag.data.split("-").reverse().join("/") : "";
   const total = (ag.quantidade_alunos ?? 0) + (ag.quantidade_professores ?? 0) + (ag.quantidade_acompanhantes ?? 0);
-  return [
-    `Olá${ag.responsavel_nome ? `, ${ag.responsavel_nome}` : ""}! Aqui é a Escola Pública de Trânsito do DETRAN-CE.`,
+  const lines = [
+    `Olá${ag.responsavel_nome ? `, ${ag.responsavel_nome}` : ""}! Aqui é a *Escola de Trânsito do DETRAN-CE*.`,
     ``,
     `Sua visita está *confirmada*:`,
-    `• Escola: ${inst.nome ?? ""}`,
-    `• Data: ${data}`,
-    `• Horário: ${ag.horario || TURNO_HORA[ag.turno] || ""}`,
-    `• Visitantes previstos: ${total}`,
-    `• OS nº ${osNumero(os)}`,
-    ag.transporte_status === "onibus_detran" ? `• Transporte: ônibus do DETRAN (esteja pronto 15 min antes)` : `• Transporte: próprio`,
+    `🏫 *Escola:* ${inst.nome ?? ""}`,
+    `📅 *Data:* ${data} às ${ag.horario || TURNO_HORA[ag.turno] || ""}`,
+    `📍 *Endereço:* ${inst.endereco || inst.cidade || ""}`,
+    `👥 *Visitantes previstos:* ${total}`,
+    `📋 *OS nº* ${osNumero(os)}`,
+    `🚐 *Transporte:* ${ag.transporte_status === "onibus_detran" ? "Ônibus do DETRAN-CE (esteja pronto 15 min antes)" : "Próprio"}`,
     ``,
-    `Orientações: levar a lista de alunos, usar roupas confortáveis e informar com antecedência qualquer necessidade de acessibilidade.`,
+    `⚠️ *Orientações:* levar a lista de alunos, usar roupas confortáveis e informar com antecedência qualquer necessidade de acessibilidade.`,
+    ``,
+    `📞 *Contato:* (85) 98135-9276 (WhatsApp) / (85) 3106-4711`,
+    `✉️ *E-mail:* escoladetransito@detran.ce.gov.br`,
     ``,
     `Por favor, responda esta mensagem confirmando o agendamento.`,
-  ].join("\n");
+  ];
+  return lines.join("\n");
 }
 
 export const soDigitos = (s?: string | null) => (s ?? "").replace(/\D/g, "");

@@ -14,7 +14,7 @@ import { toast } from "@/hooks/use-toast";
 import { gerarOSPdf } from "@/lib/osPdf";
 import { db, osNumero, waLink } from "@/lib/operacao";
 
-const UNIDADES = ["Fortaleza", "Sobral", "Juazeiro do Norte"];
+const UNIDADES = ["Fortaleza", "Sobral", "Cariri"];
 const EMPRESA_EMAIL_PADRAO = "";
 
 type Rota = {
@@ -59,6 +59,7 @@ export function OSTransporteTab({ podeEditar }: { podeEditar: boolean }) {
   const [inicio, setInicio] = useState(format(new Date(), "yyyy-MM-dd"));
   const [numeroOS, setNumeroOS] = useState("001");
   const [sel, setSel] = useState<any>(null);
+  const [tableError, setTableError] = useState<string | null>(null);
 
   // Busca próximo número sequencial para unidade + ano
   const proximoNumeroOS = useCallback(async (unid: string) => {
@@ -74,11 +75,18 @@ export function OSTransporteTab({ podeEditar }: { podeEditar: boolean }) {
   }, []);
 
   const load = useCallback(async () => {
-    const [{ data }, { data: e }] = await Promise.all([
+    const [{ data }, { data: e, error: errE }] = await Promise.all([
       db.from("ordens_servico").select("*, agendamentos(*, instituicoes(*))").in("status", ["confirmado", "programado", "em_andamento"]),
       db.from("os_transporte").select("*").order("created_at", { ascending: false }),
     ]);
-    setLista(data ?? []); setEmitidas(e ?? []);
+    setLista(data ?? []);
+    if (errE) {
+      setTableError(errE.message || "Tabela os_transporte não disponível");
+      setEmitidas([]);
+    } else {
+      setTableError(null);
+      setEmitidas(e ?? []);
+    }
   }, []);
   useEffect(() => { load(); }, [load]);
   useEffect(() => { proximoNumeroOS(unidade); }, [unidade, proximoNumeroOS]);
@@ -112,7 +120,7 @@ export function OSTransporteTab({ podeEditar }: { podeEditar: boolean }) {
     const ini = parseISO(inicio);
     const reg = { numero: numeroOS.padStart(3, "0"), ano: ini.getFullYear(), unidade, data_inicio: inicio, data_fim: format(dataFim, "yyyy-MM-dd"), rotas, empresa_email: EMPRESA_EMAIL_PADRAO || null };
     const { data, error } = await db.from("os_transporte").insert(reg).select().single();
-    if (error) return toast({ title: "Erro ao emitir", description: error.code === "23505" ? "Já existe OS com este número nesta unidade. Abra-a na lista abaixo para alterar e reenviar." : error.message, variant: "destructive" });
+    if (error) return toast({ title: "Erro ao emitir", description: error.code === "42P01" ? "Tabela os_transporte não existe. Execute a migration SQL primeiro." : error.code === "23505" ? "Já existe OS com este número nesta unidade. Abra-a na lista abaixo para alterar e reenviar." : error.message, variant: "destructive" });
     await db.from("os_transporte_eventos").insert({ os_transporte_id: data.id, revisao: 0, acao: "emissao", detalhe: `${rotas.length} rotas` });
     baixarPdf(data);
     toast({ title: "OS emitida e gravada" });
@@ -152,8 +160,15 @@ export function OSTransporteTab({ podeEditar }: { podeEditar: boolean }) {
 
       <Card>
         <CardHeader><CardTitle>OS emitidas</CardTitle><CardDescription>Abra uma OS para alterar ou cancelar rotas e reenviar a versão atualizada.</CardDescription></CardHeader>
-        <CardContent className="overflow-x-auto">
-          <Table>
+        <CardContent>
+          {tableError ? (
+            <div className="py-8 text-center space-y-2">
+              <p className="text-muted-foreground">Tabela de OS de Transporte não disponível.</p>
+              <p className="text-xs text-muted-foreground">Execute a migration SQL: supabase/migrations/20261001_fix_policies_rls_v2.sql</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto border rounded-md">
+            <Table>
             <TableHeader><TableRow><TableHead>OS</TableHead><TableHead>Unidade</TableHead><TableHead>Período</TableHead><TableHead>Rotas</TableHead><TableHead>Revisão</TableHead><TableHead>Status</TableHead><TableHead /></TableRow></TableHeader>
             <TableBody>
               {emitidas.map((o) => (
@@ -170,6 +185,7 @@ export function OSTransporteTab({ podeEditar }: { podeEditar: boolean }) {
               {!emitidas.length && <TableRow><TableCell colSpan={7} className="py-6 text-center text-muted-foreground">Nenhuma OS emitida ainda.</TableCell></TableRow>}
             </TableBody>
           </Table>
+          )}
         </CardContent>
       </Card>
       {sel && <OSTDialog os={sel} podeEditar={podeEditar} onClose={() => setSel(null)} onSaved={(o) => { setSel(o); load(); }} />}
