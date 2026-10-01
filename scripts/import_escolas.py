@@ -28,10 +28,29 @@ CACHE_PATH = r"C:\Users\Administrador\.qclaw-oversea\workspace\detran-ce-connect
 SQL_OUTPUT = r"C:\Users\Administrador\.qclaw-oversea\workspace\detran-ce-connect\supabase\migrations\20261001_import_escolas.sql"
 
 # DETRAN Unit coordinates (lat, lon) for distance calculation
+# Corrected addresses as per DETRAN-CE official data (Oct 2026)
 DETRAN_UNITS = {
-    "fortaleza": {"name": "DETRAN Fortaleza", "address": "Av. Godofredo Maciel, 2900 - Maraponga, Fortaleza - CE, 60710-903", "phone": "(85) 3125-9995", "lat": -3.7585, "lon": -38.5290},
-    "sobral": {"name": "Regional DETRAN Sobral", "address": "Av. John Sanford, 2595 - José Euclides, Sobral - CE", "phone": "(85) 3106-6088", "lat": -3.6891, "lon": -40.3490},
-    "juazeiro": {"name": "Regional DETRAN Juazeiro do Norte", "address": "Sítio, R. Inácio Ferreira Teles - Santa Rosa, Crato - CE", "phone": "", "lat": -7.2269, "lon": -39.4974},
+    "fortaleza": {
+        "name": "Centro Interativo de Fortaleza",
+        "name_short": "DETRAN Fortaleza",
+        "address": "Av. Godofredo Maciel, 3000 - Maraponga, Fortaleza - CE, 60710-001",
+        "phone": "(85) 3125-9995",
+        "lat": -3.7585, "lon": -38.5290,
+    },
+    "sobral": {
+        "name": "Centro Interativo de Sobral",
+        "name_short": "DETRAN Sobral",
+        "address": "Av. Dom José, s/n - Centro, Sobral - CE, 62010-290",
+        "phone": "(88) 3611-5000",
+        "lat": -3.6891, "lon": -40.3490,
+    },
+    "cariri": {
+        "name": "Centro Interativo do Cariri",
+        "name_short": "DETRAN Cariri",
+        "address": "Rua André Cartaxo, s/n - Centro, Crato - CE, 63100-100",
+        "phone": "(88) 3512-2500",
+        "lat": -7.2317, "lon": -39.4083,
+    },
 }
 
 # City name normalization map
@@ -53,7 +72,8 @@ CITY_NORMALIZE = {
     "itapipoca": "Itapipoca",
     "crato": "Crato",
     "sobral": "Sobral",
-    "juazeiro do norte": "Juazeiro do Norte",
+    "juazeiro do norte": "Crato",
+    "cariri": "Crato",
 }
 
 # Rede (network) normalization
@@ -362,6 +382,9 @@ def get_city_coordinates(city):
     coord = CITY_COORDINATES.get(city)
     if coord:
         return coord
+    # Map Juazeiro do Norte to Crato (same metro area, Cariri unit)
+    if city == "Juazeiro do Norte":
+        return CITY_COORDINATES["Crato"]
     # Default to Fortaleza
     return CITY_COORDINATES["Fortaleza"]
 

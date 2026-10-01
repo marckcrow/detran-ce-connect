@@ -70,6 +70,38 @@ export default function Agendar() {
   const [instituicaoId, setInstituicaoId] = useState<string | null>(null);
   const [cidadeAtual, setCidadeAtual] = useState<string | null>(null);
 
+  // Disponibilidade: slots from admin availability table
+  const [slotsMap, setSlotsMap] = useState<Record<string, { status: string; capacidade: number; vagas_ocupadas: number }>>({});
+
+  // Dates where both turns are blocked (calendar-level blocking)
+  const blockedDates = Object.entries(slotsMap)
+    .filter(([, s]) => ["bloqueado", "evento", "manutencao", "cheio"].includes(s.status))
+    .map(([k]) => k);
+
+  // Load disponibilidade slots for the next 90 days
+  useEffect(() => {
+    if (!user) return;
+    const start = format(new Date(), "yyyy-MM-dd");
+    const end = format(addDays(new Date(), 90), "yyyy-MM-dd");
+    supabase
+      .from("disponibilidade")
+      .select("data, turno, status, capacidade, vagas_ocupadas")
+      .gte("data", start)
+      .lte("data", end)
+      .then(({ data }) => {
+        if (!data) return;
+        const map: typeof slotsMap = {};
+        for (const s of data) {
+          map[`${s.data}::${s.turno}`] = {
+            status: s.status,
+            capacidade: s.capacidade ?? 46,
+            vagas_ocupadas: s.vagas_ocupadas ?? 0,
+          };
+        }
+        setSlotsMap(map);
+      });
+  }, [user]);
+
   const form = useForm<AgendamentoForm>({
     resolver: zodResolver(agendamentoSchema),
     defaultValues: {
@@ -125,6 +157,20 @@ export default function Agendar() {
     if (!instituicaoId) {
       toast({ title: "Perfil incompleto", description: "Cadastre sua instituição no Meu Perfil antes de agendar.", variant: "destructive" });
       navigate("/perfil");
+      return;
+    }
+
+    // Availability guard: check disponibilidade table before accepting booking
+    const slotKey = `${format(values.data, "yyyy-MM-dd")}::${values.turno}`;
+    const slot = slotsMap[slotKey];
+    if (slot && ["bloqueado", "evento", "manutencao", "cheio"].includes(slot.status)) {
+      const labels: Record<string, string> = {
+        bloqueado: "data bloqueada pela administração",
+        evento: "evento interno marcado para este turno",
+        manutencao: "manutenção programada para este turno",
+        cheio: "vagas esgotadas para este turno",
+      };
+      form.setError("data", { message: `Este turno não está disponível: ${labels[slot.status] ?? slot.status}` });
       return;
     }
 
@@ -248,17 +294,30 @@ export default function Agendar() {
                               mode="single"
                               selected={field.value}
                               onSelect={field.onChange}
-                              disabled={(date) =>
-                                date < addDays(new Date(), MIN_ANTECEDENCIA_DIAS) ||
-                                date.getDay() === 0 ||
-                                date.getDay() === 6
+                              disabled={(date) => {
+                                const dateStr = format(date, "yyyy-MM-dd");
+                                const manhaKey = `${dateStr}::manha`;
+                                const tardeKey = `${dateStr}::tarde`;
+                                const manhaBlocked = blockedDates.includes(manhaKey) ||
+                                  (slotsMap[manhaKey]?.status === "cheio");
+                                const tardeBlocked = blockedDates.includes(tardeKey) ||
+                                  (slotsMap[tardeKey]?.status === "cheio");
+                                if (manhaBlocked && tardeBlocked) return true;
+                                return (
+                                  date < addDays(new Date(), MIN_ANTECEDENCIA_DIAS) ||
+                                  date.getDay() === 0 ||
+                                  date.getDay() === 6
+                                );
+                              }}
                               }
                               locale={ptBR}
                               initialFocus
                             />
                           </PopoverContent>
                         </Popover>
-                        <FormDescription>Mínimo de {MIN_ANTECEDENCIA_DIAS} dias de antecedência. Somente dias úteis.</FormDescription>
+                        <FormDescription>
+                          Mínimo de {MIN_ANTECEDENCIA_DIAS} dias de antecedência. Somente dias úteis. Dias completamente bloqueados pela administração não aparecem no calendário.
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}

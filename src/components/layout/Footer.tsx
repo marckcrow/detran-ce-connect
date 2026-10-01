@@ -30,11 +30,28 @@ export const Footer = () => {
           </div>
 
           <div>
-            <h3 className="font-semibold mb-4">Unidades</h3>
+            <h3 className="font-semibold mb-4">Centros Interativos</h3>
             <ul className="space-y-2 text-sm opacity-90">
               <li className="flex items-start gap-2">
-                <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                <span>Centro Integrativo de Fortaleza</span>
+                <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0 text-accent" />
+                <div>
+                  <span className="font-medium">Fortaleza</span>
+                  <br />Av. Godofredo Maciel, 3000 – Maraponga
+                </div>
+              </li>
+              <li className="flex items-start gap-2">
+                <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0 text-accent" />
+                <div>
+                  <span className="font-medium">Sobral</span>
+                  <br />Av. Dom José, s/n – Centro
+                </div>
+              </li>
+              <li className="flex items-start gap-2">
+                <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0 text-accent" />
+                <div>
+                  <span className="font-medium">Cariri (Crato)</span>
+                  <br />Rua André Cartaxo, s/n – Centro
+                </div>
               </li>
             </ul>
           </div>

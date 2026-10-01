@@ -3,6 +3,12 @@ import autoTable from "jspdf-autotable";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
+const UNIDADE_ENDERECO: Record<string, string> = {
+  Fortaleza: "Av. Godofredo Maciel, 3000 – Maraponga, Fortaleza – CE, 60710-001",
+  Sobral:    "Av. Dom José, s/n – Centro, Sobral – CE, 62010-290",
+  Cariri:    "Rua André Cartaxo, s/n – Centro, Crato – CE, 63100-100",
+};
+
 export type RotaOS = {
   data: string; // ISO date
   turno: "manha" | "tarde";
@@ -101,7 +107,8 @@ export function gerarOSPdf(d: DadosOS) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7.5);
     doc.setTextColor(...CINZA);
-    doc.text("Unidade: Centro Integrativo de Fortaleza", M, y + 25);
+    const unitAddr = UNIDADE_ENDERECO[d.unidade] ?? `Unidade: ${d.unidade}`;
+    doc.text(unitAddr, M, y + 25);
     doc.text("Contato: (85) 98135-9276 (WhatsApp) / (85) 3106-4711 (Fixo)", M, y + 36);
     doc.text("E-mail: escoladetransito@detran.ce.gov.br", M, y + 47);
 
