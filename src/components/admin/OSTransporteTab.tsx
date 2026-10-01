@@ -57,8 +57,21 @@ export function OSTransporteTab({ podeEditar }: { podeEditar: boolean }) {
   const [unidade, setUnidade] = useState(UNIDADES[0]);
   const [periodo, setPeriodo] = useState(15);
   const [inicio, setInicio] = useState(format(new Date(), "yyyy-MM-dd"));
-  const [numeroOS, setNumeroOS] = useState(format(new Date(), "MM"));
+  const [numeroOS, setNumeroOS] = useState("001");
   const [sel, setSel] = useState<any>(null);
+
+  // Busca próximo número sequencial para unidade + ano
+  const proximoNumeroOS = useCallback(async (unid: string) => {
+    const ano = new Date().getFullYear();
+    const { data } = await db
+      .from("os_transporte")
+      .select("numero")
+      .eq("unidade", unid)
+      .eq("ano", ano);
+    const nums = (data ?? []).map((o: any) => parseInt(o.numero, 10) || 0);
+    const next = nums.length ? Math.max(...nums) + 1 : 1;
+    setNumeroOS(String(next).padStart(3, "0"));
+  }, []);
 
   const load = useCallback(async () => {
     const [{ data }, { data: e }] = await Promise.all([
@@ -68,6 +81,7 @@ export function OSTransporteTab({ podeEditar }: { podeEditar: boolean }) {
     setLista(data ?? []); setEmitidas(e ?? []);
   }, []);
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { proximoNumeroOS(unidade); }, [unidade, proximoNumeroOS]);
 
   const dataFim = useMemo(() => addDays(parseISO(inicio), periodo - 1), [inicio, periodo]);
 
@@ -122,7 +136,14 @@ export function OSTransporteTab({ podeEditar }: { podeEditar: boolean }) {
                 <Select value={String(periodo)} onValueChange={(v) => setPeriodo(Number(v))}><SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>{[7, 15, 30].map((p) => <SelectItem key={p} value={String(p)}>{p} dias</SelectItem>)}</SelectContent></Select></div>
               <div className="space-y-2"><Label>Início</Label><Input type="date" value={inicio} onChange={(e) => setInicio(e.target.value)} /></div>
-              <div className="space-y-2"><Label>Nº da OS</Label><Input value={numeroOS} onChange={(e) => setNumeroOS(e.target.value)} /></div>
+              <div className="space-y-2"><Label>Nº da OS</Label>
+              <div className="flex gap-2">
+                <Input value={numeroOS} onChange={(e) => setNumeroOS(e.target.value)} className="w-24" maxLength={3} />
+                <Button variant="outline" size="sm" onClick={() => proximoNumeroOS(unidade)} title="Buscar próximo número">
+                  ↻
+                </Button>
+              </div>
+            </div>
             </div>
             <Button onClick={emitir} className="gap-2"><FileDown className="h-4 w-4" />Emitir e gerar PDF ({rotas.length} rotas)</Button>
           </CardContent>
@@ -225,7 +246,7 @@ function OSTDialog({ os, podeEditar, onClose, onSaved }: { os: any; podeEditar: 
           <TableHeader><TableRow><TableHead>Data</TableHead><TableHead>Hora</TableHead><TableHead>Escola</TableHead><TableHead>Pax</TableHead><TableHead /></TableRow></TableHeader>
           <TableBody>
             {rotas.map((x, i) => (
-              <TableRow key={i} className={x.cancelada ? "opacity-50 line-through" : ""}>
+              <TableRow key={i} className={x.cancelada ? "bg-red-50 text-red-600" : ""}>
                 <TableCell>{format(parseISO(x.data), "dd/MM")}</TableCell>
                 <TableCell>{x.turno === "manha" ? "07h" : "13h"}</TableCell>
                 <TableCell>{x.escola}{x.motivo && <div className="text-xs italic no-underline">{x.motivo}</div>}</TableCell>
