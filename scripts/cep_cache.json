@@ -1,0 +1,86 @@
+{
+  "aratuba_zona rural_cei josé jorgede oliveira": {
+    "cep": "62762000",
+    "bairro": "Zona Rural",
+    "logradouro": "Distrito Pai João",
+    "cidade": "Aratuba",
+    "source": "api_address"
+  },
+  "aratuba_centro_cei nelly de lima e melo": {
+    "cep": "62762000",
+    "bairro": "Centro",
+    "logradouro": "Coronel João José Pereira",
+    "cidade": "Aratuba",
+    "source": "api_address"
+  },
+  "fortaleza_canindezinho_centro educacional jerusalém": {
+    "cep": "60731020",
+    "bairro": "Canindezinho",
+    "logradouro": "São Felipe",
+    "cidade": "Fortaleza",
+    "source": "api_address"
+  },
+  "fortaleza_parque manibura_colégio globomax": {
+    "cep": "60813795",
+    "bairro": "Parque Manibura",
+    "logradouro": "General Caiado de Castro",
+    "cidade": "Fortaleza",
+    "source": "api_address"
+  },
+  "eusébio_parque havaí_diagonal": {
+    "cep": "61761480",
+    "bairro": "Parque Havaí",
+    "logradouro": "Costa Machado",
+    "cidade": "Eusébio",
+    "source": "api_address"
+  },
+  "fortaleza_bom jardim_diretor": {
+    "cep": "60543352",
+    "bairro": "Bom Jardim",
+    "logradouro": "Nova Conquista",
+    "cidade": "Fortaleza",
+    "source": "api_address"
+  },
+  "maranguape_coité_emef cônego heitor vieira cavalcante": {
+    "cep": "61948200",
+    "bairro": "Coité",
+    "logradouro": "Enida Maria Efigênia Campos Teles",
+    "cidade": "Maranguape",
+    "source": "api_address"
+  },
+  "maranguape_área verde_emef direitos humanos": {
+    "cep": "61943270",
+    "bairro": "Área Verde",
+    "logradouro": "Monsenhor Assis Portela",
+    "cidade": "Maranguape",
+    "source": "api_address"
+  },
+  "maracanaú_conjunto vida nova- furna da onça_emeief irmã dulce": {
+    "cep": "61920010",
+    "bairro": "Conjunto Vida Nova- Furna da Onça",
+    "logradouro": "100",
+    "cidade": "Maracanaú",
+    "source": "api_address"
+  },
+  "fortaleza_maraponga_em sagrado coração": {
+    "cep": "60714614",
+    "bairro": "Maraponga",
+    "logradouro": "Holanda",
+    "cidade": "Fortaleza",
+    "source": "api_address"
+  },
+  "baturité_centro_enel": {
+    "cep": "62760000",
+    "bairro": "Centro",
+    "logradouro": "Newton Prado",
+    "cidade": "Baturité",
+    "source": "api_address"
+  },
+  "fortaleza_parangaba_ensino médio incompleto": {
+    "cep": "60740783",
+    "bairro": "Parangaba",
+    "logradouro": "Vitoriano Borges",
+    "cidade": "Fortaleza",
+    "source": "api_address"
+  }
+}

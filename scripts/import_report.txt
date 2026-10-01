@@ -1,0 +1,443 @@
+======================================================================
+RELATÓRIO DE IMPORTAÇÃO - BASE DE ESCOLAS DETRAN-CE
+Data: 2026-10-01 13:50:56
+======================================================================
+
+Total de registros:     400
+Com CEP:                 13 (3%)
+Com Endereço:            390 (97%)
+Com Telefone:            400 (100%)
+Com E-mail:              400 (100%)
+Com Responsável:         400 (100%)
+
+----------------------------------------------------------------------
+POR CIDADE:
+  Aratuba: 2 escolas (2 com CEP)
+  Baturité: 1 escolas (0 com CEP)
+  Caucaia: 30 escolas (0 com CEP)
+  Desconhecida: 4 escolas (4 com CEP)
+  Eusébio: 4 escolas (1 com CEP)
+  Fortaleza: 294 escolas (3 com CEP)
+  Fortaleza [12]: 1 escolas (0 com CEP)
+  Guaiúba: 5 escolas (0 com CEP)
+  Itaitinga: 1 escolas (0 com CEP)
+  Itapipoca: 1 escolas (0 com CEP)
+  Maracanaú: 30 escolas (1 com CEP)
+  Maranguape: 17 escolas (2 com CEP)
+  Maranguape, Próximo do Maracanã: 1 escolas (0 com CEP)
+  Novo Maranguape: 1 escolas (0 com CEP)
+  Pacatuba: 8 escolas (0 com CEP)
+
+----------------------------------------------------------------------
+POR REDE:
+  Pública: 400
+
+----------------------------------------------------------------------
+POR UNIDADE DETRAN MAIS PRÓXIMA:
+  DETRAN Fortaleza: 399 escolas
+    Distância média: 7.1km | Min: 3.0km | Max: 89.7km
+  Regional DETRAN Sobral: 1 escolas
+    Distância média: 104.5km | Min: 104.5km | Max: 104.5km
+
+----------------------------------------------------------------------
+ESCOLAS SEM CEP (387):
+  [1] Abc Bom Jardim - Fortaleza / Granja Lisboa - End: Três Corações,762
+  [2] Acflor- Instituto de Defesa da Cidadania Social - Fortaleza / Floresta - End: Luis Guimarães, 642
+  [3] Adauto Ferreira Lima - Maracanaú / Timbo - End: Contorno Leste S/N
+  [4] Adroaldo Teixeira Castelo - Fortaleza / Pici - End: Alagoas N 2267
+  [5] A Igreja de Jesus Cristo dos Santos dos Últimos Dias - Fortaleza / Bonsucesso - End: Augusto dos Anjos 2250
+  [6] Anexo Quilombola Cercadao - Caucaia / None - End: Raquel de Queiroz 64 Icarai
+  [7] Aquarela Reforço Escolar - Fortaleza / Carlito Pamplona - End: Assis Bezerra 169
+  [8] Arca do Saber - Fortaleza / Bela Vista - End: Mario de Andrade 1067Bela Vista
+  [9] Arco-Iris - Fortaleza / Granja Portugal - End: Humberto Lomeu 995
+  [10] Art Fitas - Caucaia / Imperador - End: Idealista, Av Dom Almeida Lustosa
+  [11] Asdasdasd - Fortaleza / Asdasdas - End: Asdasdasd
+  [12] Associação Educacional Comunitária Asafe - Projeto Bom Jesus - Fortaleza / Bom Jardim - End: Cel. João Correia, 1913
+  [13] Autarquia Municipal de Trânsito - Eusébio / Escola Maria de Fátima Façanha - Eusébio / Lagoinha - End: R. São Miguel, 327 - Centro, Eusébio - Ce, 61760-000
+  [14] Caic Maria Alves Carioca (Nape) - Fortaleza / None - End: Sargento Barbosa 851Granja Lisboa
+  [15] Casa de Irmãos - Fortaleza / Cocó - End: Magistrado Pompeu, 385
+  [16] Cei Antônio Ricardo Barbosa de Sousa - Novo Maranguape / Novo Maranguape - End: Irmã Irene, Número 60, Bairro Novo Maranguape Município de Maranguape/Ce Rua Irmã Irene, 60, Novo Maranguape 1
+  [17] Cei Antônio Ricardo Barbosa de Sousa - Maranguape / Novo Maranguape 1 - End: N/A
+  [18] Cei Audifax Rios - Fortaleza / Dias Macedo - End: C, Nº 1004, Conj. Renascer
+  [19] Cei Bergson Gurjão Farias - Fortaleza / None - End: Enida Fernandes Távora Henrique Jorge
+  [20] Cei Henrique Venâncio da Silva - Fortaleza / Presidente Vargas - End: Das Cerejeiras, Sn
+  [21] Cei José Barros Crisóstomo - Fortaleza / Conjunto Ceará, 1 Etapa - End: Enida Alanis Maria Laurindo, 467
+  [23] Cei Maria Bezerra Quevedo - Fortaleza / Novo Mondumbim - End: 106, Número 114
+  [24] Cei Maria Letícia Mota Moreira - Fortaleza / José Walter - End: Clarice Lispector, S/N Cidade Jardim Ii
+  [26] Cei Professor Anísio Teixeira - Fortaleza / Paupina - End: Guarani, 355
+  [27] Cem Pedro Pessoa Câmara - Maranguape / Outra Banda - End: Dr. Argeu Gurgel Braga Herbster,960
+  [28] Centro Comunitário do Conjunto São Francisco Rua : Ilha do Bote, 367 - Fortaleza / Quintino Cunha - End: N/A
+  [29] Centro de Integração Psicossicla do Ceará - Fortaleza / None - End: Oliveira Filho, 3320Praia do Futuro
+  [30] Centro de Integração Psicossocial do Ceará - Fortaleza / Praia do Futuro - End: Oliveira Filho, 3320Praia do Futuro
+  [31] Centro de Referência de Assistência Social (Cras) - Fortaleza / Genibaú - End: I, 340
+  [32] Centro Educacional Alfa - Fortaleza / Barra do Ceara - End: Chico Xavier 181
+  [33] Centro Educacional Arco Iris - Fortaleza / Bela Vista - End: Tres de Maio 1487
+  [34] Centro Educacional Baden Powell - Fortaleza / Maraponga - End: Cabral Veras Número 356
+  [35] Centro Educacional Chapeuzinho Vermelho - Caucaia / Nova Metrópole - End: 347, Bloco 11
+  [36] Centro Educacional Filhos da Sabedoria - Fortaleza / None - End: Oscar França 3463Granja Lisboa
+  [37] Centro Educacional Ideal - Fortaleza / Barra do Ceará - End: Francisco Calaça 602
+  [39] Centro Educacional Julia Melo - Fortaleza / None - End: Dinajá Severo 1304Jardim Jatobá
+  [40] Centro Educacional Luz do Saber - Fortaleza / Edson Queiroz - End: Otávio Rocha N° 410
+  [41] Centro Educacional Nilton Ferreira da Silva - Maracanaú / Pajuçara - End: João Henrique da Silva , 203
+  [42] Centro Educacional São Mateus - Fortaleza / Ellery - End: Sargento Hermínio 2440Ellery
+  [43] Centroeducacionalsaomateus@Yahoo.Com.Br - Fortaleza / None - End: Sargento Hermínio 2440Ellery
+  [44] Centro Educacional Sonho Meu - Fortaleza / Planalto Ayrton Senna - End: Frei Teodoro 730
+  [45] Centro Educacional Trem da Alegria - Fortaleza / Siqueira - End: Jardim Colares, 146
+  [46] Centro Educacional Vitória - Fortaleza / Praia do Futuro Ii - End: Dioguinho, 6207
+  [47] Centro Estudantil Vida Nova (Abemce) - Fortaleza / Parque São José - End: Dom Xisto Albano, 1718
+  [48] Centro Integrado do Saber - Fortaleza / None - End: Margarida Maria, 1097Presidente Kennedy
+  [49] Centro Pedagógico Nova Geração - Fortaleza / Jardim Cearense - End: 1,354
+  [50] Ch Multi - Fortaleza / Conjunto Ceará - End: 426 74 A
+  [51] Circo Escola Bom Jardim - Fortaleza / Granja Lisboa - End: Três Corações Sem Número do Lado do Abc Bom Jardim 762
+  [52] Civico Militar - Fortaleza / Sao Joao do Tauape - End: Juca 34
+  [53] Clube de Aventureiro Igreja Adventista - Fortaleza / Mondubim - End: Iv 233 Planalto Mondubim
+  [54] Clube de Aventureiros Mensageiros do Adventorua 112 191 - Maracanaú / Timbó - End: N/A
+  [55] Cnh do Brasil - Fortaleza / Monte Castelo - End: Osvaldo Figueiredo N 154, Bairro Monte Castelo
+  [56] Colégio Adauto Bezerra - Fortaleza / None - End: Senador Pompeu 2610Benfica
+  [57] Colégio Afonso Andrade - Fortaleza / None - End: Cel. Matos Dourado 168Antonio Bezerra
+  [58] Colégio Andeline Costa - Fortaleza / Eng. Luciano Cavalcanti - End: General Caiado de Castro, 445
+  [59] Colégio Antares - Fortaleza / Luciano Cavalcante - End: Caetano Ximenes Aragão, 345
+  [60] Colégio Antares - Seis Bocas - Fortaleza / Sapiranga - End: Presidente Arthur Bernardes 2452
+  [61] Colégio Batista Pequeno Aprendiz - Fortaleza / Granja Portugal - End: Londrina 1972
+  [62] Colégio Cearense Total - Fortaleza / Conjunto Esperança - End: Enida D, 85
+  [63] Colegio Cientista - Fortaleza / Conjunto Polar Barra do Ceará - End: 31 N 340
+  [64] Colégio Claudia Alencar - Fortaleza / Barroso - End: Beatriz 176 Barroso
+  [65] Colégio Criança Feliz - Fortaleza / Passaré - End: Moura Matos 1305
+  [66] Colégio Criança Feliz (Conexão Futuro) - Fortaleza / Jardim Guanabara - End: Major Assis 1771
+  [67] Colégio Cristo Rei - Fortaleza / Aracape - End: São José 1171
+  [68] Colégio Desafio - Fortaleza / Nossa Senhora das Gracas - End: Dom Quintino 1028
+  [69] Colégio Eça de Queirós - Fortaleza / Vila Peri - End: Dom Xisto Albano, 611
+  [70] Colégio Educar - Fortaleza / Dias Macedo - End: Capitão João Ferreira Lima 578
+  [71] Colégio Educar Ensino Fundamental - Fortaleza / Dias Macedo - End: Capitão João Ferreira Lima 578
+  [72] Colégio Educarte - Fortaleza / Monte Castelo - End: Naturalista Feijó 462
+  [73] Colégio Ernesto Gurgel - Organização Educacional Práxis - Fortaleza / Messejana - End: Padre Pedro de Alencar - 81
+  [74] Colegio Ernesto Lima - Fortaleza / Cais do Porto - End: Zezé Diogo 1110
+  [75] Colégio Exato - Maracanaú / Maracanaú - End: 36 N 90
+  [76] Colégio Giglioli - Fortaleza / Canindezinho - End: Umarizeiras, 940
+  [78] Colegio Impacto - Fortaleza / Barra do Ceara - End: Saojorge1272
+  [79] Colegio Independencia - Fortaleza / Quintino Cunha - End: Enida Independeneia 1361 Quintino Cunha
+  [80] Colégio Jeito de Aprender - Fortaleza / Cristo Redentor - End: Quatro de Janeiro, 131
+  [81] Colegio Joao Batista - Fortaleza / Lagoa Redonda - End: Eduardo Guimares 71
+  [82] Colégio Jose Barreto Filho - Fortaleza / Granja Portugal - End: João Xxii, Numero 51
+  [83] Colégio Lima Nogueira - Fortaleza / Conj. Novo Barroso - Passaré - End: Alameda F, 16
+  [84] Colégio Majestic - Fortaleza / Maraponga - End: Castro Meireles, 325
+  [85] Colégio Maria Trajano - Fortaleza / Messejana - End: Coronel Matos Belo, 454
+  [86] Colégio Medalha Milagrosa - Fortaleza / Montese - End: Padre João Piamarta Montese
+  [87] Colégio Menino Jesus - Pacatuba / Centro - End: Major Cícero Franklin Centro
+  [88] Colégio Menino Jesus de Praga - Fortaleza / Álvaro Weyne - End: Ana Facó 140
+  [89] Colégio Mente Criativa - Fortaleza / Passaré - End: Dos Sabiás, 376
+  [90] Colégio Mente Criativa Maraponga - Fortaleza / Maraponga - End: País de Gales. 1723
+  [91] Colégio Modelo Educar - Fortaleza / Jangurussu - End: Monsenhor Amarilio Rodrigues 335
+  [92] Colégio Mozar Anselmo - Fortaleza / Paupina - End: Adolfo Marinho, 358
+  [93] Colégio Pequenos Passos Messejana - Fortaleza / São Bento - Messejana - End: João Crispim, 1059 - Conjunto Alto Alegre Rua Roberto de Carvalho
+  [94] Colégio Pinheirinho - Fortaleza / Mondubim - End: Jorge Raupp,409. Casa 05
+  [95] Colégio Pontes - Fortaleza / São Cristóvãojangurussu - End: 208, Número 405
+  [96] Colégio Queiroz Belém - Fortaleza / Conjunto Esperança - End: 105, 120
+  [97] Colégio Saeer - Fortaleza / Vila Pery - End: Costa Freire N° 922
+  [98] Colégio Santo de Farias - Fortaleza / Parque Presidente Vargas - End: Antônio Monteiro N° 489
+  [99] Colégio Sonho Meu - Caucaia / Parque Soledade - End: Célio Rodrigues Viana 245
+  [100] Colégio Sonho Meu - Caucaia / Parque Soledade Caucaia - End: Célio Rodrigues Viana 245
+  [101] Colégio Teleyos - Fortaleza / Conjunto Esperança - End: Dr. Parente 610
+  [102] Colégio Torres Vasconcelos - Fortaleza / Conjunto São Cristóvão - End: 107 Número 77
+  [103] Colégio Uma Janela Para O Mundo - Fortaleza / None - End: Melo de Oliveira 1172 João Xxiii
+  [104] Colégio Veras - Fortaleza / Jangurussu / Conj. Sítio São João - End: Valparaíso, 672
+  [105] Comissário Francisco Barbosa - Maracanaú / Bela Vista - End: 11, 116
+  [106] Conselho Comunitário dos Moradores do Parque Santa Cecília - Fortaleza / Conjunto Palmeiras - End: Castelo de Castro, Nº 2100.
+  [107] Conselho Comunitário dos Moradores do Parque Santa Cecília- Abc Palmeiras - Fortaleza / Conjunto Palmeiras - End: Castelo de Castro, Nº 2100
+  [108] Conselho Comunitario Todos Os Cantosrua Banvarth Bezerra 425 - Fortaleza / Padre Andrade - End: N/A
+  [109] Construindo O Saber Maria Ises de Andrade - Maracanaú / Jereissati Ii - End: Antonieta Araujo Ferreira S/N
+  [110] Cras Aracapé - Fortaleza / Aracapé - End: Poliana, S/N (Em Frente Ao 101) - Aracapé, Fortaleza
+  [111] Cras Bom Jardim - Fortaleza / Bom Jardim - End: Coronel João Correia 2023
+  [112] Creche Escola Casa da Alegria - Fortaleza / Messejana - End: José Ivo, 340
+  [113] Creche Escola das Estrelinhas - Fortaleza / Mondubim - End: Coronel Tibúrcio, S/N
+  [114] Creche Escola Pintando 7 - Fortaleza / Conjunto Ceará - End: Enida F N°486 2°Etapa
+  [115] Danie Fernandes - Fortaleza / Vila União - End: Ultraleve Número 19
+  [116] Detran - Messejana - Fortaleza / Messejana - End: Enida Frei Cirilo, Dentro do Shopping Giga Mall, Messejana
+  [119] Doméstica - Caucaia / Centro de Caucaia - End: Samira Borges 180 B
+  [120] Ecim Prof Jose Maria de Barros Pinho - Maracanaú / Piratininga - End: Novo Oriente 201
+  [121] Ecim Rodolfo Teófilo - Maracanaú / Pajuçara - End: R. Otávio Alves, 1120
+  [122] Economista Rubens Vaz da Costa - Caucaia / Marechal Rondon (Jurema) - End: Enida Novo Horizonte, 500 Povoado Catirina, S/N
+  [123] Edgard Vieira Guerra - Caucaia / None - End: Enida Contorno Sul 255 Metrópole
+  [124] Educandário Nossa Senhora da Conceição - Fortaleza / Messejana - End: Tenente Jose Newton, 27
+  [125] Eebm Francisco Pereira de Andrade - Guaiúba / Distrito de Itacima - End: Luiz Pereira de Andrade, Sn
+  [126] Eebm Manuel Xavier Pires - Guaiúba / Distrito de Dourado - End: Eebm Manoel Xavier Pires Está Localizada na Localidade de Dourado, Nº 00, no Centro do Distrito Dourado, Guaiúba - Ce, Cep: 61890-000.
+  [127] Eefm Parque Presidente Vargas - Fortaleza / None - End: Francisco Almeida 940Parque Presidente Vargas
+  [128] E.E.F.M São Francisco de Assis Canindezinho - Fortaleza / Parque Jerusalém - End: São Felipe 564
+  [129] Eeief Joana Vasconcelos de Oliveira - Pacatuba / São José - End: Capitão Manoel Medeiros,745
+  [130] Eeief Maria Guiomar Bastos Cavalcante - Pacatuba / Alvorada/Velho Timbó - End: Topázio, 331
+  [131] Eeief Rita de Cássia Brasileiro Pontes - Caucaia / Araturi - End: Enida Central, 1112
+  [132] Eeif Plácido Monteiro Gondim - Caucaia / Catuana - End: Do Grupo, Km 40
+  [133] Eemti Adahil Barreto Cavalcante - Maracanaú / Timbó - End: Ver. Edmilson Marques, S/N
+  [134] Eemti Antonieta Siqueira - Fortaleza / Planalto Pici - End: Major Sucupira 134
+  [135] Eemti Estado do Maranhão - Fortaleza / Mondubim - End: Carlos Pimenta 506
+  [136] Eemti Estado do Pará - Fortaleza / Aerolandia - End: Djalma Petit 589
+  [137] Eemti Liceu Domingos Brasileiro - Fortaleza / Planalto Airton Sena - End: Planaltina S/N
+  [138] Eemti Professora Adalgisa Bonfim Soares - Fortaleza / Conjunto Esperança - End: 103, Nº 225
+  [139] Eemtti Coronel Aureliano Camera - Fortaleza / Vila União - End: Jorge Acucio 655 Vila União
+  [140] E_Kids Creche Escola - Fortaleza / Jardim Cearense - End: Apurilo Barroso, 707
+  [141] Em Adroaldo Teixeira Castelo - Fortaleza / Planalto Pici - End: Slagoas 2367
+  [142] Em Alô Sonoro - Fortaleza / Maraponga - End: Miguel Walter 32
+  [143] Em Bergson G - Fortaleza / Henrique Jorge - End: Enida Fernandes Távora, 2500
+  [144] Em Bergson Gurjao Farias - Fortaleza / Henrique Jorge - End: Enida Fernandes Tavora, 2500
+  [145] E.M. Cônego Francisco Pereira da Silva - Fortaleza / Paupina - End: Luiz Francisco Xavier - Número 150
+  [146] E.M. Cônego Francisco Pereira da Silva Rua Luiz Francisco Xavier N° 150 - Fortaleza / Paupina - End: N/A
+  [147] Em Crescer e Aprender - Fortaleza / Bom Jardim - End: Edson Martins,642
+  [148] Em Crescer e Aprender - Unidade 2 - Fortaleza / Bom Jardim - End: Mirtes Cordeiro, 700
+  [149] Em de Trânsito - Fortaleza / Jose Wlter - End: 32, 523 Jose Walter 3 Etapa
+  [150] Emef Braz Ribeiro da Silva - Maracanaú / Boa Vista - End: 21 de Abril S/N
+  [151] Emef Capistrano de Abreu - Maranguape / None - End: Coronel Manoel Paula Centro
+  [155] Emeief Constituindo O Saber Maria Isis Menezes de Andrade - Maracanaú / Jereissati 1 - End: Antonieta Araújo Ferreira S/N
+  [157] Emeief Construindo O Saber Maria Isis Menezes de Andrade - Maracanaú / Jereissati 1 - End: Antonieta Araújo Ferreira S/N
+  [159] Emeief.Contruindo O Saber Maria Isis Menezes de Andrade - Maracanaú / Jereissate 1 - End: Antônia Araújo Ferreira S/N
+  [160] Emeief Edson Queiroz - Maracanaú / Timbó - End: Edmilson Marques S/N Timbó
+  [161] Emeief Francisco Oscar Rodrigues - Maracanaú / Pajucara - End: Eng Elifio de Medeiros ,1080 Pajucara Ce
+  [162] Emeief Genciano Guerreiro de Brito - Maracanaú / Jereissati 2 - End: Doze N° 03
+  [164] Emeief. Norberto Alves Batalha - Maracanaú / Picada - End: Professor José Henrique da Silva - 4021 Rua B
+  [165] Emeief Professor Francisco Araujo do Nascimento - Maracanaú / Jereissati 1 - End: 37 Número 130
+  [166] Emeief Santa Edwirges - Maracanaú / Alto Alegre 1 - End: Paulo Afonso 1840
+  [167] Emeief Senador Carlos Jereissati - Maracanaú / Jereissati I - End: Yolanda Pontes Vidal Queiroz N° 41
+  [168] Emeif Comissário Francisco Barbosa - Maracanaú / Boa Vista - End: 11 Número 116
+  [169] Emeif Dom Hélder Pessoa Câmara. - Maracanaú / Siqueira - End: General Osório de Paiva.
+  [170] Emeif Jose de Alencar - Fortaleza / Mucuripe - End: X Casa 9 Bairro Mucuripe
+  [171] E.M.E.I.F. Maria de Paula Colares - Maranguape / Santos Dumont - Mpe - Ce/ C.E.P. 61.948400 - End: Rubens Herbster, 1020Santos Dumont
+  [172] Emeif Professor Jacinto Botelho - Fortaleza / Mondubim - End: Dr. Rodrigo Codes Sandoval Nr 374 Mondubim
+  [173] Emeif Professor José Maria Moreira Campos - Fortaleza / Parque Santa Rosa - End: Francisco Almeida 525
+  [174] Em Florival Alves Seraine - Fortaleza / Canindezinho - End: Itatiaia ,1000
+  [175] Em Francisco Andrade Teofilo Girao - Fortaleza / Passaré - End: Unidos Venceremos, 2040
+  [176] Em. João Hippolyto de Azevedo e Sa - Fortaleza / Dias Macedo - End: 3, 88 Residencial Napoleao Viana
+  [177] E.M Joaquim Alves - Fortaleza / None - End: Costa do Sol, 1061Siqueira
+  [178] E.M,Jonathan da Rocha Alcoforado - Fortaleza / Aracapé - End: Maria Gomes de Sá, 1030
+  [179] Em Jornalista Democrito Dummar - Fortaleza / Canindezinho - End: Euclides Paulino Barroso, 2505
+  [180] E M José Nauri Braga - Fortaleza / Bela Vista - End: R. Lilian Abreu, 231 - Bela Vista, Fortaleza - Ce, 60442-521
+  [181] Em Liduina Correa Leite - Fortaleza / None - End: Fernão Magalhães, 120Pici
+  [182] Em Manoel Caetano de Souza - Fortaleza / Parque Genibaú - End: Lucia, 211
+  [183] Em Manoel Malveira Maia - Fortaleza / Bom Jardim - End: Manoel Galdino, 2890Granja Lisboa
+  [184] Em Maria Zélia Correia de Souza - Fortaleza / Planalto Ayrton Senna - End: Antônio Pereira, 1495, Planalto Ayrton Senna
+  [185] Em Noberto Nogueira Alves - Fortaleza / José Walter - End: Via Arterial,253 Cidade Jardim Ii
+  [186] Em Padre Cícero Romão Batista - Fortaleza / Conjunto Esperança - End: Mariele Franco 630
+  [187] E.M. Prof Ernesto Gurgel - Fortaleza / Sapiranga - End: Olegário Memória, 3105
+  [188] E M Professora Maria Liduina Correa Leite - Fortaleza / None - End: Fernão Magalhães, 120Pici
+  [189] E.M. Professor Ernesto Gurgel - Fortaleza / Sapiranga - End: Olegário Memória, 3105Sapiranga
+  [190] Em Professor Jacinto Botelho - Fortaleza / Mondubim - End: Dr. Rodrigo Codes Sandoval, 374
+  [191] Em Professor José Maria Moreira Campos - Fortaleza / Parque Santa Rosa - End: Francisco Almeida, 525
+  [192] Em Professor Noberto Nogueira Alves - Fortaleza / José Walter - End: Via Arterial,253 Cidade Jardim Ii
+  [193] Em Prof Jacinto Botelho - Fortaleza / Mondubim - End: Dr Rodrigo Codes Sandoval 347
+  [194] Em Rosa Amaro Cavalcante - Fortaleza / None - End: Alfredo Mamede, 1064Conjunto Esperança
+  [195] Em Rosa Amaro Cavalcante Unidade Ii - Fortaleza / Parque Santana - End: Um,1169 Parque Santana
+  [196] Em Sagrado Coração - Fortaleza / Maraponga - End: Holanda
+  [197] Emti Educação Bilíngue Francisco Suderland Bastos Amota - Fortaleza / Parque Dois Irmãos - End: Enida Bernardo Manuel 9970-A
+  [198] Emti Educação Bilíngue Francisco Suderland Bastos Mota - Fortaleza / Parque Dois Irmaos - End: Enida Bernardo Manuel 9970 A
+  [199] Emti Francisca Fernandes Magalhaes - Fortaleza / Bonsucesso - End: Oliveira Sobrinho, 1031
+  [200] Emti Lais Rodriges de Almeida - Fortaleza / Curio - End: Odilon Guimaraes 1773
+  [201] Emti Lais Rodrigues de Almeida - Fortaleza / Curio - End: Odilon Guimaraes, 1773
+  [202] Emti Leonel de Moura Brizola - Fortaleza / Planalto Ayrton Senna - End: Coronel de Queiroz, 761
+  [203] Emti Maria Odete da Silva Colares - Fortaleza / Messejana - End: Coronel João de Oliveira, 687
+  [204] Emti Professor Agerson Tabosa Pinto - Fortaleza / None - End: Wilca Albuquerque, 90.Siqueira
+  [205] Emti Professora Maria José Ferreira Gomes - Fortaleza / None - End: Cônego de Castro, 8617Parque Presidente Vargas
+  [206] Emti Professor Expedito Parente - Fortaleza / Siqueira - End: P, 100
+  [207] Emti Walney do Carmo Lopes - Pacatuba / Pq. Quandú - End: Faustino Albuquerque 15533
+  [208] Em Tomaz Muniz - Fortaleza / Siqueira - End: Dra Vanda Cidade, 185
+  [209] Emtti Eunice Weaver - Maranguape, Próximo do Maracanã / Conego Raimundo- Maranguape - End: Rod. Sen. Almir Pinto Km 15
+  [210] Enel - Baturité / Centro - End: Newton Prado
+  [211] Ensino Médio Incompleto - Fortaleza / Parangaba - End: Vitoriano Borges
+  [212] Esc Mun Dom Aloisio Lorscheider - Fortaleza / Praia do Futuro - End: Julio Silva 450
+  [213] Esc Municipal Frei Tito - Fortaleza / None - End: Enida Dioguinho 5925Praia do Futuro
+  [214] Escola Abc Infantil - Fortaleza / Cambeba - End: Nenê Gonçalves Barreira 67
+  [215] Escola Adalberto Studart Filho - Fortaleza / Planalto Ayrton Senna - End: Do Campo, 25
+  [216] Escola Adroaldo Teixeira Castelo - Fortaleza / Pici - End: Alagoas 2267
+  [217] Escola Albert Aisten - Fortaleza / Alecrim - End: H, 09
+  [218] Escola Aquarela - Fortaleza / Jacarecanga - End: Enida Filomeno Gomes,766
+  [219] Escola Arca do Saber - Fortaleza / Bela Vista - End: Mario de Andrade,Bela Vista
+  [220] Escola Bambinno - Fortaleza / Alvaro Weyne - End: Tenente Lisboa, 3894
+  [221] Escola Boa Esperança - Maracanaú / Pajuçara - End: Alice Batista da Silva, 1238Boa Esperança
+  [222] Escola Cívico-Militar José Mário Barbosa - Maracanaú / Olho D'Água - End: Gabriel Ferreira de Sousa, 850
+  [223] Escola Corália Gonzaga Sales - Caucaia / Parque Soledade. - End: Vereador Gilberto Gadelha, S/N. Parque Soledade. Caucaia.
+  [224] Escola Creche Avançar - Fortaleza / None - End: Dr Silas Munguba 5455Passarė
+  [225] Escola Creche Conviver - Caucaia / Potira - End: Guara , 402
+  [226] Escola de Educação Básica Municipal Santo Antônio - Guaiúba / Chico de Goés - End: Francisco Rodrigues Bezerra, Sn
+  [227] Escola de Educação Infantil e Fundamental Clubinho do Saber - Fortaleza / Passaré - End: 1084 Rua Roberto de Carvalho
+  [228] Escola de Educação Infantil Espaço da Criança - Fortaleza / None - End: Herois do Acre, 160Passaré
+  [229] Escola de Ensino Fundamental Geraldo Batista de Lima - Itaitinga / Antônio Miguel - End: Miguel Soares Cavalcante N⁰ 120
+  [230] Escola de Ensino Fundamental Municipal Jornalista Demócrito Dummar - Fortaleza / Canindezinho - End: Enida Euclides Paulino Barroso 2505
+  [231] Escola de Ensino Fundamental Raio de Luz - Fortaleza / Granja Portugal - End: Primeiro de Maio 2612
+  [232] Escola de Ensino Infantil e Fundamental Clubinho do Saber - Fortaleza / Passaré - End: 1084
+  [233] Escola de Trânsito - Fortaleza / None - End: Godofredo Maciel, 2900Maraponga
+  [234] Escola El Shammah - Fortaleza / Siqueira - End: Maciel Bezerra , 982
+  [235] Escola Espaço Cultural Mundo do Mickey - Fortaleza / Passaré - End: Argentina Pinheiro Torres 1786
+  [236] Escola Francisca Rocha Magalhães - Maranguape / Ladeira Grande - End: Enida Alcebíades Rodrigues Barreto S/N
+  [237] Escola Gênesis - Fortaleza / Curió - Lagoa Redonda - End: Pedestre A 317
+  [238] Escola Gente Pequena - Fortaleza / Varjota - End: Manuel Jesuino, 653
+  [239] Escola Guadalajara - Caucaia / Parque Guadalajara - End: Padre Alfredo Nesi, 620
+  [240] Escola Hora de Aprender - Fortaleza / Lago Jacarey - End: Candido Portinari, 11
+  [241] Escola Indígena Tapeba Capoeira - Caucaia / Padre Júlio Maria - End: Retomada Capoeira
+  [242] Escola Indígena Tapeba do Trilho e Capoeira - Caucaia / Capuan - End: Do Trilho Sn Retomada Trilho
+  [243] Escola Joana Vasconcelos de Oliveira - Pacatuba / São José - End: Capitão Manoel Medeiros,745
+  [244] Escola João Hildo de Carvalho Furtado - Fortaleza / Aracapè - End: Juvêncio Sales S/N
+  [245] Escola João Hildo de Carvalho Furtadorua Juvêncio Sales S/Nmondubim - Fortaleza / None - End: N/A
+  [246] Escola Jornalista Demócrito Dummar - Fortaleza / Canidezinho - End: Euclides Paulino Barroso - 2505 - Canindezinho - Cep: 60734-630
+  [247] Escola José Cabral de Araújo - Guaiúba / Guaiuba Centro - End: Pedro Augusto, 91.
+  [248] Escola José Nunes de Miranda - Caucaia / Tucunduba - End: Estrada da Tucunduba, S/Ntucunduba
+  [249] Escola Luís de França - Fortaleza / Bom Jardim - End: Enida Oscar Araripe, 1099
+  [250] Escola Manoel Rodrigues Pinheiro de Melo - Maracanaú / Acaracuzinho - End: Enida Central, 2.000
+  [251] Escola Maria de Lourdes Rocha - Caucaia / Taquara - End: Da Igreja , S/N
+  [252] Escola Minicipal Adroaldo Teixeira Castelo - Fortaleza / Pici - End: Alagoas 2267
+  [253] Escola Moacir Pinheiro - Caucaia / Poço Verde - End: Br 020 Km 26 S/N Poço Verde Comunidade
+  [254] Escola Moacir Pinheiro de Sousa - Caucaia / Poço Verde - End: Br 020 Km 26, S/N.
+  [255] Escola Monteiro Lobato - Fortaleza / Vila Velha - End: Rosinha Sampaio
+  [256] Escola Muncipal Francisco Edmilson Pinheiro - Fortaleza / Conjunto Ceará - End: Enida H, 2115 - 4ª Etapa
+  [257] Escola Municipal Adalberto Studart Filho - Fortaleza / Planalto Ayrton Senna - End: Do Campo,25
+  [258] Escola Municipal Adalberto Studart Filho - Fortaleza / Planlto Ayrton Senna - End: Do Campo ,25
+  [259] Escola Municipal Adlberto Studart Filho - Fortaleza / Planalto Ayrton Senna - End: Do Campo, 25
+  [260] Escola Municipal Adroaldo Teixeira Castelo - Fortaleza / Pici - End: Alagoas 2267
+  [261] Escola Municipal Antonio de Abreu - Maranguape / Tanqueira - End: Demétrio Ferreira de Oliveira, 372
+  [262] Escola Municipal Comissário Francisco Barbosa - Maracanaú / Boa Vista - End: 11 N° 116 Residencial Bela Vista
+  [263] Escola Municipal de Caucaia Maria Luiza do Vale Forte - Caucaia / Carrapicho - End: Celio Candido,S/N Br 020 Km 10, Sn
+  [264] Escola Municipal de Tempo Integral Maria Odete da Silva Colares - Fortaleza / Messejana - End: R. Cel. João de Oliveira, 687 - Messejana, Fortaleza - Ce, 60841-820
+  [265] Escola Municipal Dr Valdir Bezerra - Maranguape / Pirapora - End: Salto do Peixe, 104
+  [266] Escola Municipal Edgard Vieira Guerra - Caucaia / Metrópole - End: Enida Contorno Sul 255
+  [267] Escola Municipal Francisco Edmilson Pinheiro - Fortaleza / Conjunto Ceará - End: Enida H, 2115 - 4ª Etapa
+  [268] Escola Municipal Geisa Firmo Gonçalves - Fortaleza / Planalto Ayrton Senna - End: R. Zuleica Pontes, 1260
+  [269] Escola Municipal Heitor Villa Lobos - Fortaleza / Planalto Ayrton Senna - End: Nova Fortaleza, 1635
+  [270] Escola Municipal Hilberto Silva - Fortaleza / Carlito Pamplona - End: Presidente Castelo Branco, 2973. Fortaleza - Ceará · (85) 3459-6784
+  [271] Escola Municipal Honorio Bezerra - Fortaleza / Bairro Ellery - End: Nestor Gois, 400
+  [272] Escola Municipal João Cirino Nogueira - Maranguape / Sapupara - End: Enida Tabatinga S/N
+  [273] Escola Municipal João Hildo de Carvalho Furtado - Fortaleza / Aracapé - End: Juvêncio Sales S/Nmondubim - Aracapé
+  [274] Escola Municipal João Nogueira Jucá - Fortaleza / Bairro Coaçu - End: B - Casa 10 - Conjunto Esplanada Messejana
+  [275] Escola Municipal João Noguiera Jucá - Fortaleza / Bairro Coaçu - End: B - Casa 10 - Conjunto Esplanada Messejana
+  [276] Escola Municipal João Paulo Ii - Fortaleza / Conjunto Ceará - End: Enida C 1381
+  [277] Escola Municipal Joaquim Alves - Fortaleza / Siqueira - End: Costa do Sol 1060
+  [278] Escola Municipal Jonathan da Rocha Alcoforado - Fortaleza / Aracapé - End: Maria Gomes de Sá, 1030 -Aracapé
+  [279] Escola Municipal Jornalista Democrito Dummar - Fortaleza / Canindezinho - End: Euclides Paulino Barroso, 2505
+  [280] Escola Municipal Jornalista Democrito Dummarav Euclides Paulino Barroso 2505 - Fortaleza / Canindezinho - End: N/A
+  [281] Escola Municipal Jornalista Democrito Dummarr. Euclides Paulino Barroso 2505 - Fortaleza / Canidezinho - End: N/A
+  [282] Escola Municipal Jornalista Demócrito Dummarrua Euclides Paulino Barroso N° 2505 - Fortaleza / Canidezinho - End: N/A
+  [283] Escola Municipal Jornalista Durval Ayres - Fortaleza / Planalto Ayton Senna - End: Do Sol 1. 522 - Planalto Ayrton Senna - Cep: 60766-160
+  [284] Escola Municipal José Nauri Braga - Fortaleza / Bela Vista - End: R. Lilian Abreu, 231 - Bela Vista, Fortaleza - Ce, 60442-521
+  [285] Escola Municipal Lorhan Marques Medeiros - Fortaleza / Jardim Guanabara - End: Creuza Rocha 255
+  [286] Escola Municipal Manoel Caetano de Souza - Fortaleza / Genibaú - End: Lúcia
+  [287] Escola Municipal Manoel Cordeiro - Maranguape / Umarizeiras - End: Enida Luiz Cordeiro Sobrinho S/N
+  [288] Escola Municipal Manoel Malveira Maia - Fortaleza / Granja Lisboa - End: Manoel Galdino 2980
+  [289] Escola Municipal Maria Luiza do Vale Forte - Caucaia / Carrapicho - End: Célio Cândido, S/N Br 020 Km 10 Bairro Carrapicho, Caucaia Ce
+  [290] Escola Municipal Maria Zélia Correia de Souza Rua Antônio Pereira, 1495, Planalto Ayrton Senna - Fortaleza [12] / Planalto Ayrton Senna - End: N/A
+  [291] Escola Municipal Minha Vida Meus Amores - Fortaleza / Prefeito José Water - End: Enida D,380
+  [292] Escola Municipal Monsenhor Mauro - Maranguape / None - End: Sebastião de Abreu S/Nparque Iracema
+  [293] Escola Municipalmurilo Serpa - Fortaleza / Dom Lustosa - End: Monsenhor Hipólito Brasil, 1400
+  [294] Escola Municipal Otávio de Farias - Fortaleza / Barroso - End: João Ferreira S N Barroso
+  [295] Escola Municipal Professora Bernadete Oriá de Oliveira - Fortaleza / Conjunto Palmeiras - End: R. Dr. Codes Sandoval, 796 - Conj. Palmeiras, Fortaleza - Ce, 60870-090
+  [296] Escola Municipal Professor Jacinto Botelho - Fortaleza / Maraponga - End: Dr. Rodrigo Codes Sandoval 374
+  [297] Escola Municipal Professor José Maria Moreira Campos - Fortaleza / Presidente Vargas - End: Francisco Almeida, 525Presidente Vargas
+  [298] Escola Municipal Professor Noberto Nogueira Alves - Fortaleza / Conjunto José Walter - End: Via Arterial, 253 Cidade Jardim Ii
+  [299] Escola Municipal Raimundo de Moura Matos - Fortaleza / Passaré - End: Dois de Maio, 1300
+  [300] Escola Municipal Rosa Amaro Cavalcante Unidade Ii - Fortaleza / Parque Santana - End: Um, 1169 Parque Santana
+  [301] Escola Municipal Sagrado Coração - Fortaleza / Maraponga - End: Holanda, 477
+  [302] Escola Municipal Santa Luzia - Fortaleza / Dom Lustosa - End: Coronel Francisco Bento N16
+  [303] Escola Municipal Santos Dumont - Fortaleza / Bom Jardim - End: Geraldo Barbosa, 240
+  [304] Escola Municipal Tertuliano Cambraia - Fortaleza / Carlito Pamplona - End: Monsenhor Rosa 946
+  [305] Escola Municipal Tristão de Alencar - Fortaleza / None - End: José Nogueira - 69Pedra
+  [306] Escola Municipal Waldemar Barroso - Fortaleza / Serrinha - End: Cônego Lima Sucupira,410
+  [307] Escola Municpal Adalberto Studart Filho - Fortaleza / Planalto Ayrton Senna - End: Do Campo, 25
+  [308] Escola Nilo Pinheiro Campelo - Maranguape / Novo Parque Iracema - End: Nilo Campelo 48
+  [309] Escola Nossa Senhora das Graças - Fortaleza / Nossa Senhora das Graças - End: Enida Presidente Castelo Branco
+  [310] Escola Nova Geração - Fortaleza / Parangaba - End: Cônego de Castro, 1324
+  [311] Escola Nova Geração - Maracanaú / None - End: 18, N 40 - Santo Sátiro Santo Sátiro
+  [312] Escola Nova Geração Ii - Maracanaú / Santo Sátiro - End: 18, Nº 40
+  [313] Escola Paraíso da Criança - Fortaleza / Demócrito Rocha - End: Rodrigues de Andrade 46
+  [314] Escola Paulo Sarapate - Maranguape / Outra Banda - End: Doutor Argeu Gurgel Braga Herbster, 883, Cep 61942005
+  [315] Escola Pequenos Passos - Fortaleza / Jacarecanga - End: Presidente Castelo Branco ,Nº 3016
+  [316] Escola Risque e Rabisque - Fortaleza / Planalto Mondubim - End: Iii, Número 787
+  [317] Escola Rural de Gereraú Ave - Maranguape / Tabatinga Gereraú - End: Enida Tabatinga S/N
+  [318] Escola Santa Rita Catarina - Caucaia / Catarina - End: Zona Rural
+  [319] Escola Santo de Farias - Fortaleza / Presidente Vargas - End: Antônio Monteiro N° 489
+  [320] Escola Sementes do Amanhã - Fortaleza / Jardim Iracema - End: Otávio Paranhos 74
+  [321] Escola Sonho de Criança - Fortaleza / Granja Lisboa - End: Dandara Ketley , 3794
+  [322] Escola Turminha do Saber - Fortaleza / Bonsucesso - End: André Rebouças 150
+  [323] Escola Walney do Carmo Lopes - Pacatuba / Parque Quandú - End: Rod.Faustino Albuquerque, 15550
+  [324] Escolinha de Futebol Meninos da Vila - Fortaleza / Vila Manoel Satiro - End: Américo Rocha Lima 227
+  [325] Escoma Municipal Lorhan Marques Medeiros - Fortaleza / Jardim Guanabara - End: Creuza Rocha 255
+  [326] Espaço Dominio - Fortaleza / Maraponga - End: Suiça 375
+  [327] Espaço Social Dias Macêdo - Fortaleza / Dias Macêdo - End: Boaventura 767
+  [328] Espaço Viva Gente - Fortaleza / Passaré - End: Maria Mirtes Pereira, 1010
+  [329] Estevão Ferreira da Rocha - Caucaia / Caraubas - End: Principal da Lagoa do Banana S/N Caraúbas
+  [330] Faculdade Maurício de Nassau - Maracanaú - Maracanaú / Maracanaú - End: Yolanda Pontes Vidal Queiroz
+  [331] Firmino Soares de Moura - Caucaia / Urucutuba - End: Raimundo Ferreira Rocha Sn
+  [332] Flávio Portela Marcílio - Caucaia / Itambé - End: Samira Borges, 180 B
+  [333] Fundação Erico Mota - Fortaleza / Bom Jardim - End: Nova Conquista 2671
+  [334] Fundação Sintaf - Fortaleza / Centro - End: Viaduto Moreira da Rocha 175
+  [335] Fundação Social Raimundo Fagner - Fortaleza / Paupina - End: Duarte Coelho 1023
+  [336] Geap - Fortaleza / Mondubim - End: B
+  [337] Igreja Adventista do Sétimo Dia - Fortaleza / Vila Manoel Sátiro - End: 452 Rua Bulgária
+  [338] Igreja Comunidade das Nações - Fortaleza / Dionísio Torres - End: Santa Esmeraldina 110
+  [339] Instituto Arena Psv - Fortaleza / Siqueira - End: Marcelo Santa Fé 934
+  [340] Instituto Bom Vizinho de Cultura e Responsabilidade Social - Fortaleza / Paupina - End: Coronel Xavier Chaves Nr.100
+  [341] Instituto de Arte e Cidadania - Abrigo Tia Júlia Primeira Infãncia - Fortaleza / None - End: Armando Dall'Olio, 686Luciano Cavalcante
+  [342] Instituto de Arte e Cidadania do Ceará - Fortaleza / None - End: Tomas Rodrigues 760 Antônio Bezerra
+  [343] Instituto de Arte e Cidadania do Ceará - Abrigo Tia Júlia - Fortaleza / Parangaba - End: Desembargador Gomes Parente, 219
+  [344] Instituto Educacional Aquarela - Fortaleza / Jacarecanga - End: Enida Filomeno Gomes,766
+  [345] Instituto Educacional Grão do Saber - Fortaleza / Parquelândia - End: Professor Lino Encarnação, 540
+  [346] Instituto Educacional Monteiro Lobato - Fortaleza / Vila Velha - End: Rosinha Sampaio, 2204
+  [347] Instituto Fortalecer Brasil - Fortaleza / Vila Velha 3 - End: N 24
+  [348] Instituto Infantil Tia Neuma - Fortaleza / Cidade 2000 - End: Alameda Amália Maria, 132, Quadra 2
+  [349] Instituto Meninos de Deus - Fortaleza / Parque Betânia- Jangurussu - End: Manuel Martins, Nº 791Parque Betânia- Jangurussu
+  [350] Instituto Semear - Fortaleza / Luciano Cavalcante - End: Philomeno Gomes 1661
+  [351] Instituto Sócio Cultural Maria João - Caucaia / Jurema - End: Enida Dom Almeida Lustosa 4245
+  [352] Instituto Todos Os Cantos - Fortaleza / Siqueira - End: Boa Vista 2090
+  [353] Instituto Todos Os Cantos - Caucaia / Jurema - End: Carpina 144
+  [354] Instituto Well Vi - Fortaleza / Bom Jardim - End: Atoba 1105
+  [355] João Hildo de Carvalho Furtado - Fortaleza / Aracapé - End: Juvêncio Sales, S/N (Vizinho Ao Posto de Saúde)
+  [356] José Cabral de Araújo - Guaiúba / Centro de Guaiúba - End: Pedro Augusto, 91 Guaiuba
+  [357] José Maria Pontes da Rocha - Caucaia / Tabapuazinho - End: José Pinheiro 2301
+  [358] Kairós Kids - Fortaleza / Paupina - End: São Judas Tadeu,66
+  [359] Lar Antonio de Pádua - Fortaleza / Manoel Sátiro - End: R. Fernando Farias de Melo, 752
+  [360] Legião da Boa Vontade (Lbv) - Fortaleza / Vila Manoel Sátiro - End: Alziro Zarur, 275 Vila Manoel Sátiro
+  [361] Macário Coelho - Fortaleza / Passaré - End: Banabuiu 45
+  [362] Não Sei - Fortaleza / Bairro São Geraldo Avenida Bezerra de Menezes 1277 - End: Cuiabá 2010
+  [364] Napaz Núcleo de Ação Pela Paz - Fortaleza / Granja Lisboa - End: Dandara Ketley 1250 D, Entrada Pela Rua C
+  [365] Nazaré Severiano - Fortaleza / Joaquim Távora - End: Joaquim Távora 385
+  [366] Nucat - Fortaleza / Nucat Detran - End: Nucat Detran
+  [367] Nucat - Alunos do Fat 10H - Fortaleza / Nucat - End: Nucat
+  [368] Nucat Detran Curso Fat - Fortaleza / Nucat Detran - End: Nucat Detran
+  [369] Núcleo de Ação Pela Paz - Napaz Curió - Fortaleza / Lagoa Redonda - End: Raquel Florêncio 228
+  [370] Ocean Garden - Eusébio / Parque Havaí - End: Costa Machado 74
+  [371] Parque Dom Aloisio Lorscheider - Fortaleza / Itapery - End: Enida Bernardo Manuel, 10080
+  [372] Patronato Nossa Senhora das Merces - Itapipoca / Centro - End: Enida Duque de Caixias
+  [373] Paulo Freire - Fortaleza / Parque do Sossego - End: 10 N 320
+  [374] Paulo Sarapate - Maranguape / Outra Banda - End: Doutor Argeu Gurgel Braga Herster, 883
+  [375] Paulo Sarapate - Maranguape / Outra Banda, Maranguape - End: Doutor Argeu Gurgel Braga Herbster, 883. Outra Banda. Maranguape - Ceará
+  [376] Poeta Patativa do Assaré - Fortaleza / None - End: Descartes Braga, 4269Granja Lisboa
+  [377] Policia Militra do Ceará - Fortaleza / Siqueira - End: Jardim do Éden
+  [378] Presidente - Fortaleza / José Walter - End: Pau Brasil, N°100, Cidade Jardim I
+  [379] Professora Maria José Macário Coelho - Fortaleza / Passare - End: Banabuiú 45
+  [380] Prof Maria Guiomar Bastos Cavalcante - Pacatuba / Velho Timbó - End: Topázio, 331
+  [381] Prof. Milton Cunha - Fortaleza / Messejana - End: Eduardo Porto 42
+  [382] Projeto Agraciados - Fortaleza / Aerolandia - End: Alecrim, 27 -
+  [383] Projeto Construindo O Futuro. - Fortaleza / Miguel Arraes Siqueira. - End: Ria da Força 52A Apto 101 Quadra
+  [384] Projeto Cristo É Vida no Pirambu - Fortaleza / Carlito Pamplona - End: Pedro Artur, 521
+  [385] Projeto Espaço Viva Gente - Fortaleza / Passaré - End: Maria Mirtes Pereira, 1010
+  [386] Projeto Maria Ribeiro - Caucaia / Marechal Rondon - End: Enida Dom Almeida Lustosa Nº 5057
+  [387] Projeto Sociocultural Gabriel Wesley - Fortaleza / Floresta - End: Frei Odilon,513
+  [388] Recanto Psicopedagógico - Fortaleza / Papicu - End: Ary Barroso 55
+  [389] Reforço Escolar Crescer - Fortaleza / Carlito Pamplona - End: Vl Cirandinha Sá I 14
+  [390] Seguro Segurança - Pacatuba / Timbozinho Pacatuba - End: Araújo Silva Número 257 Casa
+  [391] Sos Periferia - Fortaleza / Parque São Jose - End: Recanto Boreal Nº60
+  [392] Teleyos - Fortaleza / Conjunto Esperança - End: Dr. Parente N 610
+  [393] Teste - Fortaleza / Teste - End: Teste
+  [394] Teste Escola - Fortaleza / Maraponga - End: Enida Godofredo Maciel 2900
+  [395] Tico Cell - Fortaleza / Floresta - End: Buenos Aires Número 180
+  [396] Top Lanches - Fortaleza / Sabiaguaba - End: Sabiaguaba
+  [397] Transcleber Transportes - Eusébio / Santa Clara - End: Rod Quarto Anel Viario, 3003 H
+  [398] Unip Fafor - Fortaleza / Demócrito Rocha - End: José Bastos
+  [399] Universo Menino Jesus - Fortaleza / Jacarecanga - End: Dom Quintino 928
+  [400] Ws Gesso e Reformas - Fortaleza / Joaquim Távora - End: João Cordeiro 3314
+
+----------------------------------------------------------------------
+ESCOLAS SEM ENDEREÇO (10):
+  [17] Cei Antônio Ricardo Barbosa de Sousa - Maranguape / Novo Maranguape 1
+  [28] Centro Comunitário do Conjunto São Francisco Rua : Ilha do Bote, 367 - Fortaleza / Quintino Cunha
+  [54] Clube de Aventureiros Mensageiros do Adventorua 112 191 - Maracanaú / Timbó
+  [108] Conselho Comunitario Todos Os Cantosrua Banvarth Bezerra 425 - Fortaleza / Padre Andrade
+  [146] E.M. Cônego Francisco Pereira da Silva Rua Luiz Francisco Xavier N° 150 - Fortaleza / Paupina
+  [245] Escola João Hildo de Carvalho Furtadorua Juvêncio Sales S/Nmondubim - Fortaleza / None
+  [280] Escola Municipal Jornalista Democrito Dummarav Euclides Paulino Barroso 2505 - Fortaleza / Canindezinho
+  [281] Escola Municipal Jornalista Democrito Dummarr. Euclides Paulino Barroso 2505 - Fortaleza / Canidezinho
+  [282] Escola Municipal Jornalista Demócrito Dummarrua Euclides Paulino Barroso N° 2505 - Fortaleza / Canidezinho
+  [290] Escola Municipal Maria Zélia Correia de Souza Rua Antônio Pereira, 1495, Planalto Ayrton Senna - Fortaleza [12] / Planalto Ayrton Senna
