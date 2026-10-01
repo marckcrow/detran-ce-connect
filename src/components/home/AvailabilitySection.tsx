@@ -27,6 +27,10 @@ export const AvailabilitySection = () => {
 
   useEffect(() => {
     const load = async () => {
+      if (!supabase) {
+        setLoading(false);
+        return;
+      }
       const hoje = startOfDay(new Date());
       const fim = addDays(hoje, DIAS_HORIZONTE);
       const { data } = await supabase

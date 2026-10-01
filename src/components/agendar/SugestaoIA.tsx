@@ -56,6 +56,10 @@ export function SugestaoIA({ cidadeAtual, onAplicar }: Props) {
       toast({ title: "Conte um pouco mais", description: "Descreva a visita com pelo menos uma frase.", variant: "destructive" });
       return;
     }
+    if (!supabase) {
+      toast({ title: "Serviço indisponível", description: "Configuração do Supabase não encontrada.", variant: "destructive" });
+      return;
+    }
     setLoading(true);
     setSugestao(null);
     const { data, error } = await supabase.functions.invoke("sugerir-visita", {
