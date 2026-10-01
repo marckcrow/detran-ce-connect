@@ -211,10 +211,11 @@ create table public.atendimentos (
 
 -- Configurações do sistema
 create table public.config_sistema (
-  id number primary key default 1 check (id = 1),
+  id integer primary key,
   limite_km numeric(10,2) not null default 30,
   ponto_saida text not null default 'DETRAN-CE, Av. Monsenhor Tabosa, Fortaleza/CE',
-  updated_at timestamptz default now()
+  updated_at timestamptz default now(),
+  constraint config_sistema_single_row check (id = 1)
 );
 insert into public.config_sistema (id, limite_km, ponto_saida) values (1, 30, 'DETRAN-CE, Av. Monsenhor Tabosa, Fortaleza/CE');
 
@@ -476,8 +477,5 @@ create policy "importacoes_select_own" on public.importacoes_escolas for select 
 create policy "importacoes_insert_staff" on public.importacoes_escolas for insert with check (public.is_staff(auth.uid()));
 
 -- ============================================================
--- ANON PODE VER CONFIG (sistema público)
+-- DONE — Schema completo DETRAN-CE Connect
 -- ============================================================
-alter table public.config_sistema enable row level security;
-drop policy if exists "config_sistema_select_all" on public.config_sistema;
-create policy "config_sistema_select_all" on public.config_sistema for select using (true);
