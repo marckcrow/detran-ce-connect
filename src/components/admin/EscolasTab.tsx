@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
-import { db, soDigitos } from "@/lib/operacao";
+import { db, soDigitos, TIPO_PUBLICO } from "@/lib/operacao";
 
 const CAMPOS: { key: string; label: string; req?: boolean; num?: boolean }[] = [
   { key: "nome", label: "Nome da escola", req: true },
@@ -37,7 +37,7 @@ const ALIAS: Record<string, string> = {
   cep: "cep", telefone: "telefone", fone: "telefone", email: "email", responsavel: "responsavel", diretor: "responsavel",
   contatoresponsavel: "responsavel_telefone", telefoneresponsavel: "responsavel_telefone", tipo: "rede", rede: "rede",
   alunos: "alunos_estimados", alunosestimados: "alunos_estimados", quantidadealunos: "alunos_estimados", distancia: "distancia_km", km: "distancia_km",
-  observacoes: "observacoes",
+  observacoes: "observacoes", publico: "tipo", tipopublico: "tipo", segmento: "tipo",
 };
 const chave = (e: any) => (soDigitos(e.cnpj) || (e.codigo ?? "").trim() || `${norm(e.nome ?? "")}|${norm(e.cidade ?? "")}`);
 
@@ -66,7 +66,7 @@ export function EscolasTab({ podeEditar }: { podeEditar: boolean }) {
   return (
     <Card>
       <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
-        <div><CardTitle>Escolas</CardTitle><CardDescription>{lista.length} cadastradas. Registros não são apagados — use inativar.</CardDescription></div>
+        <div><CardTitle>Instituições / público</CardTitle><CardDescription>{lista.length} cadastradas. Registros não são apagados — use inativar.</CardDescription></div>
         <div className="flex gap-2">
           <Input placeholder="Buscar..." value={busca} onChange={(e) => setBusca(e.target.value)} className="w-48" />
           {podeEditar && <>
@@ -79,11 +79,12 @@ export function EscolasTab({ podeEditar }: { podeEditar: boolean }) {
         {loading ? <Loader2 className="mx-auto h-6 w-6 animate-spin" /> : (
           <div className="overflow-x-auto">
             <Table>
-              <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>Rede</TableHead><TableHead>Cidade</TableHead><TableHead>CNPJ/Código</TableHead><TableHead>Responsável</TableHead><TableHead>Km</TableHead><TableHead>Status</TableHead>{podeEditar && <TableHead />}</TableRow></TableHeader>
+              <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>Público</TableHead><TableHead>Rede</TableHead><TableHead>Cidade</TableHead><TableHead>CNPJ/Código</TableHead><TableHead>Responsável</TableHead><TableHead>Km</TableHead><TableHead>Status</TableHead>{podeEditar && <TableHead />}</TableRow></TableHeader>
               <TableBody>
                 {vis.map((e) => (
                   <TableRow key={e.id}>
                     <TableCell className="font-medium">{e.nome}</TableCell>
+                    <TableCell>{TIPO_PUBLICO[e.tipo] ?? e.tipo}</TableCell>
                     <TableCell>{e.rede === "privada" ? "Privada" : "Pública"}</TableCell>
                     <TableCell>{e.cidade}</TableCell>
                     <TableCell className="text-xs">{e.cnpj || e.codigo || "—"}</TableCell>
@@ -115,8 +116,8 @@ function EscolaDialog({ escola, onClose, onSaved }: { escola: any; onClose: () =
     const payload: any = {};
     CAMPOS.forEach((c) => { const v = f[c.key]; payload[c.key] = v === "" || v == null ? null : c.num ? Number(v) : String(v).trim(); });
     payload.nome = f.nome.trim(); payload.cidade = f.cidade.trim();
-    payload.rede = f.rede; payload.observacoes = f.observacoes || null; payload.ativa = f.ativa ?? true;
-    const q = f.id ? db.from("instituicoes").update(payload).eq("id", f.id) : db.from("instituicoes").insert({ ...payload, tipo: "escola" });
+    payload.rede = f.rede; payload.tipo = f.tipo ?? "escola"; payload.observacoes = f.observacoes || null; payload.ativa = f.ativa ?? true;
+    const q = f.id ? db.from("instituicoes").update(payload).eq("id", f.id) : db.from("instituicoes").insert(payload);
     const { error } = await q;
     if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
     toast({ title: "Escola salva" }); onSaved(); onClose();
@@ -136,6 +137,11 @@ function EscolaDialog({ escola, onClose, onSaved }: { escola: any; onClose: () =
             <Select value={f.rede ?? "publica"} onValueChange={(v) => setF({ ...f, rede: v })}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent><SelectItem value="publica">Pública</SelectItem><SelectItem value="privada">Privada</SelectItem></SelectContent>
+            </Select></div>
+          <div className="space-y-1"><Label>Público</Label>
+            <Select value={f.tipo ?? "escola"} onValueChange={(v) => setF({ ...f, tipo: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>{Object.entries(TIPO_PUBLICO).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
             </Select></div>
           <Textarea className="sm:col-span-2" placeholder="Observações" maxLength={1000} value={f.observacoes ?? ""} onChange={(e) => setF({ ...f, observacoes: e.target.value })} />
         </div>
@@ -169,6 +175,8 @@ function ImportarDialog({ existentes, onClose, onDone }: { existentes: any[]; on
       if (d.cep && soDigitos(d.cep).length !== 8) erros.push("CEP inválido");
       ["alunos_estimados", "distancia_km"].forEach((k) => { if (d[k] && isNaN(Number(d[k]))) erros.push(`${k} não numérico`); });
       const r2 = norm(d.rede ?? "");
+      const tp = norm(d.tipo ?? "");
+      d.tipo = Object.keys(TIPO_PUBLICO).find((k) => tp.startsWith(norm(k)) || tp.startsWith(norm(TIPO_PUBLICO[k]))) ?? "escola";
       d.rede = r2.startsWith("priv") || r2.includes("particular") ? "privada" : "publica";
       const k = chave(d);
       const duplicada = chavesExist.has(k) || vistos.has(k);
@@ -187,7 +195,7 @@ function ImportarDialog({ existentes, onClose, onDone }: { existentes: any[]; on
     }).select().single();
     if (e1) { setSaving(false); return toast({ title: "Erro", description: e1.message, variant: "destructive" }); }
     const payload = validas.map(({ dados: d }) => ({
-      ...d, tipo: "escola", estado: d.estado || "CE", importacao_id: imp.id,
+      ...d, estado: d.estado || "CE", importacao_id: imp.id,
       alunos_estimados: d.alunos_estimados ? Number(d.alunos_estimados) : null,
       distancia_km: d.distancia_km ? Number(d.distancia_km) : null,
     }));
@@ -204,7 +212,7 @@ function ImportarDialog({ existentes, onClose, onDone }: { existentes: any[]; on
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[90vh] max-w-5xl overflow-y-auto">
         <DialogHeader><DialogTitle>Importar escolas (XLSX, XLS ou CSV)</DialogTitle></DialogHeader>
-        <p className="text-sm text-muted-foreground">Colunas reconhecidas: Nome, CNPJ, Código/INEP, Endereço, Bairro, Cidade/Município, Estado/UF, CEP, Telefone, E-mail, Responsável, Contato responsável, Rede/Tipo (pública/privada), Alunos, Distância (km).</p>
+        <p className="text-sm text-muted-foreground">Colunas reconhecidas: Nome, CNPJ, Código/INEP, Endereço, Bairro, Cidade/Município, Estado/UF, CEP, Telefone, E-mail, Responsável, Contato responsável, Rede (pública/privada), Público (escola, universidade, empresa, ONG, igreja, órgão público, outros), Alunos, Distância (km).</p>
         <Input type="file" accept=".xlsx,.xls,.csv" onChange={(e) => e.target.files?.[0] && ler(e.target.files[0])} />
         {linhas.length > 0 && <>
           <div className="flex flex-wrap gap-3 text-sm">
