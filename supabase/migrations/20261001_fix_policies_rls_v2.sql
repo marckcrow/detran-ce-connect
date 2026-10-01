@@ -73,6 +73,10 @@ CREATE POLICY "Authenticated read published noticias" ON public.noticias
     AND (status = 'publicada' OR status = 'agendada')
   );
 
+DROP FUNCTION IF EXISTS public.handle_noticias_updated_at();
+CREATE FUNCTION public.handle_noticias_updated_at()
+RETURNS TRIGGER AS $$ BEGIN NEW.updated_at = now(); RETURN NEW; END; $$ LANGUAGE plpgsql;
+
 DROP TRIGGER IF EXISTS noticias_updated_at ON public.noticias;
 CREATE TRIGGER noticias_updated_at
   BEFORE UPDATE ON public.noticias
