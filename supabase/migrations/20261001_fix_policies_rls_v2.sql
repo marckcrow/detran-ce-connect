@@ -104,13 +104,17 @@ CREATE POLICY "Staff full access logs" ON public.logs_sistema
   FOR ALL USING (public.is_staff(auth.uid())) WITH CHECK (public.is_staff(auth.uid()));
 
 -- -------------------------------------------------------
--- 4. os_status type (handle duplicate)
+-- 4. os_status type — PRESERVE existing enum (already has 8 values)
+-- V2 tried to replace values → 22P02. Fixed: skip CREATE TYPE, preserve existing.
+-- Existing values: rascunho, solicitado, confirmado, programado,
+--   em_andamento, realizado, cancelado, nao_realizado
 -- -------------------------------------------------------
 DO $$
 BEGIN
-  CREATE TYPE public.os_status AS ENUM ('rascunho', 'confirmado', 'programado', 'em_andamento', 'concluida', 'cancelada', 'revisada');
+  -- Check if type exists; if so, do NOTHING (preserve existing values)
+  PERFORM 1 FROM pg_type WHERE typname = 'os_status' AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public');
 EXCEPTION
-  WHEN duplicate_object THEN null;
+  WHEN undefined_function THEN null;
 END $$;
 
 -- -------------------------------------------------------
@@ -135,7 +139,7 @@ CREATE TABLE IF NOT EXISTS public.os_transporte (
 
 CREATE UNIQUE INDEX IF NOT EXISTS os_transporte_numero_ano_unidade_idx
   ON public.os_transporte(numero, ano, unidade)
-  WHERE status != 'cancelada';
+  WHERE status != 'cancelado';
 
 ALTER TABLE public.os_transporte ENABLE ROW LEVEL SECURITY;
 
