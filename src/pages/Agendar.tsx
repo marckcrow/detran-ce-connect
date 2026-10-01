@@ -45,7 +45,7 @@ const agendamentoSchema = z.object({
   transporte_status: z.enum(["onibus_detran", "proprio"] as const, { required_error: "Selecione o transporte" }),
   observacoes: z.string().max(500, "Máximo 500 caracteres").optional(),
   responsavel_nome: z.string().trim().min(3, "Informe o responsável").max(100),
-  responsavel_whatsapp: z.string().trim().refine((v) => v.replace(/\D/g, "").length >= 10, "Telefone/WhatsApp inválido"),
+  responsavel_whatsapp: z.string().trim().refine((v) => v.replace(/\D/g, "").length >= 10, "Informe um telefone/WhatsApp válido com DDD (ex: 85 99999-9999)"),
   quantidade_acompanhantes: z.coerce.number().int().min(0).max(MAX_PESSOAS),
   necessidades_especiais: z.string().max(500).optional(),
   possui_pcd: z.enum(["sim", "nao"]),
@@ -126,6 +126,22 @@ export default function Agendar() {
       toast({ title: "Perfil incompleto", description: "Cadastre sua instituição no Meu Perfil antes de agendar.", variant: "destructive" });
       navigate("/perfil");
       return;
+    }
+
+    // Bus only available for public schools
+    if (values.transporte_status === "onibus_detran") {
+      const { data: inst } = await supabase
+        .from("instituicoes")
+        .select("tipo, rede")
+        .eq("id", instituicaoId)
+        .single();
+      if (inst?.tipo !== "escola" || inst?.rede !== "publica") {
+        toast({
+          title: "Ônibus indisponível",\n          description: "O ônibus do DETRAN está disponível apenas para escolas da rede pública. Selecione 'Transporte Próprio'.",
+          variant: "destructive"
+        });
+        return;
+      }
     }
 
     setSubmitting(true);
@@ -347,7 +363,23 @@ export default function Agendar() {
                     <FormField control={form.control} name="responsavel_whatsapp" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Telefone / WhatsApp</FormLabel>
-                        <FormControl><Input placeholder="(85) 99999-9999" maxLength={20} {...field} /></FormControl>
+                        <FormControl>
+                          <Input
+                            placeholder="(85) 99999-9999"
+                            maxLength={20}
+                            value={field.value}
+                            onChange={(e) => {
+                              const v = e.target.value.replace(/\D/g, "");
+                              if (v.length <= 11) {
+                                let f = v;
+                                if (v.length > 6) f = `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`;
+                                else if (v.length > 2) f = `(${v.slice(0,2)}) ${v.slice(2)}`;
+                                else if (v.length > 0) f = `(${v}`;
+                                field.onChange(f);
+                              }
+                            }}
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )} />
