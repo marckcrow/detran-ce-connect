@@ -14,9 +14,7 @@ export const Navbar = () => {
       <div className="container mx-auto px-4 relative z-10">
         <div className="flex items-center justify-between h-16">
           <Link to="/" className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-gradient-hero flex items-center justify-center">
-              <School className="h-6 w-6 text-primary-foreground" />
-            </div>
+            <img src="/logo-detran-ce.png" alt="DETRAN-CE" className="h-10 w-10 rounded-full object-contain" />
             <div className="flex flex-col">
               <span className="text-sm font-semibold text-foreground">Escola de Trânsito</span>
               <span className="text-xs text-muted-foreground">Detran Ceará</span>

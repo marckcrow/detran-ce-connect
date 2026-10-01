@@ -18,9 +18,7 @@ export const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
             <div className="flex items-center gap-3 mb-4">
-              <div className="h-10 w-10 rounded-lg bg-white/10 flex items-center justify-center">
-                <School className="h-6 w-6" />
-              </div>
+              <img src="/logo-detran-ce.png" alt="DETRAN-CE" className="h-10 w-10 rounded-full object-contain" />
               <div className="flex flex-col">
                 <span className="font-semibold">Escola de Trânsito</span>
                 <span className="text-sm opacity-90">Detran Ceará</span>

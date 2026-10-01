@@ -82,8 +82,8 @@ export default function Auth() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-secondary to-background p-4">
       <Card className="w-full max-w-md shadow-elevated">
         <CardHeader className="text-center">
-          <div className="mx-auto h-12 w-12 rounded-lg bg-gradient-hero flex items-center justify-center mb-4">
-            <School className="h-7 w-7 text-primary-foreground" />
+          <div className="mx-auto h-12 w-12 rounded-full flex items-center justify-center mb-4 overflow-hidden">
+            <img src="/logo-detran-ce.png" alt="DETRAN-CE" className="h-full w-full object-contain" />
           </div>
           <CardTitle className="text-2xl">Escola de Trânsito</CardTitle>
           <CardDescription>Detran Ceará</CardDescription>
