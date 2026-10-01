@@ -223,6 +223,7 @@ export function LogsTab() {
                   </TableBody>
                 </Table>
               </div>
+            )}
 
               {/* Paginação */}
               {total > PAGE_SIZE && (
@@ -245,8 +246,6 @@ export function LogsTab() {
                   </div>
                 </div>
               )}
-            </>
-          )}
         </CardContent>
       </Card>
 

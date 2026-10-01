@@ -178,13 +178,14 @@ export function OSTransporteTab({ podeEditar }: { podeEditar: boolean }) {
                   <TableCell className="whitespace-nowrap">{format(parseISO(o.data_inicio), "dd/MM")} a {format(parseISO(o.data_fim), "dd/MM/yyyy")}</TableCell>
                   <TableCell>{(o.rotas as Rota[]).filter((r) => !r.cancelada).length} ativas{(o.rotas as Rota[]).some((r) => r.cancelada) && ` / ${(o.rotas as Rota[]).filter((r) => r.cancelada).length} canc.`}</TableCell>
                   <TableCell>{o.revisao || "Original"}</TableCell>
-                  <TableCell><Badge variant={o.status === "cancelada" ? "destructive" : "secondary"}>{o.status}</Badge></TableCell>
+                  <TableCell><Badge variant={o.status === "cancelado" ? "destructive" : "secondary"}>{o.status}</Badge></TableCell>
                   <TableCell className="text-right"><Button size="sm" variant="outline" onClick={() => setSel(o)}>Abrir</Button></TableCell>
                 </TableRow>
               ))}
               {!emitidas.length && <TableRow><TableCell colSpan={7} className="py-6 text-center text-muted-foreground">Nenhuma OS emitida ainda.</TableCell></TableRow>}
             </TableBody>
           </Table>
+          </div>
           )}
         </CardContent>
       </Card>

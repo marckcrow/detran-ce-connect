@@ -57,7 +57,7 @@ export default function Admin() {
             <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-yellow-800 dark:border-yellow-800 dark:bg-yellow-950 dark:text-yellow-200">
               <strong>Atenção:</strong> Seu cadastro está em análise. Aguarde aprovação para acessar o painel administrativo.
             </div>
-          )
+          )}
           <Tabs defaultValue="dashboard">
             <TabsList className="h-auto flex-wrap">
               <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
