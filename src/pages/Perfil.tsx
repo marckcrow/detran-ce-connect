@@ -235,21 +235,29 @@ export default function Perfil() {
   const solicitarAcesso = async (instId: string) => {
     if (!user) return;
     setRequesting(true);
-    const { error } = await supabase
-      .from("instituicao_access_requests")
-      .insert({ user_id: user.id, instituicao_id: instId });
+    try {
+      const { error } = await supabase
+        .from("instituicao_access_requests")
+        .insert({ user_id: user.id, instituicao_id: instId });
 
-    if (error) {
-      toast({ title: "Erro ao solicitar", description: error.message, variant: "destructive" });
-    } else {
-      toast({
-        title: "Solicitação enviada!",
-        description: "Aguarde a aprovação do responsável pela instituição. Você será notificado quando for aprovado.",
-      });
-      setPendingRequest(true);
-      setRequestOpen(false);
-      setSearchQuery("");
-      setSearchResults([]);
+      if (error) {
+        if (error.code === "42P01" || error.message?.includes("does not exist") || error.message?.includes("Could not find")) {
+          toast({ title: "Funcão indisponível", description: "A solicitação de acesso à instituição ainda não está disponível. Tente novamente mais tarde.", variant: "destructive" });
+        } else {
+          toast({ title: "Erro ao solicitar", description: error.message, variant: "destructive" });
+        }
+      } else {
+        toast({
+          title: "Solicitação enviada!",
+          description: "Aguarde a aprovação do responsável pela instituição. Você será notificado quando for aprovado.",
+        });
+        setPendingRequest(true);
+        setRequestOpen(false);
+        setSearchQuery("");
+        setSearchResults([]);
+      }
+    } catch (err: any) {
+      toast({ title: "Erro ao solicitar", description: err.message ?? "Tabela de solicitações não disponível.", variant: "destructive" });
     }
     setRequesting(false);
   };
