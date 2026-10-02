@@ -19,7 +19,10 @@ type Rede = Database["public"]["Enums"]["rede"];
 
 const tipoLabels: Record<TipoInstituicao, string> = {
   escola: "Escola",
+  universidade: "Universidade",
   empresa: "Empresa",
+  ong: "ONG",
+  igreja: "Igreja",
   orgao_publico: "Órgão Público",
   outros: "Outros",
 };
