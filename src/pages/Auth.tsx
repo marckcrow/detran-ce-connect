@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { School, Eye, EyeOff, Loader2, ShieldCheck, ShieldAlert, Shield } from "lucide-react";
+import { School, Eye, EyeOff, Loader2, ShieldCheck, ShieldAlert, Shield, UserCircle, Briefcase } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
@@ -21,6 +21,8 @@ export default function Auth() {
   const [showForgot, setShowForgot] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [registerPassword, setRegisterPassword] = useState("");
+  const [registerType, setRegisterType] = useState<"responsavel" | "colaborador">("responsavel");
+  const [colaboradorPerfil, setColaboradorPerfil] = useState<string>("consulta");
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -70,11 +72,35 @@ export default function Auth() {
     // Update profile with basic info — institution is set in Perfil page
     if (data.user) {
       await supabase.from("profiles").update({ nome, telefone }).eq("id", data.user.id);
-      toast({
-        title: "Cadastro realizado!",
-        description: "Complete seu cadastro escolhendo ou cadastrando sua instituição no próximo passo.",
-      });
-      navigate("/perfil");
+
+      if (registerType === "colaborador") {
+        // Staff registration: create access request for admin approval
+        const { error: reqError } = await supabase.from("access_requests").insert({
+          user_id: data.user.id,
+          nome,
+          email,
+          telefone: telefone || null,
+          perfil_solicitado: colaboradorPerfil,
+          status: "pendente",
+        });
+
+        if (reqError) {
+          console.error("Failed to create access request:", reqError);
+        }
+
+        toast({
+          title: "Cadastro de colaborador enviado!",
+          description: "Sua solicitação de acesso foi enviada para aprovação. Você será notificado quando for aprovado.",
+        });
+        navigate("/perfil");
+      } else {
+        // Institution responsible: go to Perfil to link institution
+        toast({
+          title: "Cadastro realizado!",
+          description: "Complete seu cadastro escolhendo ou cadastrando sua instituição no próximo passo.",
+        });
+        navigate("/perfil");
+      }
     } else {
       toast({
         title: "Cadastro realizado!",
@@ -272,8 +298,70 @@ export default function Auth() {
 
               <TabsContent value="register">
                 <form onSubmit={handleRegister} className="space-y-4">
+                  {/* Account Type Selector */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setRegisterType("responsavel")}
+                      className={`flex flex-col items-center gap-1 rounded-lg border p-3 text-center transition-colors ${
+                        registerType === "responsavel"
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-muted hover:border-primary/50"
+                      }`}
+                    >
+                      <UserCircle className={`h-5 w-5 ${registerType === "responsavel" ? "text-primary" : "text-muted-foreground"}`} />
+                      <span className={`text-xs font-medium ${registerType === "responsavel" ? "text-primary" : "text-muted-foreground"}`}>Responsável</span>
+                      <span className="text-[10px] text-muted-foreground">Escola / Instituição</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRegisterType("colaborador")}
+                      className={`flex flex-col items-center gap-1 rounded-lg border p-3 text-center transition-colors ${
+                        registerType === "colaborador"
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-muted hover:border-primary/50"
+                      }`}
+                    >
+                      <Briefcase className={`h-5 w-5 ${registerType === "colaborador" ? "text-primary" : "text-muted-foreground"}`} />
+                      <span className={`text-xs font-medium ${registerType === "colaborador" ? "text-primary" : "text-muted-foreground"}`}>Colaborador</span>
+                      <span className="text-[10px] text-muted-foreground">Equipe DETRAN</span>
+                    </button>
+                  </div>
+
+                  {/* Colaborador: perfil selection */}
+                  {registerType === "colaborador" && (
+                    <div className="space-y-2 rounded-lg border border-primary/20 bg-primary/5 p-3">
+                      <Label className="text-xs font-semibold text-primary">Perfil solicitado:</Label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {["operador", "logistica", "consulta"].map((p) => (
+                          <label
+                            key={p}
+                            className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-md border px-2 py-1.5 text-xs transition-colors ${
+                              colaboradorPerfil === p
+                                ? "border-primary bg-primary/10 text-primary font-medium"
+                                : "border-muted hover:border-primary/30 text-muted-foreground"
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="perfil"
+                              value={p}
+                              checked={colaboradorPerfil === p}
+                              onChange={() => setColaboradorPerfil(p)}
+                              className="sr-only"
+                            />
+                            {p === "operador" ? "⚡ Operador" : p === "logistica" ? "🚚 Logística" : "👁️ Consulta"}
+                          </label>
+                        ))}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground text-center">
+                        A administração irá aprovar seu acesso.
+                      </p>
+                    </div>
+                  )}
+
                   <div className="space-y-2">
-                    <Label htmlFor="nome">Nome do Responsável</Label>
+                    <Label htmlFor="nome">Nome {registerType === "colaborador" ? "do Colaborador" : "do Responsável"}</Label>
                     <Input id="nome" name="nome" placeholder="Seu nome completo" required />
                   </div>
                   <div className="space-y-2">
@@ -356,7 +444,12 @@ export default function Auth() {
                     <p className="text-xs text-muted-foreground">Mínimo de 6 caracteres (recomendado: 12+)</p>
                   </div>
                   <Button type="submit" className="w-full bg-gradient-hero" disabled={isLoading}>
-                    {isLoading ? "Cadastrando..." : "Cadastrar"}
+                    {isLoading
+                      ? "Cadastrando..."
+                      : registerType === "colaborador"
+                        ? "Solicitar acesso como Colaborador"
+                        : "Cadastrar"
+                    }
                   </Button>
                 </form>
               </TabsContent>

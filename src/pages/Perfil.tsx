@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Loader2, Building2, User as UserIcon, CheckCircle2, Search, Plus, Send, Shield } from "lucide-react";
+import { Loader2, Building2, User as UserIcon, CheckCircle2, Search, Plus, Send, Shield, Briefcase } from "lucide-react";
 
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -71,6 +71,7 @@ export default function Perfil() {
   const [searching, setSearching] = useState(false);
   const [requesting, setRequesting] = useState(false);
   const [pendingRequest, setPendingRequest] = useState(false);
+  const [staffRequest, setStaffRequest] = useState<{ status: string; perfil: string; id: string } | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
@@ -124,6 +125,22 @@ export default function Perfil() {
           // Table instituicao_access_requests may not exist yet — non-blocking
           setPendingRequest(false);
         }
+      }
+
+      // Check for pending staff access request (access_requests table)
+      try {
+        const { data: staffReq } = await supabase
+          .from("access_requests")
+          .select("id, status, perfil_solicitado")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (staffReq) {
+          setStaffRequest({ status: staffReq.status, perfil: staffReq.perfil_solicitado, id: staffReq.id });
+        }
+      } catch {
+        // Table access_requests may not exist yet — non-blocking
       }
 
       setLoading(false);
@@ -558,6 +575,98 @@ export default function Perfil() {
                       </Button>
                     </div>
                   )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Colaborador (Staff) Access Request Section */}
+          <Card className="shadow-elevated">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <Briefcase className="h-5 w-5 text-primary" />
+                Acesso como Colaborador
+              </CardTitle>
+              <CardDescription>
+                Solicite acesso à equipe DETRAN para agendar em nome de qualquer instituição (Modo Equipe).
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {staffRequest ? (
+                <div className={`rounded-lg border px-4 py-3 text-sm ${
+                  staffRequest.status === "pendente"
+                    ? "border-warning/30 bg-warning/10"
+                    : staffRequest.status === "aprovado"
+                      ? "border-success/30 bg-success/10"
+                      : "border-destructive/30 bg-destructive/10"
+                }`}>
+                  {staffRequest.status === "pendente" && (
+                    <>
+                      <span className="font-medium">⏳ Solicitação em análise</span>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Você solicitou acesso como <strong>{
+                          staffRequest.perfil === "operador" ? "Operador" :
+                          staffRequest.perfil === "logistica" ? "Logística" : "Consulta/Gestão"
+                        }</strong>. Aguarde a aprovação da administração.
+                      </p>
+                    </>
+                  )}
+                  {staffRequest.status === "aprovado" && (
+                    <>
+                      <span className="font-medium">✅ Acesso aprovado!</span>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Seu acesso como colaborador foi aprovado. Você já pode usar o <strong>Modo Equipe</strong> no Agendamento.
+                      </p>
+                      <Button size="sm" className="mt-2" onClick={() => navigate("/agendar")}>
+                        Ir para Agendamento →
+                      </Button>
+                    </>
+                  )}
+                  {staffRequest.status === "rejeitado" && (
+                    <>
+                      <span className="font-medium">❌ Solicitação rejeitada</span>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Sua solicitação foi rejeitada. Entre em contato com a administração.
+                      </p>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Solicite acesso como colaborador da equipe DETRAN. Após aprovação, você poderá agendar visitas em nome de qualquer instituição.
+                  </p>
+                  <div className="grid gap-2 sm:grid-cols-3">
+                    {["operador", "logistica", "consulta"].map((p) => (
+                      <Button
+                        key={p}
+                        variant="outline"
+                        size="sm"
+                        className="h-auto flex-col gap-1 py-3"
+                        onClick={async () => {
+                          if (!user) return;
+                          const { error } = await supabase.from("access_requests").insert({
+                            user_id: user.id,
+                            nome: nomeResponsavel || user.user_metadata?.nome || user.email,
+                            email: user.email,
+                            telefone: telefoneResponsavel || null,
+                            perfil_solicitado: p,
+                            status: "pendente",
+                          });
+                          if (error) {
+                            toast({ title: "Erro ao solicitar", description: error.message, variant: "destructive" });
+                          } else {
+                            toast({ title: "Solicitação enviada!", description: "Aguarde a aprovação da administração." });
+                            setStaffRequest({ status: "pendente", perfil: p, id: "" });
+                          }
+                        }}
+                      >
+                        <span className="text-lg">{p === "operador" ? "⚡" : p === "logistica" ? "🚚" : "👁️"}</span>
+                        <span className="text-xs font-medium">{p === "operador" ? "Operador" : p === "logistica" ? "Logística" : "Consulta/Gestão"}</span>
+                        <span className="text-[10px] text-muted-foreground">Solicitar acesso</span>
+                      </Button>
+                    ))}
+                  </div>
                 </div>
               )}
             </CardContent>
