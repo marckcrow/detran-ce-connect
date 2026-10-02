@@ -5,7 +5,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format, addDays, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarIcon, Loader2, AlertTriangle, ShieldAlert, Clock, Users, XCircle } from "lucide-react";
+import { CalendarIcon, Loader2, AlertTriangle, ShieldAlert, Clock, Users, XCircle, Building2, Plus, Search } from "lucide-react";
 
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -18,9 +18,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useRoles } from "@/hooks/useRoles";
 import { SugestaoIA, type SugestaoVisita } from "@/components/agendar/SugestaoIA";
 import { toast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -30,6 +32,10 @@ import type { Database } from "@/integrations/supabase/types";
 type FaixaEtaria = Database["public"]["Enums"]["faixa_etaria"];
 type Turno = Database["public"]["Enums"]["turno"];
 type TransporteStatus = Database["public"]["Enums"]["transporte_status"];
+type TipoInstituicao = Database["public"]["Enums"]["tipo_instituicao"];
+type Rede = Database["public"]["Enums"]["rede"];
+
+type InstituicaoSearch = Database["public"]["Tables"]["instituicoes"]["Row"];
 
 const MAX_PESSOAS_DEFAULT = 46;
 const MIN_ANTECEDENCIA_DEFAULT = 3;
@@ -102,12 +108,56 @@ function createSchema(maxPessoas: number, minAntec: number) {
 
 type AgendamentoForm = z.infer<ReturnType<typeof createSchema>>;
 
+// ---- New institution form type ----
+const newInstSchema = z.object({
+  nome: z.string().trim().min(3, "Nome da instituição é obrigatório"),
+  tipo: z.enum(["escola", "universidade", "empresa", "ong", "igreja", "orgao_publico", "outros"]),
+  cidade: z.string().min(1),
+  rede: z.enum(["publica", "privada", "outra"]),
+  telefone: z.string().optional(),
+});
+
+type NewInstituicaoForm = z.infer<typeof newInstSchema>;
+
+const tipoLabels: Record<TipoInstituicao, string> = {
+  escola: "Escola",
+  universidade: "Universidade",
+  empresa: "Empresa",
+  ong: "ONG",
+  igreja: "Igreja",
+  orgao_publico: "Órgão Público",
+  outros: "Outros",
+};
+
+const redeLabels: Record<Rede, string> = {
+  publica: "Pública",
+  privada: "Privada",
+  outra: "Outra",
+};
+
+const UNIDADES = ["Fortaleza", "Sobral", "Crato"];
+
 export default function Agendar() {
   const { user, loading: authLoading } = useAuth();
+  const { isStaff } = useRoles();
   const navigate = useNavigate();
+
   const [submitting, setSubmitting] = useState(false);
-  const [instituicaoId, setInstituicaoId] = useState<string | null>(null);
+
+  // ---- Institution selector state ----
+  const [institutions, setInstitutions] = useState<InstituicaoSearch[]>([]);
+  const [selectedInstitutionId, setSelectedInstitutionId] = useState<string>("");
   const [cidadeAtual, setCidadeAtual] = useState<string | null>(null);
+  const [institutionsLoading, setInstitutionsLoading] = useState(true);
+  const [institutionSearch, setInstitutionSearch] = useState("");
+
+  // ---- Inline new institution form ----
+  const [showNewInstForm, setShowNewInstForm] = useState(false);
+  const [newInstForm, setNewInstForm] = useState<NewInstituicaoForm>({
+    nome: "", tipo: "escola", cidade: "Fortaleza", rede: "publica", telefone: "",
+  });
+  const [savingNewInst, setSavingNewInst] = useState(false);
+  const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
 
   // Availability rules from DB
   const [centroConfig, setCentroConfig] = useState<CentroConfig | null>(null);
@@ -132,12 +182,56 @@ export default function Agendar() {
   // Non-working days
   const nonWorkingDays = new Set(diasFunc.filter((d) => !d.ativo).map((d) => d.dia_semana));
 
-  // Load availability rules from the new rules engine
+  // Selected institution for quick access
+  const selectedInstitution = institutions.find((i) => i.id === selectedInstitutionId) ?? null;
+
+  // Filtered institutions for staff searchable select
+  const filteredInstitutions = isStaff && institutionSearch.length > 0
+    ? institutions.filter((i) =>
+        i.nome.toLowerCase().includes(institutionSearch.toLowerCase()) ||
+        (i.cidade ?? "").toLowerCase().includes(institutionSearch.toLowerCase())
+      )
+    : institutions;
+
+  // ---- Load institutions on mount ----
+  useEffect(() => {
+    if (!user) return;
+    setInstitutionsLoading(true);
+
+    (async () => {
+      if (isStaff) {
+        // Staff: load ALL institutions
+        const { data } = await supabase
+          .from("instituicoes")
+          .select("*")
+          .order("nome");
+        setInstitutions(data ?? []);
+      } else {
+        // Institution user: load only accessible institutions via instituicao_access
+        const { data } = await supabase
+          .from("instituicoes")
+          .select("instituicoes.*")
+          .innerJoin("instituicao_access", "instituicao_access.instituicao_id", "instituicoes.id")
+          .eq("instituicao_access.user_id", user.id)
+          .order("instituicoes.nome");
+        setInstitutions(data ?? []);
+      }
+      setInstitutionsLoading(false);
+    })();
+  }, [user, isStaff]);
+
+  // ---- Auto-select first institution if only one ----
+  useEffect(() => {
+    if (!institutionsLoading && institutions.length === 1 && !selectedInstitutionId) {
+      setSelectedInstitutionId(institutions[0].id);
+    }
+  }, [institutionsLoading, institutions, selectedInstitutionId]);
+
+  // ---- Load availability rules from the new rules engine ----
   useEffect(() => {
     if (!user || !cidadeAtual) return;
     setRulesLoading(true);
 
-    // Step 1: get centro for cidade
     (supabase as any)
       .rpc("get_centro_for_cidade", { p_cidade: cidadeAtual })
       .then(async ({ data: centroName }) => {
@@ -146,7 +240,6 @@ export default function Agendar() {
           return;
         }
 
-        // Step 2: load all rules in parallel
         const [cfgRes, horRes, blkRes, diaRes] = await Promise.all([
           supabase.from("centro_config").select("*").eq("centro", centroName).maybeSingle(),
           supabase.from("centro_horarios").select("*").eq("centro", centroName).eq("ativo", true).order("horario"),
@@ -161,7 +254,6 @@ export default function Agendar() {
         setRulesLoading(false);
       });
 
-    // Also load legacy disponibilidade slots for backward compat
     const start = format(new Date(), "yyyy-MM-dd");
     const end = format(addDays(new Date(), 90), "yyyy-MM-dd");
     (supabase as any)
@@ -204,7 +296,6 @@ export default function Agendar() {
 
   // Re-create form when rules change
   useEffect(() => {
-    // Reset and re-validate when rules are loaded
     form.clearErrors();
   }, [maxPessoas, minAntec]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -212,20 +303,78 @@ export default function Agendar() {
     if (!authLoading && !user) navigate("/auth");
   }, [user, authLoading, navigate]);
 
+  // ---- Watch selected institution to update cidadeAtual ----
   useEffect(() => {
+    if (!selectedInstitutionId) return;
+    const inst = institutions.find((i) => i.id === selectedInstitutionId);
+    if (inst?.cidade) {
+      setCidadeAtual(inst.cidade);
+    } else {
+      setCidadeAtual(null);
+    }
+  }, [selectedInstitutionId, institutions]);
+
+  // ---- Check for duplicate institution name as user types ----
+  useEffect(() => {
+    if (!newInstForm.nome.trim() || newInstForm.nome.trim().length < 3) {
+      setDuplicateWarning(null);
+      return;
+    }
+    const sim = setTimeout(() => {
+      const q = newInstForm.nome.trim();
+      const found = institutions.find((i) =>
+        i.nome.toLowerCase().includes(q.toLowerCase()) || q.toLowerCase().includes(i.nome.toLowerCase())
+      );
+      setDuplicateWarning(found ? `Já existe uma instituição similar: "${found.nome}"` : null);
+    }, 400);
+    return () => clearTimeout(sim);
+  }, [newInstForm.nome, institutions]);
+
+  // ---- Save new institution inline ----
+  const handleSaveNewInstitution = async () => {
     if (!user) return;
-    (async () => {
-      const { data } = await supabase.from("profiles").select("instituicao_id").eq("id", user.id).maybeSingle();
-      if (!data?.instituicao_id) return;
-      setInstituicaoId(data.instituicao_id);
-      const { data: inst } = await supabase
+    const parsed = newInstSchema.safeParse(newInstForm);
+    if (!parsed.success) {
+      toast({ title: "Preencha os campos obrigatórios", variant: "destructive" });
+      return;
+    }
+
+    setSavingNewInst(true);
+    try {
+      // Create institution — trigger will auto-grant owner access
+      const { data: inst, error: instErr } = await supabase
         .from("instituicoes")
-        .select("cidade")
-        .eq("id", data.instituicao_id)
-        .maybeSingle();
-      if (inst?.cidade) setCidadeAtual(inst.cidade);
-    })();
-  }, [user]);
+        .insert({
+          nome: parsed.data.nome.trim(),
+          tipo: parsed.data.tipo,
+          cidade: parsed.data.cidade,
+          rede: parsed.data.tipo === "escola" ? parsed.data.rede : null,
+          telefone: parsed.data.telefone || null,
+        })
+        .select("id, nome, tipo, cidade, rede")
+        .single();
+
+      if (instErr || !inst) {
+        toast({ title: "Erro ao criar instituição", description: instErr?.message, variant: "destructive" });
+        setSavingNewInst(false);
+        return;
+      }
+
+      // Also update profile's instituicao_id
+      await supabase.from("profiles").update({ instituicao_id: inst.id }).eq("id", user.id);
+
+      // Add to local list and select it
+      const newInst = { ...inst, bairro: null, endereco: null, email: null, responsavel: null, created_at: new Date().toISOString(), updated_at: null } as InstituicaoSearch;
+      setInstitutions((prev) => [...prev, newInst]);
+      setSelectedInstitutionId(inst.id);
+      setShowNewInstForm(false);
+      setDuplicateWarning(null);
+      toast({ title: "Instituição criada!", description: "Você já pode fazer o agendamento." });
+    } catch (err: any) {
+      toast({ title: "Erro ao criar instituição", description: err.message, variant: "destructive" });
+    }
+    setSavingNewInst(false);
+  };
 
   // ---- VALIDATION ENGINE ----
   const validateBooking = async (data: AgendamentoForm): Promise<ValidationResult> => {
@@ -236,47 +385,41 @@ export default function Agendar() {
       return { valid: false, errors: ["Regras de disponibilidade não carregadas. Tente recarregar a página."], warnings: [] };
     }
 
-    // Rule 1: Centro ativo?
     if (!centroConfig.ativo) {
       errors.push(`O Centro ${centroConfig.centro} está temporariamente inativo para agendamentos.`);
     }
 
-    // Rule 2: Antecedência mínima
     const diasAntec = differenceInDays(data.data, new Date());
     if (diasAntec < centroConfig.antecedencia_minima_dias) {
       errors.push(`Antecedência mínima: ${centroConfig.antecedencia_minima_dias} dias. Faltam ${centroConfig.antecedencia_minima_dias - diasAntec} dias.`);
     }
 
-    // Rule 3: Antecedência máxima
     if (diasAntec > centroConfig.antecedencia_maxima_dias) {
       errors.push(`Antecedência máxima: ${centroConfig.antecedencia_maxima_dias} dias. Esta data está muito distante (${diasAntec} dias).`);
     }
 
-    // Rule 4: Data bloqueada?
     const dateStr = format(data.data, "yyyy-MM-dd");
     if (blockedDateSet.has(dateStr)) {
       const blk = bloqueios.find((b) => b.data === dateStr);
       errors.push(`Data bloqueada: ${format(data.data, "dd/MM/yyyy")} — motivo: ${blk?.motivo ?? "indisponível"}`);
     }
 
-    // Rule 5: Dia de funcionamento?
-    const dayOfWeek = data.data.getDay(); // 0=Sun ... 6=Sat
+    const dayOfWeek = data.data.getDay();
     if (nonWorkingDays.has(dayOfWeek)) {
       const nomesDias = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
       errors.push(`${nomesDias[dayOfWeek]} não é dia de funcionamento do Centro ${centroConfig.centro}.`);
     }
 
-    // Rule 6: Capacidade máxima por agendamento
     const totalPessoas = data.quantidade_alunos + data.quantidade_professores + data.quantidade_acompanhantes;
     if (totalPessoas > centroConfig.maxima_visitantes) {
       errors.push(`Capacidade máxima do centro: ${centroConfig.maxima_visitantes} pessoas. Você informou ${totalPessoas}.`);
     }
 
     // Rule 7: Limite por instituição (via RPC)
-    if (centroConfig.maxima_agendamentos_inst && instituicaoId) {
+    if (centroConfig.maxima_agendamentos_inst && selectedInstitutionId) {
       try {
         const { data: limiteData, error: limiteErr } = await (supabase as any).rpc("check_instituicao_limite", {
-          p_instituicao_id: instituicaoId,
+          p_instituicao_id: selectedInstitutionId,
           p_centro: centroConfig.centro,
           p_data: dateStr,
         });
@@ -293,12 +436,11 @@ export default function Agendar() {
           }
         }
       } catch {
-        // RPC might not exist yet — non-blocking warning
         warnings.push("Não foi possível verificar o limite da instituição. O agendamento será aceito.");
       }
     }
 
-    // Rule 8: Horário disponível? (check if there's at least one active slot for this turn)
+    // Rule 8: Horário disponível?
     if (horarios.length > 0) {
       const hasSlotForTurn = horarios.some((h) => {
         const hour = parseInt(h.horario.split(":")[0], 10);
@@ -309,7 +451,7 @@ export default function Agendar() {
       }
     }
 
-    // Rule 9: Legacy disponibilidade table check (backward compat)
+    // Rule 9: Legacy disponibilidade table check
     const slotKey = `${dateStr}::${data.turno}`;
     const legacySlot = slotsMap[slotKey];
     if (legacySlot && ["bloqueado", "evento", "manutencao", "cheio"].includes(legacySlot.status)) {
@@ -337,13 +479,11 @@ export default function Agendar() {
   };
 
   const onSubmit = async (values: AgendamentoForm) => {
-    if (!instituicaoId) {
-      toast({ title: "Perfil incompleto", description: "Cadastre sua instituição no Meu Perfil antes de agendar.", variant: "destructive" });
-      navigate("/perfil");
+    if (!selectedInstitutionId) {
+      toast({ title: "Selecione uma instituição", description: "Escolha a instituição que fará a visita antes de agendar.", variant: "destructive" });
       return;
     }
 
-    // Run full validation engine
     const result = await validateBooking(values);
     setValidationResult(result);
 
@@ -356,32 +496,17 @@ export default function Agendar() {
       return;
     }
 
-    // Show warnings but don't block
     if (result.warnings.length > 0) {
       result.warnings.forEach((w) => toast({ title: "Atenção", description: w }));
     }
 
-    // Bus only available for public schools
-    if (values.transporte_status === "onibus_detran") {
-      const { data: inst } = await supabase
-        .from("instituicoes")
-        .select("tipo, rede")
-        .eq("id", instituicaoId)
-        .single();
-      if (inst?.tipo !== "escola" || inst?.rede !== "publica") {
-        toast({
-          title: "Ônibus indisponível",
-          description: "O ônibus do DETRAN está disponível apenas para escolas da rede pública.",
-          variant: "destructive"
-        });
-        return;
-      }
-    }
-
     setSubmitting(true);
+
     const pcd = values.possui_pcd === "sim";
+    const status = isStaff ? "confirmado" : "pendente";
+
     const { error } = await supabase.from("agendamentos").insert({
-      instituicao_id: instituicaoId,
+      instituicao_id: selectedInstitutionId,
       data: format(values.data, "yyyy-MM-dd"),
       turno: values.turno,
       horario: values.turno === "manha" ? "07:00" : "13:00",
@@ -398,13 +523,15 @@ export default function Agendar() {
       pcd_tipos: pcd ? values.pcd_tipos : [],
       pcd_outros: pcd && values.pcd_tipos.includes("Outros") ? values.pcd_outros || null : null,
       pcd_quantidade: pcd ? values.pcd_quantidade : 0,
+      status,
     });
     setSubmitting(false);
 
     if (error) {
       toast({ title: "Erro ao agendar", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Agendamento solicitado!", description: "Você receberá a confirmação em breve." });
+      const statusMsg = status === "confirmado" ? "Agendamento confirmado!" : "Agendamento solicitado — aguarde aprovação.";
+      toast({ title: statusMsg, description: "Você receberá a confirmação em breve." });
       form.reset();
       setValidationResult({ valid: true, errors: [], warnings: [] });
     }
@@ -435,24 +562,16 @@ export default function Agendar() {
     proprio: "Transporte Próprio",
   };
 
-  // Calendar disabled logic using rules engine
   const isCalendarDayDisabled = (date: Date): boolean => {
     const dateStr = format(date, "yyyy-MM-dd");
     const dayOfWeek = date.getDay();
-
-    // Min antecedência
     if (date < addDays(new Date(), minAntec)) return true;
-    // Max antecedência
     if (date > addDays(new Date(), maxAntec)) return true;
-    // Blocked date
     if (blockedDateSet.has(dateStr)) return true;
-    // Non-working day
     if (nonWorkingDays.has(dayOfWeek)) return true;
-    // Both turns fully blocked in legacy table
     const manhaKey = `${dateStr}::manha`;
     const tardeKey = `${dateStr}::tarde`;
     if ((slotsMap[manhaKey]?.status === "cheio") && (slotsMap[tardeKey]?.status === "cheio")) return true;
-
     return false;
   };
 
@@ -495,12 +614,203 @@ export default function Agendar() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {!instituicaoId && (
-                <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
-                  <span>Você ainda não escolheu a instituição que fará a visita.</span>
-                  <Button variant="outline" size="sm" onClick={() => navigate("/perfil")}>
-                    Definir instituição
-                  </Button>
+              {/* ---- INSTITUTION SELECTOR (at the top) ---- */}
+              <div className="mb-6 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium flex items-center gap-2">
+                    <Building2 className="h-4 w-4" />
+                    Instituição
+                    <span className="text-destructive">*</span>
+                  </label>
+                  {isStaff && (
+                    <Badge variant="outline" className="text-xs bg-primary/5 text-primary border-primary/30">
+                      Modo Equipe — acesso a todas
+                    </Badge>
+                  )}
+                </div>
+
+                {institutionsLoading ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Carregando instituições...
+                  </div>
+                ) : institutions.length === 0 && !showNewInstForm ? (
+                  <div className="text-sm text-muted-foreground">
+                    Nenhuma instituição encontrada. Cadastre uma nova abaixo.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {/* Staff: searchable select */}
+                    {isStaff ? (
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          className="pl-9"
+                          placeholder="Buscar instituição..."
+                          value={institutionSearch}
+                          onChange={(e) => setInstitutionSearch(e.target.value)}
+                        />
+                        {institutionSearch.length > 0 && filteredInstitutions.length > 0 && (
+                          <div className="absolute z-10 mt-1 w-full rounded-lg border bg-background shadow-lg max-h-60 overflow-y-auto">
+                            {filteredInstitutions.slice(0, 8).map((inst) => (
+                              <button
+                                key={inst.id}
+                                type="button"
+                                className={cn(
+                                  "w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors",
+                                  inst.id === selectedInstitutionId && "bg-primary/10 text-primary font-medium"
+                                )}
+                                onClick={() => {
+                                  setSelectedInstitutionId(inst.id);
+                                  setInstitutionSearch("");
+                                }}
+                              >
+                                <div>{inst.nome}</div>
+                                <div className="text-xs text-muted-foreground">{inst.cidade} · {tipoLabels[inst.tipo as TipoInstituicao] ?? inst.tipo}</div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {institutionSearch.length > 0 && filteredInstitutions.length === 0 && (
+                          <div className="absolute z-10 mt-1 w-full rounded-lg border bg-background shadow-lg px-3 py-2 text-sm text-muted-foreground">
+                            Nenhuma instituição encontrada.
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      /* Institution user: dropdown */
+                      <Select value={selectedInstitutionId} onValueChange={setSelectedInstitutionId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a instituição" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {institutions.map((inst) => (
+                            <SelectItem key={inst.id} value={inst.id}>
+                              {inst.nome} — {inst.cidade}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+
+                    {/* Show selected institution badge */}
+                    {selectedInstitution && (
+                      <div className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-3 py-2 text-sm">
+                        <span className="font-medium">{selectedInstitution.nome}</span>
+                        <span className="text-muted-foreground">· {selectedInstitution.cidade}</span>
+                        <span className="ml-auto text-xs text-muted-foreground">
+                          {tipoLabels[selectedInstitution.tipo as TipoInstituicao] ?? selectedInstitution.tipo}
+                          {selectedInstitution.tipo === "escola" && selectedInstitution.rede && ` · ${redeLabels[selectedInstitution.rede as Rede] ?? selectedInstitution.rede}`}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* + Nova instituição button */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="w-full border-dashed"
+                      onClick={() => {
+                        setShowNewInstForm(true);
+                        setNewInstForm({ nome: "", tipo: "escola", cidade: selectedInstitution?.cidade ?? "Fortaleza", rede: "publica", telefone: "" });
+                      }}
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Cadastrar nova instituição
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              {/* ---- INLINE NEW INSTITUTION FORM ---- */}
+              {showNewInstForm && (
+                <div className="mb-6 space-y-3 rounded-lg border border-primary/30 bg-primary/5 p-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold flex items-center gap-2">
+                      <Building2 className="h-4 w-4" />
+                      Nova instituição
+                    </h3>
+                    <Button type="button" variant="ghost" size="sm" onClick={() => { setShowNewInstForm(false); setDuplicateWarning(null); }}>
+                      ✕
+                    </Button>
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div className="md:col-span-2 space-y-1">
+                      <Label htmlFor="new-inst-nome">Nome da instituição *</Label>
+                      <Input
+                        id="new-inst-nome"
+                        value={newInstForm.nome}
+                        onChange={(e) => setNewInstForm((f) => ({ ...f, nome: e.target.value }))}
+                        placeholder="Ex.: EEF João da Silva"
+                      />
+                      {duplicateWarning && (
+                        <p className="text-xs text-warning flex items-center gap-1">
+                          <AlertTriangle className="h-3 w-3" />
+                          {duplicateWarning}
+                        </p>
+                      )}
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Tipo</Label>
+                      <Select value={newInstForm.tipo} onValueChange={(v) => setNewInstForm((f) => ({ ...f, tipo: v as TipoInstituicao }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(tipoLabels).map(([v, l]) => (
+                            <SelectItem key={v} value={v}>{l}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {newInstForm.tipo === "escola" && (
+                      <div className="space-y-1">
+                        <Label>Rede</Label>
+                        <Select value={newInstForm.rede} onValueChange={(v) => setNewInstForm((f) => ({ ...f, rede: v as Rede }))}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {Object.entries(redeLabels).map(([v, l]) => (
+                              <SelectItem key={v} value={v}>{l}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                    <div className="space-y-1">
+                      <Label>Cidade</Label>
+                      <Select value={newInstForm.cidade} onValueChange={(v) => setNewInstForm((f) => ({ ...f, cidade: v }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {UNIDADES.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Telefone</Label>
+                      <Input
+                        value={newInstForm.telefone}
+                        onChange={(e) => {
+                          const v = e.target.value.replace(/\D/g, "");
+                          if (v.length <= 11) {
+                            let f = v;
+                            if (v.length > 6) f = `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`;
+                            else if (v.length > 2) f = `(${v.slice(0,2)}) ${v.slice(2)}`;
+                            else if (v.length > 0) f = `(${v}`;
+                            setNewInstForm((prev) => ({ ...prev, telefone: f }));
+                          }
+                        }}
+                        placeholder="(85) 99999-9999"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={handleSaveNewInstitution} disabled={savingNewInst} className="bg-gradient-hero">
+                      {savingNewInst ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
+                      Criar e selecionar
+                    </Button>
+                    <Button type="button" variant="outline" size="sm" onClick={() => { setShowNewInstForm(false); setDuplicateWarning(null); }}>
+                      Cancelar
+                    </Button>
+                  </div>
                 </div>
               )}
 
@@ -795,17 +1105,21 @@ export default function Agendar() {
                     )}
                   />
 
-                  <Button type="submit" className="w-full bg-gradient-hero" disabled={submitting || rulesLoading}>
+                  <Button type="submit" className="w-full bg-gradient-hero" disabled={submitting || rulesLoading || institutionsLoading || !selectedInstitutionId}>
                     {submitting ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Enviando...
                       </>
-                    ) : rulesLoading ? (
+                    ) : rulesLoading || institutionsLoading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Carregando regras...
+                        Carregando...
                       </>
+                    ) : !selectedInstitutionId ? (
+                      "Selecione uma instituição acima"
+                    ) : isStaff ? (
+                      "Confirmar Agendamento"
                     ) : (
                       "Solicitar Agendamento"
                     )}

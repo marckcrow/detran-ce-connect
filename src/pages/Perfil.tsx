@@ -109,16 +109,21 @@ export default function Perfil() {
         if (access) setMyAccessRole(access.role);
       }
 
-      // Check if there's a pending access request
+      // Check if there's a pending access request (table may not exist yet)
       if (profile?.instituicao_id) {
-        const { data: req } = await supabase
-          .from("instituicao_access_requests")
-          .select("id")
-          .eq("user_id", user.id)
-          .eq("instituicao_id", profile.instituicao_id)
-          .eq("status", "pendente")
-          .maybeSingle();
-        setPendingRequest(!!req);
+        try {
+          const { data: req } = await supabase
+            .from("instituicao_access_requests")
+            .select("id")
+            .eq("user_id", user.id)
+            .eq("instituicao_id", profile.instituicao_id)
+            .eq("status", "pendente")
+            .maybeSingle();
+          setPendingRequest(!!req);
+        } catch {
+          // Table instituicao_access_requests may not exist yet — non-blocking
+          setPendingRequest(false);
+        }
       }
 
       setLoading(false);
