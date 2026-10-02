@@ -39,8 +39,6 @@ export default function Auth() {
     const email = form.get("email") as string;
     const telefone = form.get("telefone") as string;
     const password = form.get("password") as string;
-    const escolaNome = form.get("escola") as string;
-    const cidade = form.get("cidade") as string;
 
     if (password.length < 6) {
       toast({ title: "Senha muito curta", description: "Mínimo de 6 caracteres", variant: "destructive" });
@@ -60,30 +58,23 @@ export default function Auth() {
       return;
     }
 
-    // Create institution and link to profile
+    // Update profile with basic info — institution is set in Perfil page
     if (data.user) {
-      const { data: inst, error: instErr } = await supabase
-        .from("instituicoes")
-        .insert({ nome: escolaNome, cidade, responsavel: nome, telefone, email })
-        .select("id")
-        .single();
-
-      if (!instErr && inst) {
-        await supabase.from("profiles").update({ instituicao_id: inst.id, telefone }).eq("id", data.user.id);
-      }
+      await supabase.from("profiles").update({ nome, telefone }).eq("id", data.user.id);
       toast({
         title: "Cadastro realizado!",
-        description: "Sua solicitação de acesso foi enviada para análise. Você receberá um e-mail quando aprovada.",
+        description: "Complete seu cadastro escolhendo ou cadastrando sua instituição no próximo passo.",
       });
+      navigate("/perfil");
     } else {
       toast({
         title: "Cadastro realizado!",
-        description: "Verifique seu e-mail para confirmar a conta. Sua solicitação de acesso será enviada após a confirmação.",
+        description: "Verifique seu e-mail para confirmar a conta.",
       });
+      navigate("/auth");
     }
 
     setIsLoading(false);
-    navigate("/agendar");
   };
 
   return (
@@ -121,14 +112,6 @@ export default function Auth() {
 
             <TabsContent value="register">
               <form onSubmit={handleRegister} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="escola">Nome da Instituição</Label>
-                  <Input id="escola" name="escola" placeholder="Ex: Escola Municipal..." required />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="cidade">Cidade</Label>
-                  <Input id="cidade" name="cidade" placeholder="Ex: Fortaleza" required />
-                </div>
                 <div className="space-y-2">
                   <Label htmlFor="nome">Nome do Responsável</Label>
                   <Input id="nome" name="nome" placeholder="Seu nome completo" required />
