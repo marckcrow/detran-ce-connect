@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS public.centro_config (
   centro                    TEXT NOT NULL UNIQUE
                               CHECK (centro IN ('Fortaleza', 'Sobral', 'Cariri')),
   maxima_visitantes         INTEGER NOT NULL DEFAULT 45,
-  maxima_agendamentos_inst  INTEGER NOT NULL NULL,   -- NULL = sem limite
+  maxima_agendamentos_inst  INTEGER,   -- NULL = sem limite
   periodo_limite            TEXT NOT NULL DEFAULT 'mes'
                               CHECK (periodo_limite IN ('semana', 'mes')),
   antecedencia_minima_dias  INTEGER NOT NULL DEFAULT 3,

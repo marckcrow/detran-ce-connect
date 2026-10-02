@@ -133,6 +133,7 @@ CREATE POLICY "instituicoes_update_lgpd" ON public.instituicoes
   );
 
 -- DELETE: staff only
+DROP POLICY IF EXISTS "instituicoes_delete_staff" ON public.instituicoes;
 CREATE POLICY "instituicoes_delete_staff" ON public.instituicoes
   FOR DELETE
   USING (public.is_staff(auth.uid()));
