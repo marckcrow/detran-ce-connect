@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { addDays, format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { BusFront, FileDown, Mail, MessageCircle, Pencil, XCircle } from "lucide-react";
+import { BusFront, FileDown, Mail, MessageCircle, Pencil, XCircle, Eye, Save, RotateCcw } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -201,6 +201,7 @@ function OSTDialog({ os, podeEditar, onClose, onSaved }: { os: any; podeEditar: 
   const [whats, setWhats] = useState(os.empresa_whatsapp ?? "");
   const [edit, setEdit] = useState<number | null>(null);
   const [eventos, setEventos] = useState<any[]>([]);
+  const [previewMode, setPreviewMode] = useState(false);
   const alterado = JSON.stringify(rotas) !== JSON.stringify(os.rotas);
   const cancelada = os.status === "cancelada";
 
@@ -227,7 +228,11 @@ function OSTDialog({ os, podeEditar, onClose, onSaved }: { os: any; podeEditar: 
   };
 
   const cancelarOS = async () => {
-    if (!motivo.trim()) return toast({ title: "Informe o motivo do cancelamento", variant: "destructive" });
+    if (!motivo.trim()) {
+      const m = window.prompt("Motivo do cancelamento da OS inteira:");
+      if (!m?.trim()) return;
+      setMotivo(m.trim());
+    }
     const { data, error } = await db.from("os_transporte").update({ status: "cancelada", motivo: motivo.trim(), updated_at: new Date().toISOString() }).eq("id", os.id).select().single();
     if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
     await evento("cancelamento", motivo.trim());
@@ -295,24 +300,64 @@ function OSTDialog({ os, podeEditar, onClose, onSaved }: { os: any; podeEditar: 
             <div className="sm:col-span-2"><Label>Local de embarque</Label><Input value={r.endereco} onChange={(e) => setRotas(rotas.map((y, j) => j === edit ? { ...y, endereco: e.target.value } : y))} /></div>
             <div><Label>Alunos</Label><Input type="number" min={0} value={r.alunos} onChange={(e) => setRotas(rotas.map((y, j) => j === edit ? { ...y, alunos: Number(e.target.value) } : y))} /></div>
             <div><Label>Prof./acomp.</Label><Input type="number" min={0} value={r.professores} onChange={(e) => setRotas(rotas.map((y, j) => j === edit ? { ...y, professores: Number(e.target.value) } : y))} /></div>
-            <Button className="self-end" variant="outline" onClick={() => setEdit(null)}>Concluir</Button>
+            <Button className="self-end" variant="default" onClick={() => setEdit(null)}><Save className="mr-1 h-4 w-4" />Salvar alterações da rota</Button>
           </div>
         )}
 
         {podeEditar && !cancelada && (
           <div className="flex flex-wrap items-end gap-2">
-            <div className="flex-1"><Label>Motivo da alteração / cancelamento</Label><Input value={motivo} onChange={(e) => setMotivo(e.target.value)} maxLength={300} /></div>
-            <Button disabled={!alterado} onClick={reemitir}>Salvar e gerar versão atualizada</Button>
-            <Button variant="destructive" onClick={cancelarOS}>Cancelar OS inteira</Button>
+            <div className="flex-1 min-w-[200px]"><Label>Motivo da alteração / cancelamento</Label><Input value={motivo} onChange={(e) => setMotivo(e.target.value)} maxLength={300} placeholder={alterado ? "Descreva as alterações feitas..." : "Opcional: motivo da alteração"} /></div>
+            <Button onClick={() => { if (!alterado) { baixarPdf(os); toast({ title: "PDF baixado", description: "Versão atual sem alterações." }); } else { reemitir(); } }}>
+              {alterado ? <><Save className="mr-1 h-4 w-4" />Salvar e gerar versão atualizada</> : <><FileDown className="mr-1 h-4 w-4" />Baixar PDF atual</>}
+            </Button>
+            <Button variant="outline" onClick={() => setPreviewMode(!previewMode)}>
+              <Eye className="mr-1 h-4 w-4" />{previewMode ? "Ocultar visualização" : "Visualizar OS"}
+            </Button>
+            <Button variant="destructive" onClick={cancelarOS}><XCircle className="mr-1 h-4 w-4" />Cancelar OS inteira</Button>
           </div>
         )}
-        {alterado && <p className="text-sm text-warning">Há alterações não salvas. Gere a versão atualizada antes de reenviar.</p>}
+        {alterado && <p className="text-sm text-warning">⚠️ Há alterações não salvas. Clique em "Salvar e gerar versão atualizada" para persistir.</p>}
+
+        {/* Preview / Visualização da OS */}
+        {previewMode && (
+          <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-sm flex items-center gap-2"><Eye className="h-4 w-4" />Visualização da OS</h3>
+              <Badge variant="outline">{numeroRev(os)}/{os.ano}</Badge>
+            </div>
+            <div className="grid gap-2 text-sm sm:grid-cols-2">
+              <div><span className="text-muted-foreground">Unidade:</span> <strong>{os.unidade}</strong></div>
+              <div><span className="text-muted-foreground">Período:</span> <strong>{format(parseISO(os.data_inicio), "dd/MM/yyyy")} a {format(parseISO(os.data_fim), "dd/MM/yyyy")}</strong></div>
+              <div><span className="text-muted-foreground">Status:</span> <Badge variant={cancelada ? "destructive" : "secondary"}>{os.status}</Badge></div>
+              <div><span className="text-muted-foreground">Revisão:</span> <strong>{os.revisao ? `R${os.revisao}` : "Original"}</strong></div>
+            </div>
+            <Table>
+              <TableHeader><TableRow><TableHead>Data</TableHead><TableHead>Hora</TableHead><TableHead>Escola</TableHead><TableHead>Pax</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
+              <TableBody>
+                {rotas.map((x, i) => (
+                  <TableRow key={i} className={x.cancelada ? "bg-red-50 text-red-600" : ""}>
+                    <TableCell>{format(parseISO(x.data), "dd/MM")}</TableCell>
+                    <TableCell>{x.turno === "manha" ? "07h" : "13h"}</TableCell>
+                    <TableCell className="max-w-[300px] truncate">{x.escola}{x.endereco && x.endereco !== "—" && <div className="text-xs text-muted-foreground">📍 {x.endereco}</div>}</TableCell>
+                    <TableCell className="font-mono">{x.alunos + x.professores}</TableCell>
+                    <TableCell>{x.cancelada ? <Badge variant="destructive">Cancelada</Badge> : <Badge variant="secondary">Ativa</Badge>}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            <div className="text-xs text-muted-foreground">
+              Rotas ativas: <strong>{rotas.filter((r) => !r.cancelada).length}</strong>
+              {rotas.some((r) => r.cancelada) && <> | Canceladas: <strong>{rotas.filter((r) => r.cancelada).length}</strong></>}
+              | Total pax: <strong>{rotas.filter((r) => !r.cancelada).reduce((s, r) => s + r.alunos + r.professores, 0)}</strong>
+            </div>
+          </div>
+        )}
 
         <div className="grid gap-3 rounded-lg bg-muted/50 p-3 sm:grid-cols-2">
           <div className="space-y-1"><Label>E-mail da empresa</Label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
           <div className="space-y-1"><Label>WhatsApp da empresa</Label><Input value={whats} onChange={(e) => setWhats(e.target.value)} placeholder="(88) 99999-9999" /></div>
-          <Button variant="outline" className="gap-2" disabled={alterado} onClick={enviarEmail}><Mail className="h-4 w-4" />Enviar por e-mail</Button>
-          <Button variant="outline" className="gap-2" disabled={alterado} onClick={enviarWhats}><MessageCircle className="h-4 w-4" />Enviar por WhatsApp</Button>
+          <Button variant="outline" className="gap-2" onClick={enviarEmail}><Mail className="h-4 w-4" />Enviar por e-mail</Button>
+          <Button variant="outline" className="gap-2" onClick={enviarWhats}><MessageCircle className="h-4 w-4" />Enviar por WhatsApp</Button>
           <Button variant="ghost" className="gap-2 sm:col-span-2" onClick={() => baixarPdf(os)}><FileDown className="h-4 w-4" />Baixar PDF da versão atual</Button>
         </div>
 
