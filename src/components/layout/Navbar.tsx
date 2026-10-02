@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Calendar, LayoutDashboard, LogIn, LogOut, User } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useRoles } from "@/hooks/useRoles";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,6 +13,7 @@ import {
 
 export const Navbar = () => {
   const { user, signOut, loading: authLoading } = useAuth();
+  const { isStaff } = useRoles();
 
   return (
     <nav className="border-b bg-card shadow-sm sticky top-0 z-50 relative overflow-hidden">
@@ -44,9 +46,12 @@ export const Navbar = () => {
             <Link to="/perfil" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
               Meu Perfil
             </Link>
-            <Link to="/admin" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-              Admin
-            </Link>
+            {/* Admin link only visible to staff (admin, operador, logistica, consulta) */}
+            {isStaff && (
+              <Link to="/admin" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+                Admin
+              </Link>
+            )}
           </div>
 
           <div className="flex items-center gap-3">
@@ -64,10 +69,15 @@ export const Navbar = () => {
                   <DropdownMenuItem asChild>
                     <Link to="/perfil">Meu Perfil</Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/admin">Painel Admin</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
+                  {/* Admin menu item only visible to staff */}
+                  {isStaff && (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link to="/admin">Painel Admin</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
                   <DropdownMenuItem onClick={signOut} className="text-destructive cursor-pointer">
                     <LogOut className="h-4 w-4 mr-2" />
                     Sair
