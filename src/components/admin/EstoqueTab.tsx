@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { db } from "@/lib/operacao";
-import { Plus, Pencil, Package, UtensilsCrossed, BookOpen, Trash2 } from "lucide-react";
+import { Plus, Pencil, Package, UtensilsCrossed, BookOpen, Trash2, CalendarDays } from "lucide-react";
 
 const TIPO_LABELS: Record<string, { label: string; icon: any; color: string }> = {
   lanche: { label: "Lanche", icon: UtensilsCrossed, color: "bg-orange-100 text-orange-700" },
@@ -48,7 +48,7 @@ export function EstoqueTab({ podeEditar }: { podeEditar: boolean }) {
   const [itens, setItens] = useState<EstoqueItem[]>([]);
   const [movs, setMovs] = useState<EstoqueMov[]>([]);
   const [nomes, setNomes] = useState<Record<string, string>>({});
-  const [f, setF] = useState({ item_id: "", tipo: "entrada", quantidade: "", motivo: "" });
+  const [f, setF] = useState({ item_id: "", tipo: "entrada", quantidade: "", motivo: "", data_mov: format(new Date(), "yyyy-MM-dd") });
 
   // Item catalog dialog
   const [itemDialog, setItemDialog] = useState(false);
@@ -77,11 +77,20 @@ export function EstoqueTab({ podeEditar }: { podeEditar: boolean }) {
     if (!f.item_id) return toast({ title: "Selecione um item", variant: "destructive" });
     if (!q || (f.tipo !== "ajuste" && q < 0)) return toast({ title: "Quantidade inválida", variant: "destructive" });
     if (!f.motivo.trim()) return toast({ title: "Informe o motivo", variant: "destructive" });
-    const saldo = itens.find((i) => i.id === f.item_id)?.quantidade ?? 0;
-    if ((f.tipo === "saida" && q > saldo) || (f.tipo === "ajuste" && saldo + q < 0))
-      return toast({ title: "Estoque insuficiente", variant: "destructive" });
+    if (!f.data_mov) return toast({ title: "Informe a data da movimentação", variant: "destructive" });
+
+    // Fetch FRESH stock from DB (not stale state)
+    const { data: freshItem } = await db.from("estoque_itens").select("quantidade").eq("id", f.item_id).single();
+    const saldo = freshItem?.quantidade ?? 0;
+
+    if (f.tipo === "saida" && q > saldo)
+      return toast({ title: `Estoque insuficiente`, description: `Saldo atual: ${saldo} unidades. Você tentou registrar saída de ${q}.`, variant: "destructive" });
+    if (f.tipo === "ajuste" && saldo + q < 0)
+      return toast({ title: `Ajuste inválido`, description: `Saldo atual: ${saldo}. Ajuste de ${q} resultaria em saldo negativo.`, variant: "destructive" });
+
     const { error } = await db.from("estoque_movimentos").insert({
       item_id: f.item_id, tipo: f.tipo, quantidade: q, motivo: f.motivo.trim(),
+      created_at: f.data_mov + "T12:00:00Z", // Use selected date instead of NOW()
     });
     if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
     toast({ title: "Movimentação registrada" });
@@ -175,7 +184,7 @@ export function EstoqueTab({ podeEditar }: { podeEditar: boolean }) {
       {podeEditar && (
         <Card>
           <CardHeader><CardTitle>Nova movimentação</CardTitle><CardDescription>Saídas por atendimento são lançadas automaticamente ao registrar a visita.</CardDescription></CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-5">
+          <CardContent className="grid gap-3 sm:grid-cols-6">
             <div className="space-y-1"><Label>Item</Label>
               <Select value={f.item_id} onValueChange={(v) => setF({ ...f, item_id: v })}>
                 <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
@@ -201,10 +210,18 @@ export function EstoqueTab({ podeEditar }: { podeEditar: boolean }) {
             <div className="space-y-1"><Label>Quantidade</Label>
               <Input type="number" min="0" value={f.quantidade} onChange={(e) => setF({ ...f, quantidade: e.target.value })} />
             </div>
+            <div className="space-y-1"><Label>Data</Label>
+              <Input
+                type="date"
+                value={f.data_mov}
+                onChange={(e) => setF({ ...f, data_mov: e.target.value })}
+                max={format(new Date(), "yyyy-MM-dd")}
+              />
+            </div>
             <div className="space-y-1 sm:col-span-2"><Label>Motivo</Label>
               <Input maxLength={200} value={f.motivo} onChange={(e) => setF({ ...f, motivo: e.target.value })} />
             </div>
-            <Button className="sm:col-span-5 sm:justify-self-end" onClick={registrar}>Registrar</Button>
+            <Button className="sm:col-span-6 sm:justify-self-end" onClick={registrar}>Registrar</Button>
           </CardContent>
         </Card>
       )}
