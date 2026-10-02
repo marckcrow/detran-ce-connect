@@ -572,6 +572,98 @@ export type Database = {
           },
         ]
       }
+      os_transporte: {
+        Row: {
+          ano: number
+          created_at: string
+          created_by: string | null
+          data_fim: string
+          data_inicio: string
+          empresa_email: string | null
+          empresa_whatsapp: string | null
+          id: string
+          motivo: string | null
+          numero: string
+          revisao: number
+          rotas: Json
+          status: string
+          unidade: string
+          updated_at: string
+        }
+        Insert: {
+          ano: number
+          created_at?: string
+          created_by?: string | null
+          data_fim: string
+          data_inicio: string
+          empresa_email?: string | null
+          empresa_whatsapp?: string | null
+          id?: string
+          motivo?: string | null
+          numero: string
+          revisao?: number
+          rotas?: Json
+          status?: string
+          unidade: string
+          updated_at?: string
+        }
+        Update: {
+          ano?: number
+          created_at?: string
+          created_by?: string | null
+          data_fim?: string
+          data_inicio?: string
+          empresa_email?: string | null
+          empresa_whatsapp?: string | null
+          id?: string
+          motivo?: string | null
+          numero?: string
+          revisao?: number
+          rotas?: Json
+          status?: string
+          unidade?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      os_transporte_eventos: {
+        Row: {
+          acao: string
+          created_at: string
+          detalhe: string | null
+          id: string
+          os_transporte_id: string
+          revisao: number
+          usuario_id: string | null
+        }
+        Insert: {
+          acao: string
+          created_at?: string
+          detalhe?: string | null
+          id?: string
+          os_transporte_id: string
+          revisao: number
+          usuario_id?: string | null
+        }
+        Update: {
+          acao?: string
+          created_at?: string
+          detalhe?: string | null
+          id?: string
+          os_transporte_id?: string
+          revisao?: number
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "os_transporte_eventos_os_transporte_id_fkey"
+            columns: ["os_transporte_id"]
+            isOneToOne: false
+            referencedRelation: "os_transporte"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string | null
@@ -785,7 +877,14 @@ export type Database = {
       status_agendamento: "pendente" | "confirmado" | "cancelado" | "realizado"
       status_certificado: "pendente" | "enviado"
       tipo_certificado: "escola_amiga" | "carteirinhas"
-      tipo_instituicao: "escola" | "empresa" | "orgao_publico" | "outros"
+      tipo_instituicao:
+        | "escola"
+        | "empresa"
+        | "orgao_publico"
+        | "outros"
+        | "universidade"
+        | "ong"
+        | "igreja"
       transporte_status: "onibus_detran" | "proprio"
       turno: "manha" | "tarde"
     }
@@ -931,7 +1030,15 @@ export const Constants = {
       status_agendamento: ["pendente", "confirmado", "cancelado", "realizado"],
       status_certificado: ["pendente", "enviado"],
       tipo_certificado: ["escola_amiga", "carteirinhas"],
-      tipo_instituicao: ["escola", "empresa", "orgao_publico", "outros"],
+      tipo_instituicao: [
+        "escola",
+        "empresa",
+        "orgao_publico",
+        "outros",
+        "universidade",
+        "ong",
+        "igreja",
+      ],
       transporte_status: ["onibus_detran", "proprio"],
       turno: ["manha", "tarde"],
     },
