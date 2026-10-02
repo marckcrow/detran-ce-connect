@@ -235,7 +235,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- -------------------------------------------------------
 -- 8. Logs for LGPD audit trail
 -- -------------------------------------------------------
-CALL public.log_sistema(
+SELECT public.log_sistema(
   NULL,
   'lgpd_access_setup',
   'instituicao_access',
