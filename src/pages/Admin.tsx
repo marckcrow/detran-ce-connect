@@ -15,6 +15,7 @@ import { EstoqueTab } from "@/components/admin/EstoqueTab";
 import { RelatoriosTab } from "@/components/admin/RelatoriosTab";
 import { UsuariosTab } from "@/components/admin/UsuariosTab";
 import { DisponibilidadeTab } from "@/components/admin/DisponibilidadeTab";
+import { DisponibilidadeAdminTab } from "@/components/admin/DisponibilidadeAdminTab";
 import { NoticiasTab } from "@/components/admin/NoticiasTab";
 import { LogsTab } from "@/components/admin/LogsTab";
 import { AccessRequestsTab } from "@/components/admin/AccessRequestsTab";
@@ -63,6 +64,7 @@ export default function Admin() {
               <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
               <TabsTrigger value="agendamentos">Agendamentos</TabsTrigger>
               <TabsTrigger value="disponibilidade">Disponibilidade</TabsTrigger>
+              <TabsTrigger value="regras">Regras</TabsTrigger>
               <TabsTrigger value="noticias">Notícias</TabsTrigger>
               <TabsTrigger value="logs">Logs</TabsTrigger>
               <TabsTrigger value="os">Ordens de Serviço</TabsTrigger>
@@ -76,6 +78,7 @@ export default function Admin() {
             <TabsContent value="dashboard" className="mt-4"><DashboardTab /></TabsContent>
             <TabsContent value="agendamentos" className="mt-4"><AgendamentosTab podeEditar={isOperador} /></TabsContent>
             <TabsContent value="disponibilidade" className="mt-4"><DisponibilidadeTab /></TabsContent>
+            <TabsContent value="regras" className="mt-4"><DisponibilidadeAdminTab /></TabsContent>
             <TabsContent value="noticias" className="mt-4"><NoticiasTab podeEditar={isOperador} /></TabsContent>
             <TabsContent value="logs" className="mt-4"><LogsTab /></TabsContent>
             <TabsContent value="os" className="mt-4"><OrdensTab podeOperar={isOperador} podeLogistica={isLogistica} /></TabsContent>
