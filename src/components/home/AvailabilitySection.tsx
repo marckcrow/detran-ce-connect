@@ -15,7 +15,7 @@ const DIAS_HORIZONTE = 45;
 const UNIDADES = [
   { id: "fortaleza", nome: "Fortaleza", cidade: "Fortaleza" },
   { id: "sobral", nome: "Sobral", cidade: "Sobral" },
-  { id: "cariri", nome: "Cariri", cidade: "Juazeiro do Norte" },
+  { id: "cariri", nome: "Cariri", cidade: "Crato" },
 ];
 
 type Ocupacao = Record<string, { manha: number; tarde: number }>;

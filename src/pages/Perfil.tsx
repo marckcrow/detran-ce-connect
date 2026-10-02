@@ -30,7 +30,7 @@ const redeLabels: Record<Rede, string> = {
   outra: "Outra",
 };
 
-const UNIDADES = ["Fortaleza", "Sobral", "Juazeiro do Norte"];
+const UNIDADES = ["Fortaleza", "Sobral", "Crato"];
 
 export default function Perfil() {
   const { user, loading: authLoading } = useAuth();
