@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { School, Eye, EyeOff, Loader2 } from "lucide-react";
+import { School, Eye, EyeOff, Loader2, ShieldCheck, ShieldAlert, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
@@ -20,6 +20,7 @@ export default function Auth() {
   const [isForgotLoading, setIsForgotLoading] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [registerPassword, setRegisterPassword] = useState("");
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -107,12 +108,67 @@ export default function Auth() {
     }
   };
 
+  // ---- Password Strength Meter ----
+  type PasswordStrength = { level: "fraca" | "media" | "forte"; score: number; label: string; color: string; bgColor: string; tips: string[] };
+
+  const checkPasswordStrength = (pwd: string): PasswordStrength => {
+    let score = 0;
+    const tips: string[] = [];
+
+    if (pwd.length >= 8) score++;
+    else if (pwd.length > 0) tips.push("Use pelo menos 8 caracteres");
+
+    if (/[a-z]/.test(pwd) && /[A-Z]/.test(pwd)) score++;
+    else if (pwd.length > 0) tips.push("Misture letras maiúsculas e minúsculas");
+
+    if (/\d/.test(pwd)) score++;
+    else if (pwd.length > 0) tips.push("Adicione números (ex: 2024)");
+
+    if (/[^a-zA-Z\d]/.test(pwd)) score++;
+    else if (pwd.length > 0) tips.push("Adicione caracteres especiais (!@#$%&*)");
+
+    if (pwd.length >= 12) score++;
+
+    if (score <= 1) return { level: "fraca", score, label: "Fraca", color: "text-destructive", bgColor: "bg-destructive/20", tips };
+    if (score <= 3) return { level: "media", score, label: "Média", color: "text-yellow-600", bgColor: "bg-yellow-500/20", tips };
+    return { level: "forte", score, label: "Forte", color: "text-green-600", bgColor: "bg-green-500/20", tips };
+  };
+
+  const generateStrongPassword = (): string => {
+    const lower = "abcdefghijkmnpqrstuvwxyz";
+    const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+    const digits = "23456789";
+    const special = "!@#$%&*";
+    const all = lower + upper + digits + special;
+    const arr = new Uint32Array(16);
+    crypto.getRandomValues(arr);
+    let pwd = "";
+    // Guarantee one of each type
+    pwd += lower[arr[0] % lower.length];
+    pwd += upper[arr[1] % upper.length];
+    pwd += digits[arr[2] % digits.length];
+    pwd += special[arr[3] % special.length];
+    for (let i = 4; i < 16; i++) pwd += all[arr[i] % all.length];
+    // Shuffle
+    return pwd.split("").sort(() => Math.random() - 0.5).join("");
+  };
+
+  const strength = checkPasswordStrength(registerPassword);
+
   // Password input component
-  const PasswordInput = ({ id, name, show, onToggle }: {
+  const PasswordInput = ({ id, name, show, onToggle, value, onChange }: {
     id: string; name: string; show: boolean; onToggle: () => void;
+    value?: string; onChange?: (v: string) => void;
   }) => (
     <div className="relative">
-      <Input id={id} name={name} type={show ? "text" : "password"} required />
+      <Input
+        id={id}
+        name={name}
+        type={show ? "text" : "password"}
+        required
+        value={value}
+        onChange={onChange ? (e) => onChange(e.target.value) : undefined}
+      />
       <button
         type="button"
         onClick={onToggle}
@@ -235,8 +291,69 @@ export default function Auth() {
                       name="password"
                       show={showRegisterPassword}
                       onToggle={() => setShowRegisterPassword(!showRegisterPassword)}
+                      value={registerPassword}
+                      onChange={setRegisterPassword}
                     />
-                    <p className="text-xs text-muted-foreground">Mínimo de 6 caracteres</p>
+
+                    {/* Password Strength Meter */}
+                    {registerPassword.length > 0 && (
+                      <div className={`rounded-md px-3 py-2 ${strength.bgColor} space-y-1.5`}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            {strength.level === "fraca" ? (
+                              <ShieldAlert className={`h-4 w-4 ${strength.color}`} />
+                            ) : strength.level === "media" ? (
+                              <Shield className={`h-4 w-4 ${strength.color}`} />
+                            ) : (
+                              <ShieldCheck className={`h-4 w-4 ${strength.color}`} />
+                            )}
+                            <span className={`text-sm font-medium ${strength.color}`}>Senha {strength.label}</span>
+                          </div>
+                          {/* Score bars */}
+                          <div className="flex gap-1">
+                            {[1, 2, 3, 4, 5].map((i) => (
+                              <div
+                                key={i}
+                                className={`h-1.5 w-5 rounded-full transition-colors ${
+                                  i <= strength.score ? (strength.level === "fraca" ? "bg-destructive" : strength.level === "media" ? "bg-yellow-500" : "bg-green-500") : "bg-gray-300 dark:bg-gray-600"
+                                }`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                        {/* Tips */}
+                        {strength.tips.length > 0 && (
+                          <ul className="text-xs text-muted-foreground space-y-0.5 ml-5 list-disc">
+                            {strength.tips.map((tip, i) => (
+                              <li key={i}>{tip}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Generate strong password */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const pwd = generateStrongPassword();
+                        setRegisterPassword(pwd);
+                        // Also set the hidden input value
+                        const input = document.getElementById("register-password") as HTMLInputElement;
+                        if (input) {
+                          // React controlled input — we update state above, but also need to sync
+                          const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
+                          if (nativeInputValueSetter) {
+                            nativeInputValueSetter.call(input, pwd);
+                            input.dispatchEvent(new Event("input", { bubbles: true }));
+                          }
+                        }
+                      }}
+                      className="flex items-center gap-1.5 text-xs text-primary hover:underline w-fit"
+                    >
+                      🔐 Sugerir senha forte
+                    </button>
+                    <p className="text-xs text-muted-foreground">Mínimo de 6 caracteres (recomendado: 12+)</p>
                   </div>
                   <Button type="submit" className="w-full bg-gradient-hero" disabled={isLoading}>
                     {isLoading ? "Cadastrando..." : "Cadastrar"}
