@@ -19,6 +19,7 @@ import { DisponibilidadeAdminTab } from "@/components/admin/DisponibilidadeAdmin
 import { NoticiasTab } from "@/components/admin/NoticiasTab";
 import { LogsTab } from "@/components/admin/LogsTab";
 import { AccessRequestsTab } from "@/components/admin/AccessRequestsTab";
+import { MensagensTab } from "@/components/admin/MensagensTab";
 
 export default function Admin() {
   const { user, loading, isAdmin, isOperador, isLogistica, isStaff, isPendingUser, roles } = useRoles();
@@ -74,6 +75,7 @@ export default function Admin() {
               <TabsTrigger value="relatorios">Relatórios</TabsTrigger>
               {isAdmin && <TabsTrigger value="solicitacoes">Solicitações de Acesso</TabsTrigger>}
               {isAdmin && <TabsTrigger value="usuarios">Usuários e config.</TabsTrigger>}
+              <TabsTrigger value="mensagens">Mensagens</TabsTrigger>
             </TabsList>
             <TabsContent value="dashboard" className="mt-4"><DashboardTab /></TabsContent>
             <TabsContent value="agendamentos" className="mt-4"><AgendamentosTab podeEditar={isOperador} /></TabsContent>
@@ -88,6 +90,7 @@ export default function Admin() {
             <TabsContent value="relatorios" className="mt-4"><RelatoriosTab /></TabsContent>
             {isAdmin && <TabsContent value="solicitacoes" className="mt-4"><AccessRequestsTab /></TabsContent>}
             {isAdmin && <TabsContent value="usuarios" className="mt-4"><UsuariosTab meuId={user?.id} /></TabsContent>}
+            <TabsContent value="mensagens" className="mt-4"><MensagensTab /></TabsContent>
           </Tabs>
         </div>
       </main>

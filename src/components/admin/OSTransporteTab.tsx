@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { addDays, format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { BusFront, FileDown, Mail, MessageCircle, Pencil, XCircle, Eye, Save, RotateCcw } from "lucide-react";
+import { BusFront, FileDown, Mail, MessageCircle, Pencil, XCircle, Eye, Save, AlertTriangle, PlusCircle, CheckCircle2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,8 +10,10 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { gerarOSPdf } from "@/lib/osPdf";
+import { gerarListaPresencaPdf } from "@/lib/listaPresencaPdf";
 import { db, osNumero, waLink } from "@/lib/operacao";
 
 const UNIDADES = ["Fortaleza", "Sobral", "Cariri"];
@@ -178,7 +180,7 @@ export function OSTransporteTab({ podeEditar }: { podeEditar: boolean }) {
                   <TableCell className="whitespace-nowrap">{format(parseISO(o.data_inicio), "dd/MM")} a {format(parseISO(o.data_fim), "dd/MM/yyyy")}</TableCell>
                   <TableCell>{(o.rotas as Rota[]).filter((r) => !r.cancelada).length} ativas{(o.rotas as Rota[]).some((r) => r.cancelada) && ` / ${(o.rotas as Rota[]).filter((r) => r.cancelada).length} canc.`}</TableCell>
                   <TableCell>{o.revisao || "Original"}</TableCell>
-                  <TableCell><Badge variant={o.status === "cancelado" ? "destructive" : "secondary"}>{o.status}</Badge></TableCell>
+                  <TableCell><Badge variant={o.status === "cancelada" ? "destructive" : "secondary"}>{o.status}</Badge></TableCell>
                   <TableCell className="text-right"><Button size="sm" variant="outline" onClick={() => setSel(o)}>Abrir</Button></TableCell>
                 </TableRow>
               ))}
@@ -201,12 +203,16 @@ function OSTDialog({ os, podeEditar, onClose, onSaved }: { os: any; podeEditar: 
   const [whats, setWhats] = useState(os.empresa_whatsapp ?? "");
   const [edit, setEdit] = useState<number | null>(null);
   const [eventos, setEventos] = useState<any[]>([]);
+  const [ocorrencias, setOcorrencias] = useState<any[]>([]);
   const [previewMode, setPreviewMode] = useState(false);
+  const [showAddOcorrencia, setShowAddOcorrencia] = useState(false);
+  const [novaOcorrencia, setNovaOcorrencia] = useState({ tipo: "atraso", descricao: "", gravidade: "baixa", data_hora: "" });
   const alterado = JSON.stringify(rotas) !== JSON.stringify(os.rotas);
   const cancelada = os.status === "cancelada";
 
   useEffect(() => {
     db.from("os_transporte_eventos").select("*").eq("os_transporte_id", os.id).order("created_at", { ascending: false }).then(({ data }: any) => setEventos(data ?? []));
+    db.from("os_ocorrencias").select("*").eq("os_transporte_id", os.id).order("created_at", { ascending: false }).then(({ data }: any) => setOcorrencias(data ?? []));
   }, [os.id, os.revisao, os.status]);
 
   const evento = (acao: string, detalhe: string, revisao = os.revisao) =>
@@ -276,13 +282,10 @@ function OSTDialog({ os, podeEditar, onClose, onSaved }: { os: any; podeEditar: 
                 <TableCell className="space-x-1 whitespace-nowrap text-right">
                   {podeEditar && !cancelada && (x.cancelada ? (
                     <Button size="sm" variant="ghost" onClick={() => setRotas(rotas.map((y, j) => j === i ? { ...y, cancelada: false, motivo: undefined } : y))}>Restaurar</Button>
-                  ) : <>
-                    <Button size="icon" variant="ghost" aria-label="Alterar rota" onClick={() => setEdit(i)}><Pencil className="h-4 w-4" /></Button>
-                    <Button size="icon" variant="ghost" aria-label="Cancelar rota" onClick={() => {
+                  ) : <Button size="icon" variant="ghost" aria-label="Cancelar rota" onClick={() => {
                       const m = window.prompt("Motivo do cancelamento da rota:");
                       if (m?.trim()) setRotas(rotas.map((y, j) => j === i ? { ...y, cancelada: true, motivo: m.trim() } : y));
-                    }}><XCircle className="h-4 w-4 text-destructive" /></Button>
-                  </>)}
+                    }}><XCircle className="h-4 w-4 text-destructive" /></Button>)}
                 </TableCell>
               </TableRow>
             ))}
@@ -300,7 +303,7 @@ function OSTDialog({ os, podeEditar, onClose, onSaved }: { os: any; podeEditar: 
             <div className="sm:col-span-2"><Label>Local de embarque</Label><Input value={r.endereco} onChange={(e) => setRotas(rotas.map((y, j) => j === edit ? { ...y, endereco: e.target.value } : y))} /></div>
             <div><Label>Alunos</Label><Input type="number" min={0} value={r.alunos} onChange={(e) => setRotas(rotas.map((y, j) => j === edit ? { ...y, alunos: Number(e.target.value) } : y))} /></div>
             <div><Label>Prof./acomp.</Label><Input type="number" min={0} value={r.professores} onChange={(e) => setRotas(rotas.map((y, j) => j === edit ? { ...y, professores: Number(e.target.value) } : y))} /></div>
-            <Button className="self-end" variant="default" onClick={() => setEdit(null)}><Save className="mr-1 h-4 w-4" />Salvar alterações da rota</Button>
+            <Button className="self-end" variant="default" onClick={() => setEdit(null)}><Save className="mr-1 h-4 w-4" />Salvar rota</Button>
           </div>
         )}
 
@@ -353,12 +356,172 @@ function OSTDialog({ os, podeEditar, onClose, onSaved }: { os: any; podeEditar: 
           </div>
         )}
 
+        {/* Ocorrências */}
+        <div className="space-y-3 rounded-lg border border-orange-200 bg-orange-50 p-4 dark:border-orange-800 dark:bg-orange-950">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-sm flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-orange-600" />
+              Ocorrências
+              {ocorrencias.length > 0 && (
+                <Badge variant="outline" className="text-xs">{ocorrencias.filter((o) => !o.resolvido).length} abertas</Badge>
+              )}
+            </h3>
+            {podeEditar && (
+              <Button size="sm" variant="outline" onClick={() => setShowAddOcorrencia(!showAddOcorrencia)}>
+                <PlusCircle className="mr-1 h-4 w-4" />Adicionar
+              </Button>
+            )}
+          </div>
+
+          {showAddOcorrencia && (
+            <div className="grid gap-3 rounded-lg border bg-white p-3 dark:bg-black">
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <Label className="text-xs">Tipo</Label>
+                  <Select value={novaOcorrencia.tipo} onValueChange={(v) => setNovaOcorrencia({ ...novaOcorrencia, tipo: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="atraso">Atraso</SelectItem>
+                      <SelectItem value="onibus_quebrado">Ônibus quebrado</SelectItem>
+                      <SelectItem value="motorista_ausente">Motorista ausente</SelectItem>
+                      <SelectItem value="aluno_doente">Aluno doente</SelectItem>
+                      <SelectItem value="acidente_vias">Acidente nas vias</SelectItem>
+                      <SelectItem value="mudanca_rota">Mudança de rota</SelectItem>
+                      <SelectItem value="problema_escola">Problema na escola</SelectItem>
+                      <SelectItem value="outro">Outro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Gravidade</Label>
+                  <Select value={novaOcorrencia.gravidade} onValueChange={(v) => setNovaOcorrencia({ ...novaOcorrencia, gravidade: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="baixa">Baixa</SelectItem>
+                      <SelectItem value="media">Média</SelectItem>
+                      <SelectItem value="alta">Alta</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Data/Hora</Label>
+                  <Input type="datetime-local" value={novaOcorrencia.data_hora} onChange={(e) => setNovaOcorrencia({ ...novaOcorrencia, data_hora: e.target.value })} />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Descrição</Label>
+                <Textarea value={novaOcorrencia.descricao} onChange={(e) => setNovaOcorrencia({ ...novaOcorrencia, descricao: e.target.value })} placeholder="Descreva a ocorrência..." className="min-h-[60px]" />
+              </div>
+              <Button
+                size="sm"
+                onClick={async () => {
+                  if (!novaOcorrencia.descricao.trim()) return toast({ title: "Informe a descrição", variant: "destructive" });
+                  const payload: any = {
+                    os_transporte_id: os.id,
+                    tipo: novaOcorrencia.tipo,
+                    descricao: novaOcorrencia.descricao.trim(),
+                    gravidade: novaOcorrencia.gravidade,
+                    resolvido: false,
+                  };
+                  if (novaOcorrencia.data_hora) payload.data_hora = novaOcorrencia.data_hora;
+                  const { data, error } = await db.from("os_ocorrencias").insert(payload).select().single();
+                  if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
+                  setOcorrencias([data, ...ocorrencias]);
+                  setNovaOcorrencia({ tipo: "atraso", descricao: "", gravidade: "baixa", data_hora: "" });
+                  setShowAddOcorrencia(false);
+                  toast({ title: "Ocorrência registrada" });
+                }}
+              ><PlusCircle className="mr-1 h-4 w-4" />Registrar ocorrência</Button>
+            </div>
+          )}
+
+          {ocorrencias.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-2">Nenhuma ocorrência registrada.</p>
+          ) : (
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+              {ocorrencias.map((oc) => {
+                const tipoLabel: Record<string, string> = {
+                  atraso: "Atraso", onibus_quebrado: "Ônibus quebrado",
+                  motorista_ausente: "Motorista ausente", aluno_doente: "Aluno doente",
+                  acidente_vias: "Acidente nas vias", mudanca_rota: "Mudança de rota",
+                  problema_escola: "Problema na escola", outro: "Outro"
+                };
+                const gravColors: Record<string, string> = {
+                  baixa: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
+                  media: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
+                  alta: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
+                };
+                return (
+                  <div key={oc.id} className={`rounded-lg border p-3 text-sm ${oc.resolvido ? "bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800" : "bg-white dark:bg-black"}`}>
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <span className="font-medium">{tipoLabel[oc.tipo] ?? oc.tipo}</span>
+                      <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${gravColors[oc.gravidade] ?? "bg-gray-100"}`}>{oc.gravidade}</span>
+                      {oc.resolvido ? (
+                        <Badge variant="outline" className="text-xs border-green-500 text-green-600"><CheckCircle2 className="mr-1 h-3 w-3" />Resolvida</Badge>
+                      ) : (
+                        <Badge variant="destructive" className="text-xs">Aberta</Badge>
+                      )}
+                      <span className="ml-auto text-xs text-muted-foreground">{format(new Date(oc.data_hora), "dd/MM/yy HH:mm")}</span>
+                    </div>
+                    <p className="text-muted-foreground text-xs">{oc.descricao}</p>
+                    {!oc.resolvido && podeEditar && (
+                      <div className="mt-2 space-y-1">
+                        <Input
+                          placeholder="Resolução (opcional)..."
+                          className="text-xs"
+                          value={oc.resolucao ?? ""}
+                          onChange={(e) => setOcorrencias(ocorrencias.map((o) => o.id === oc.id ? { ...o, resolucao: e.target.value } : o))}
+                        />
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs w-full"
+                          onClick={async () => {
+                            const { data, error } = await db.from("os_ocorrencias")
+                              .update({ resolvido: true, resolucao: oc.resolucao ?? "", updated_at: new Date().toISOString() })
+                              .eq("id", oc.id).select().single();
+                            if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
+                            setOcorrencias(ocorrencias.map((o) => o.id === oc.id ? data : o));
+                            toast({ title: "Ocorrência resolvida" });
+                          }}
+                        ><CheckCircle2 className="mr-1 h-3 w-3" />Marcar como resolvida</Button>
+                      </div>
+                    )}
+                    {oc.resolvido && oc.resolucao && (
+                      <p className="mt-1 text-xs italic text-green-700 dark:text-green-400">Resolução: {oc.resolucao}</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* E-mail / WhatsApp / Download */}
         <div className="grid gap-3 rounded-lg bg-muted/50 p-3 sm:grid-cols-2">
           <div className="space-y-1"><Label>E-mail da empresa</Label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
           <div className="space-y-1"><Label>WhatsApp da empresa</Label><Input value={whats} onChange={(e) => setWhats(e.target.value)} placeholder="(88) 99999-9999" /></div>
           <Button variant="outline" className="gap-2" onClick={enviarEmail}><Mail className="h-4 w-4" />Enviar por e-mail</Button>
           <Button variant="outline" className="gap-2" onClick={enviarWhats}><MessageCircle className="h-4 w-4" />Enviar por WhatsApp</Button>
           <Button variant="ghost" className="gap-2 sm:col-span-2" onClick={() => baixarPdf(os)}><FileDown className="h-4 w-4" />Baixar PDF da versão atual</Button>
+          <Button
+            variant="outline"
+            className="gap-2 sm:col-span-2"
+            onClick={() => {
+              const rotaAtiva = (rotas.filter((r) => !r.cancelada) || [])[0];
+              gerarListaPresencaPdf({
+                osNumero: numeroRev(os),
+                ano: os.ano,
+                data: rotaAtiva ? format(parseISO(rotaAtiva.data), "dd/MM/yyyy") : format(new Date(), "dd/MM/yyyy"),
+                turno: rotaAtiva?.turno ?? "manha",
+                escola: rotaAtiva?.escola ?? "",
+                endereco: rotaAtiva?.endereco ?? "",
+                cidade: rotaAtiva?.cidade ?? "",
+                alunosPrevistos: rotas.filter((r) => !r.cancelada).reduce((s, r) => s + r.alunos + r.professores, 0),
+              });
+              toast({ title: "Lista de presença gerada" });
+            }}
+          >📥 Baixar Lista de Presença</Button>
         </div>
 
         <div className="space-y-1 text-sm">

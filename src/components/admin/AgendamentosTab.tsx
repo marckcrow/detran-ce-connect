@@ -1,38 +1,96 @@
 import { useCallback, useEffect, useState } from "react";
 import { format, parseISO } from "date-fns";
-import { AlertTriangle, Loader2, Mail, MessageCircle } from "lucide-react";
+import { AlertTriangle, Loader2, Mail, MessageCircle, FileText } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
 import { db, FAIXA, waLink } from "@/lib/operacao";
+import { gerarListaPresencaPdf } from "@/lib/listaPresencaPdf";
 
 const statusLabel: Record<string, string> = { pendente: "Pendente", confirmado: "Confirmado", cancelado: "Cancelado", realizado: "Realizado" };
 const statusVariant: Record<string, any> = { pendente: "warning", confirmado: "success", cancelado: "destructive", realizado: "default" };
+
+// --- Fallback templates (when DB templates not available) ---
+const FALLBACK_EMAIL = `Olá {responsavel}!
+
+A Escola de Trânsito do DETRAN-CE confirma o agendamento de visita:
+
+🏫 Escola: {escola}
+📅 Data: {data} às {hora}
+📍 Endereço: {endereco}
+🔔 Status: {status}
+🚌 Transporte: {transporte}
+
+📞 Contato: (85) 98135-9276 (WhatsApp) / (85) 3106-4711
+📧 E-mail: escoladetransito@detran.ce.gov.br`;
+
+const FALLBACK_WHATSAPP = `Olá {responsavel}! 👋
+
+A *Escola de Trânsito do DETRAN-CE* confirma o agendamento de visita:
+
+🏫 Escola: {escola}
+📅 Data: {data} às {hora}
+📍 Endereço: {endereco}
+🔔 Status: {status}
+🚌 Transporte: {transporte}
+
+📞 Contato: (85) 98135-9276 (WhatsApp)`;
+
+const FALLBACK_EMAIL_SUBJECT = "[DETRAN-CE] Confirmação de Visita – {escola} – {data}";
+
+function interpolateTemplate(template: string, vars: Record<string, string>): string {
+  return template.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? `{${k}}`);
+}
+
+function buildVars(a: any): Record<string, string> {
+  const inst = a.instituicoes ?? {};
+  const dataFmt = a.data ? format(parseISO(a.data), "dd/MM/yyyy") : "";
+  const hora = a.turno === "manha" ? "07h" : "13h";
+  const statusTxt = a.status === "confirmado" ? "CONFIRMADO" : a.status === "pendente" ? "PENDENTE DE CONFIRMAÇÃO" : a.status.toUpperCase();
+  const transporte = a.transporte_status === "onibus_detran" ? "Ônibus do DETRAN-CE (esteja pronto 15 min antes)" : "Próprio";
+  return {
+    escola: inst.nome ?? "—",
+    responsavel: inst.responsavel || "responsável",
+    data: dataFmt,
+    hora,
+    endereco: [inst.endereco, inst.bairro, inst.cidade].filter(Boolean).join(", ") || "—",
+    status: statusTxt,
+    transporte,
+  };
+}
 
 export function AgendamentosTab({ podeEditar, onChange }: { podeEditar: boolean; onChange?: () => void }) {
   const [lista, setLista] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
   const [config, setConfig] = useState<any>(null);
+  const [templates, setTemplates] = useState<any[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [{ data }, { data: cfg }] = await Promise.all([
+    const [{ data }, { data: cfg }, { data: tpls }] = await Promise.all([
       db.from("agendamentos").select("*, instituicoes(*), ordens_servico(id, numero, ano, status)").order("data"),
       db.from("config_sistema").select("*").eq("id", 1).maybeSingle(),
+      db.from("mensagens_templates").select("*").eq("ativo", true),
     ]);
     setLista(data ?? []);
     setConfig(cfg);
+    setTemplates(tpls ?? []);
     setLoading(false);
   }, []);
+
   useEffect(() => { load(); }, [load]);
+
+  const getTemplate = (canal: string, gatilho = "confirmacao") => {
+    return templates.find((t) => t.canal === canal && t.gatilho === gatilho) ?? null;
+  };
 
   const confirmar = async (a: any) => {
     setSaving(a.id);
     const inst = a.instituicoes ?? {};
-    const km = inst.distancia_km != null ? Number(inst.distancia_km) * 2 : null; // ida e volta
+    const km = inst.distancia_km != null ? Number(inst.distancia_km) * 2 : null;
     const { error: e1 } = await db.from("agendamentos").update({ status: "confirmado" }).eq("id", a.id);
     let e2 = null;
     if (!e1 && !(a.ordens_servico?.length)) {
@@ -56,47 +114,37 @@ export function AgendamentosTab({ podeEditar, onChange }: { podeEditar: boolean;
 
   const enviarConfirmacaoEmail = (a: any) => {
     const inst = a.instituicoes ?? {};
-    const dataFmt = a.data ? format(parseISO(a.data), "dd/MM/yyyy") : "";
-    const hora = a.turno === "manha" ? "07h" : "13h";
-    const statusLabel = a.status === "confirmado" ? "CONFIRMADO" : a.status === "pendente" ? "PENDENTE DE CONFIRMAÇÃO" : a.status.toUpperCase();
-    const body = [
-      `Olá ${inst.responsavel || "responsável"}!`,
-      ``,
-      `A Escola de Trânsito do DETRAN-CE confirma o agendamento de visita:`,
-      ``,
-      `Escola: ${inst.nome ?? "—"}`,
-      `Data: ${dataFmt} às ${hora}`,
-      `Endereço: ${[inst.endereco, inst.bairro, inst.cidade].filter(Boolean).join(", ")}`,
-      `Status: ${statusLabel}`,
-      `Transporte: ${a.transporte_status === "onibus_detran" ? "Ônibus do DETRAN-CE (esteja pronto 15 min antes)" : "Próprio"}`,
-      ``,
-      `Contato: (85) 98135-9276 (WhatsApp) / (85) 3106-4711`,
-      `E-mail: escoladetransito@detran.ce.gov.br`,
-    ].join("\n");
-    const subject = `[DETRAN-CE] Confirmação de Visita – ${inst.nome ?? "Escola"} – ${dataFmt}`;
+    const vars = buildVars(a);
+    const tpl = getTemplate("email", "confirmacao");
+    const body = tpl ? interpolateTemplate(tpl.corpo, vars) : interpolateTemplate(FALLBACK_EMAIL, vars);
+    const subjectTpl = tpl?.assunto ?? FALLBACK_EMAIL_SUBJECT;
+    const subject = interpolateTemplate(subjectTpl, vars);
     window.location.href = `mailto:${inst.email ?? ""}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
 
   const enviarConfirmacaoWhatsApp = (a: any) => {
     const inst = a.instituicoes ?? {};
-    const dataFmt = a.data ? format(parseISO(a.data), "dd/MM/yyyy") : "";
-    const hora = a.turno === "manha" ? "07h" : "13h";
-    const statusLabel = a.status === "confirmado" ? "CONFIRMADO ✅" : a.status === "pendente" ? "PENDENTE DE CONFIRMAÇÃO ⏳" : a.status.toUpperCase();
-    const msg = [
-      `Olá ${inst.responsavel || "responsável"}! 👋`,
-      ``,
-      `A *Escola de Trânsito do DETRAN-CE* confirma o agendamento de visita:`,
-      ``,
-      `🏫 Escola: ${inst.nome ?? "—"}`,
-      `📅 Data: ${dataFmt} às ${hora}`,
-      `📍 Endereço: ${[inst.endereco, inst.bairro, inst.cidade].filter(Boolean).join(", ")}`,
-      `🔔 Status: ${statusLabel}`,
-      `🚌 Transporte: ${a.transporte_status === "onibus_detran" ? "Ônibus do DETRAN-CE (esteja pronto 15 min antes)" : "Próprio"}`,
-      ``,
-      `📞 Contato: (85) 98135-9276 (WhatsApp) / (85) 3106-4711`,
-      `📧 E-mail: escoladetransito@detran.ce.gov.br`,
-    ].join("\n");
+    const vars = { ...buildVars(a), status: a.status === "confirmado" ? "CONFIRMADO ✅" : a.status === "pendente" ? "PENDENTE DE CONFIRMAÇÃO ⏳" : a.status.toUpperCase() };
+    const tpl = getTemplate("whatsapp", "confirmacao");
+    const msg = tpl ? interpolateTemplate(tpl.corpo, vars) : interpolateTemplate(FALLBACK_WHATSAPP, vars);
     window.open(waLink(a.responsavel_whatsapp ?? inst.telefone ?? "", msg), "_blank", "noopener");
+  };
+
+  const baixarListaPresenca = (a: any) => {
+    const inst = a.instituicoes ?? {};
+    const dataFmt = a.data ? format(parseISO(a.data), "dd/MM/yyyy") : "";
+    const os = a.ordens_servico?.[0];
+    gerarListaPresencaPdf({
+      osNumero: os ? String(os.numero).padStart(3, "0") : "000",
+      ano: os?.ano ?? new Date().getFullYear(),
+      data: dataFmt,
+      turno: a.turno ?? "manha",
+      escola: inst.nome ?? "—",
+      endereco: [inst.endereco, inst.bairro, inst.cidade].filter(Boolean).join(" – ") || "—",
+      cidade: inst.cidade ?? "",
+      alunosPrevistos: a.quantidade_alunos + a.quantidade_professores + (a.quantidade_acompanhantes ?? 0),
+    });
+    toast({ title: "Lista de presença gerada" });
   };
 
   const cancelar = async (a: any) => {
@@ -155,6 +203,9 @@ export function AgendamentosTab({ podeEditar, onChange }: { podeEditar: boolean;
                               </Button>
                               <Button size="sm" variant="ghost" title="Enviar confirmação por WhatsApp" onClick={() => enviarConfirmacaoWhatsApp(a)}>
                                 <MessageCircle className="h-4 w-4" />
+                              </Button>
+                              <Button size="sm" variant="ghost" title="Baixar lista de presença" onClick={() => baixarListaPresenca(a)}>
+                                <FileText className="h-4 w-4" />
                               </Button>
                             </>
                           )}
