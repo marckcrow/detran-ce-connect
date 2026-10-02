@@ -15,15 +15,25 @@ import { toast } from "@/hooks/use-toast";
 import type { Database } from "@/integrations/supabase/types";
 
 type TipoInstituicao = Database["public"]["Enums"]["tipo_instituicao"];
+type Rede = Database["public"]["Enums"]["rede"];
 
 const tipoLabels: Record<TipoInstituicao, string> = {
   escola: "Escola",
+  universidade: "Universidade",
   empresa: "Empresa",
+  ong: "ONG",
+  igreja: "Igreja",
   orgao_publico: "Órgão Público",
   outros: "Outros",
 };
 
-const UNIDADES = ["Fortaleza", "Sobral", "Juazeiro do Norte"];
+const redeLabels: Record<Rede, string> = {
+  publica: "Pública",
+  privada: "Privada",
+  outra: "Outra",
+};
+
+const UNIDADES = ["Fortaleza", "Sobral", "Crato"];
 
 export default function Perfil() {
   const { user, loading: authLoading } = useAuth();
@@ -43,6 +53,7 @@ export default function Perfil() {
   const [endereco, setEndereco] = useState("");
   const [telefone, setTelefone] = useState("");
   const [email, setEmail] = useState("");
+  const [rede, setRede] = useState<Rede>("publica");
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
@@ -76,6 +87,7 @@ export default function Perfil() {
             setEndereco(inst.endereco ?? "");
             setTelefone(inst.telefone ?? "");
             setEmail(inst.email ?? "");
+            setRede((inst.rede as Rede) ?? "publica");
           }
         }
       }
@@ -89,6 +101,26 @@ export default function Perfil() {
       toast({ title: "Informe o nome da instituição", variant: "destructive" });
       return;
     }
+
+    // Validate email format
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast({ title: "E-mail inválido", description: "Informe um e-mail válido (ex: escola@edu.ce.gov.br)", variant: "destructive" });
+      return;
+    }
+
+    // Validate phone format (Brazilian)
+    const phoneDigits = telefone.replace(/\D/g, "");
+    if (telefone && phoneDigits.length < 10) {
+      toast({ title: "Telefone inválido", description: "Informe um telefone com DDD (ex: 85 99999-9999)", variant: "destructive" });
+      return;
+    }
+
+    const respPhoneDigits = telefoneResponsavel.replace(/\D/g, "");
+    if (telefoneResponsavel && respPhoneDigits.length < 10) {
+      toast({ title: "Telefone do responsável inválido", description: "Informe um telefone com DDD (ex: 85 99999-9999)", variant: "destructive" });
+      return;
+    }
+
     setSaving(true);
 
     let id = instituicaoId;
@@ -96,7 +128,7 @@ export default function Perfil() {
     if (id) {
       const { error } = await supabase
         .from("instituicoes")
-        .update({ nome, tipo, cidade, bairro: bairro || null, endereco: endereco || null, telefone: telefone || null, email: email || null, responsavel: nomeResponsavel || null })
+        .update({ nome, tipo, cidade, bairro: bairro || null, endereco: endereco || null, telefone: telefone || null, email: email || null, responsavel: nomeResponsavel || null, rede: tipo === "escola" ? rede : null })
         .eq("id", id);
       if (error) {
         setSaving(false);
@@ -106,7 +138,7 @@ export default function Perfil() {
     } else {
       const { data, error } = await supabase
         .from("instituicoes")
-        .insert({ nome, tipo, cidade, bairro: bairro || null, endereco: endereco || null, telefone: telefone || null, email: email || null, responsavel: nomeResponsavel || null })
+        .insert({ nome, tipo, cidade, bairro: bairro || null, endereco: endereco || null, telefone: telefone || null, email: email || null, responsavel: nomeResponsavel || null, rede: tipo === "escola" ? rede : null })
         .select("id")
         .single();
       if (error || !data) {
@@ -175,7 +207,16 @@ export default function Perfil() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="telefoneResp">Telefone</Label>
-                <Input id="telefoneResp" value={telefoneResponsavel} onChange={(e) => setTelefoneResponsavel(e.target.value)} placeholder="(85) 99999-9999" />
+                <Input id="telefoneResp" value={telefoneResponsavel} onChange={(e) => {
+                  const v = e.target.value.replace(/\D/g, "");
+                  if (v.length <= 11) {
+                    let f = v;
+                    if (v.length > 6) f = `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`;
+                    else if (v.length > 2) f = `(${v.slice(0,2)}) ${v.slice(2)}`;
+                    else if (v.length > 0) f = `(${v}`;
+                    setTelefoneResponsavel(f);
+                  }
+                }} placeholder="(85) 99999-9999" />
               </div>
             </CardContent>
           </Card>
@@ -206,6 +247,21 @@ export default function Perfil() {
                   </SelectContent>
                 </Select>
               </div>
+              {tipo === "escola" && (
+                <div className="space-y-2">
+                  <Label>Rede</Label>
+                  <Select value={rede} onValueChange={(v) => setRede(v as Rede)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a rede" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(redeLabels).map(([value, label]) => (
+                        <SelectItem key={value} value={value}>{label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <div className="space-y-2">
                 <Label>Cidade / Unidade de atendimento</Label>
                 <Select value={cidade} onValueChange={setCidade}>
@@ -229,7 +285,16 @@ export default function Perfil() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="telefone">Telefone</Label>
-                <Input id="telefone" value={telefone} onChange={(e) => setTelefone(e.target.value)} />
+                <Input id="telefone" value={telefone} onChange={(e) => {
+                  const v = e.target.value.replace(/\D/g, "");
+                  if (v.length <= 11) {
+                    let f = v;
+                    if (v.length > 6) f = `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`;
+                    else if (v.length > 2) f = `(${v.slice(0,2)}) ${v.slice(2)}`;
+                    else if (v.length > 0) f = `(${v}`;
+                    setTelefone(f);
+                  }
+                }} placeholder="(85) 99999-9999" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail</Label>
