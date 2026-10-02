@@ -280,16 +280,16 @@ export default function MinhaEscola() {
                 <div className="text-muted-foreground">Professores</div>
                 <div className="font-medium">{selected.quantidade_professores}</div>
               </div>
-              {selected.acompanhantes ? (
+              {selected.quantidade_acompanhantes ? (
                 <div>
                   <div className="text-muted-foreground">Acompanhantes</div>
-                  <div className="font-medium">{selected.acompanhantes}</div>
+                  <div className="font-medium">{selected.quantidade_acompanhantes}</div>
                 </div>
               ) : null}
               <div>
                 <div className="text-muted-foreground">Total de pessoas</div>
                 <div className="font-medium font-bold text-primary">
-                  {(selected.quantidade_alunos || 0) + (selected.quantidade_professores || 0) + (selected.acompanhantes || 0)}
+                  {(selected.quantidade_alunos || 0) + (selected.quantidade_professores || 0) + (selected.quantidade_acompanhantes || 0)}
                 </div>
               </div>
               <div>

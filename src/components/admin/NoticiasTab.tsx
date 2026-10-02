@@ -371,7 +371,7 @@ export function NoticiasTab({ podeEditar }: { podeEditar: boolean }) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction variant="destructive" onClick={confirmarExcluir}>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={confirmarExcluir}>
               Sim, excluir
             </AlertDialogAction>
           </AlertDialogFooter>

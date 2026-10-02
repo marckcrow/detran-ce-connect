@@ -83,7 +83,7 @@ export default function Agendar() {
     if (!user) return;
     const start = format(new Date(), "yyyy-MM-dd");
     const end = format(addDays(new Date(), 90), "yyyy-MM-dd");
-    supabase
+    (supabase as any)
       .from("disponibilidade")
       .select("data, turno, status, capacidade, vagas_ocupadas")
       .gte("data", start)

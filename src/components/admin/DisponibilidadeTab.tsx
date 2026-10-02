@@ -55,7 +55,7 @@ export function DisponibilidadeTab() {
     const startDate = format(addWeeks(startOfWeek(new Date(), { weekStartsOn: 1 }), weekOffset), "yyyy-MM-dd");
     const endDate = format(addDays(addWeeks(startOfWeek(new Date(), { weekStartsOn: 1 }), weekOffset), 41), "yyyy-MM-dd");
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("disponibilidade")
       .select("*")
       .gte("data", startDate)
@@ -95,7 +95,7 @@ export function DisponibilidadeTab() {
     }
     setSaving(true);
 
-    const { error } = await supabase.from("disponibilidade").upsert({
+    const { error } = await (supabase as any).from("disponibilidade").upsert({
       data: formData.data,
       turno: formData.turno,
       status: formData.status,
@@ -115,7 +115,7 @@ export function DisponibilidadeTab() {
   };
 
   const handleDelete = async (id: string) => {
-    const { error } = await supabase.from("disponibilidade").delete().eq("id", id);
+    const { error } = await (supabase as any).from("disponibilidade").delete().eq("id", id);
     if (error) {
       toast({ title: "Erro ao remover", description: error.message, variant: "destructive" });
     } else {
@@ -140,7 +140,7 @@ export function DisponibilidadeTab() {
       inserts.push({ data: dateStr, turno: "tarde", status: "aberto", capacidade: 46 });
     }
 
-    const { error } = await supabase.from("disponibilidade").upsert(inserts, { onConflict: "data,turno", ignoreDuplicates: true });
+    const { error } = await (supabase as any).from("disponibilidade").upsert(inserts, { onConflict: "data,turno", ignoreDuplicates: true });
     setSaving(false);
     if (error) {
       toast({ title: "Erro ao gerar", description: error.message, variant: "destructive" });
