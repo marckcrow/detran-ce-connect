@@ -201,14 +201,14 @@ export default function Agendar() {
     (async () => {
       if (isStaff) {
         // Staff: load ALL institutions
-        const { data } = await supabase
+        const { data } = await (supabase as any)
           .from("instituicoes")
           .select("*")
           .order("nome");
         setInstitutions(data ?? []);
       } else {
         // Institution user: load only accessible institutions via instituicao_access
-        const { data } = await supabase
+        const { data } = await (supabase as any)
           .from("instituicoes")
           .select("instituicoes.*")
           .innerJoin("instituicao_access", "instituicao_access.instituicao_id", "instituicoes.id")
@@ -241,10 +241,10 @@ export default function Agendar() {
         }
 
         const [cfgRes, horRes, blkRes, diaRes] = await Promise.all([
-          supabase.from("centro_config").select("*").eq("centro", centroName).maybeSingle(),
-          supabase.from("centro_horarios").select("*").eq("centro", centroName).eq("ativo", true).order("horario"),
-          supabase.from("centro_bloqueios").select("*").eq("centro", centroName).order("data"),
-          supabase.from("centro_dias_funcionamento").select("*").eq("centro", centroName).order("dia_semana"),
+          (supabase as any).from("centro_config").select("*").eq("centro", centroName).maybeSingle(),
+          (supabase as any).from("centro_horarios").select("*").eq("centro", centroName).eq("ativo", true).order("horario"),
+          (supabase as any).from("centro_bloqueios").select("*").eq("centro", centroName).order("data"),
+          (supabase as any).from("centro_dias_funcionamento").select("*").eq("centro", centroName).order("dia_semana"),
         ]);
 
         if (cfgRes.data) setCentroConfig(cfgRes.data as CentroConfig);
@@ -342,7 +342,7 @@ export default function Agendar() {
     setSavingNewInst(true);
     try {
       // Create institution — trigger will auto-grant owner access
-      const { data: inst, error: instErr } = await supabase
+      const { data: inst, error: instErr } = await (supabase as any)
         .from("instituicoes")
         .insert({
           nome: parsed.data.nome.trim(),
@@ -361,7 +361,7 @@ export default function Agendar() {
       }
 
       // Also update profile's instituicao_id
-      await supabase.from("profiles").update({ instituicao_id: inst.id }).eq("id", user.id);
+      await (supabase as any).from("profiles").update({ instituicao_id: inst.id }).eq("id", user.id);
 
       // Add to local list and select it
       const newInst = { ...inst, bairro: null, endereco: null, email: null, responsavel: null, created_at: new Date().toISOString(), updated_at: null } as InstituicaoSearch;
@@ -505,7 +505,7 @@ export default function Agendar() {
     const pcd = values.possui_pcd === "sim";
     const status = isStaff ? "confirmado" : "pendente";
 
-    const { error } = await supabase.from("agendamentos").insert({
+    const { error } = await (supabase as any).from("agendamentos").insert({
       instituicao_id: selectedInstitutionId,
       data: format(values.data, "yyyy-MM-dd"),
       turno: values.turno,

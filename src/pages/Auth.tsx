@@ -71,11 +71,11 @@ export default function Auth() {
 
     // Update profile with basic info — institution is set in Perfil page
     if (data.user) {
-      await supabase.from("profiles").update({ nome, telefone }).eq("id", data.user.id);
+      await (supabase as any).from("profiles").update({ nome, telefone }).eq("id", data.user.id);
 
       if (registerType === "colaborador") {
         // Staff registration: create access request for admin approval
-        const { error: reqError } = await supabase.from("access_requests").insert({
+        const { error: reqError } = await (supabase as any).from("access_requests").insert({
           user_id: data.user.id,
           nome,
           email,
