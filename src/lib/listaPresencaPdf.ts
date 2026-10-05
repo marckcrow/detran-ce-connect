@@ -135,7 +135,7 @@ export function gerarListaPresencaPdf(d: DadosListaPresenca) {
 
   // ---- Tabela de alunos ----
   const totalRows = Math.max(d.alunosPrevistos, 20);
-  const rows: Array<[string, string, string, string]> = [];
+  const rows: string[][] = [];
 
   for (let i = 0; i < totalRows; i++) {
     const a = dadosAlunos[i];
@@ -176,7 +176,7 @@ export function gerarListaPresencaPdf(d: DadosListaPresenca) {
       3: { cellWidth: 80, halign: "center" },
       4: { cellWidth: 80, halign: "center" },
     },
-    didDrawPage: ({ pageNumber, pageCount }) => {
+    didDrawPage: ({ pageNumber }) => { const pageCount = doc.getNumberOfPages();
       if (pageNumber > 1) cabecalho();
       rodape(pageNumber, pageCount);
     },
@@ -193,7 +193,7 @@ export function gerarListaPresencaPdf(d: DadosListaPresenca) {
   // Total de presentes
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
-  doc.setTextColor(PRETO);
+  doc.setTextColor(...(PRETO as [number, number, number]));
   doc.text("Total de presentes: __________ / " + String(d.alunosPrevistos), M, finalY);
   finalY += 20;
 
