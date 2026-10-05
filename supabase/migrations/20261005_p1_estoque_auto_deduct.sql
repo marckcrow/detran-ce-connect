@@ -172,11 +172,14 @@ DROP POLICY IF EXISTS "atendimentos_select_auth" ON public.atendimentos;
 CREATE POLICY "atendimentos_select_auth" ON public.atendimentos
   FOR SELECT USING (auth.uid() IS NOT NULL);
 
-DROP POLICY IF EXISTS "atendimentos_insert_auth" ON public.atendimentos
+DROP POLICY IF EXISTS "atendimentos_insert_auth" ON public.atendamentos;
+CREATE POLICY "atendimentos_insert_auth" ON public.atendimentos
   FOR INSERT WITH CHECK (public.is_staff(auth.uid()));
 
-DROP POLICY IF EXISTS "atendimentos_update_auth" ON public.atendimentos
-  FOR UPDATE USING (public.is_staff(auth.uid()));
+DROP POLICY IF EXISTS "atendamentos_update_auth" ON public.atendimentos;
+CREATE POLICY "atendamentos_update_auth" ON public.atendimentos
+  FOR UPDATE USING (public.is_staff(auth.uid()))
+  WITH CHECK (public.is_staff(auth.uid()));
 
 -- ============================================================
 -- STEP 4: Verification
