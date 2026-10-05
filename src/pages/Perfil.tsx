@@ -81,7 +81,7 @@ export default function Perfil() {
     if (!user) return;
     (async () => {
       // Load profile
-      const { data: profile } = await supabase
+      const { data: profile } = await (supabase as any)
         .from("profiles")
         .select("nome, telefone, instituicao_id")
         .eq("id", user.id)
@@ -94,14 +94,14 @@ export default function Perfil() {
 
       // Load user's institution access
       if (profile?.instituicao_id) {
-        const { data: inst } = await supabase
+        const { data: inst } = await (supabase as any)
           .from("instituicoes")
           .select("*")
           .eq("id", profile.instituicao_id)
           .maybeSingle();
         if (inst) setMyInstitution(inst);
 
-        const { data: access } = await supabase
+        const { data: access } = await (supabase as any)
           .from("instituicao_access")
           .select("role")
           .eq("user_id", user.id)
@@ -113,7 +113,7 @@ export default function Perfil() {
       // Check if there's a pending access request (table may not exist yet)
       if (profile?.instituicao_id) {
         try {
-          const { data: req } = await supabase
+          const { data: req } = await (supabase as any)
             .from("instituicao_access_requests")
             .select("id")
             .eq("user_id", user.id)
@@ -129,7 +129,7 @@ export default function Perfil() {
 
       // Check for pending staff access request (access_requests table)
       try {
-        const { data: staffReq } = await supabase
+        const { data: staffReq } = await (supabase as any)
           .from("access_requests")
           .select("id, status, perfil_solicitado")
           .eq("user_id", user.id)
@@ -155,7 +155,7 @@ export default function Perfil() {
     }
     const timer = setTimeout(async () => {
       setSearching(true);
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from("instituicoes")
         .select("id, nome, cidade, tipo")
         .ilike("nome", `%${searchQuery}%`)
@@ -174,7 +174,7 @@ export default function Perfil() {
       return;
     }
     setSaving(true);
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from("profiles")
       .update({ nome: nomeResponsavel || "Usuário", telefone: telefoneResponsavel || null })
       .eq("id", user.id);
@@ -202,7 +202,7 @@ export default function Perfil() {
     setSaving(true);
 
     // Create institution — trigger will auto-grant owner access
-    const { data: inst, error: instErr } = await supabase
+    const { data: inst, error: instErr } = await (supabase as any)
       .from("instituicoes")
       .insert({
         nome,
@@ -225,7 +225,7 @@ export default function Perfil() {
     }
 
     // Link to profile
-    await supabase.from("profiles").update({ instituicao_id: inst.id }).eq("id", user.id);
+    await (supabase as any).from("profiles").update({ instituicao_id: inst.id }).eq("id", user.id);
     setMyInstitution({ ...inst, nome, tipo, cidade } as InstituicaoSearch);
     setMyAccessRole("proprietario");
     setSaving(false);
@@ -236,7 +236,7 @@ export default function Perfil() {
     if (!user) return;
     setRequesting(true);
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("instituicao_access_requests")
         .insert({ user_id: user.id, instituicao_id: instId });
 
@@ -653,7 +653,7 @@ export default function Perfil() {
                         className="h-auto flex-col gap-1 py-3"
                         onClick={async () => {
                           if (!user) return;
-                          const { error } = await supabase.from("access_requests").insert({
+                          const { error } = await (supabase as any).from("access_requests").insert({
                             user_id: user.id,
                             nome: nomeResponsavel || user.user_metadata?.nome || user.email,
                             email: user.email,
