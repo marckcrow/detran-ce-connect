@@ -87,169 +87,182 @@ DECLARE
   v_dia_semana      INTEGER;
   v_total           INTEGER;
   v_eh_bloqueio     BOOLEAN;
-  v_eh_feriado      BOOLEAN;
-  v_slot_disponivel BOOLEAN;
-  v_limite_ok       BOOLEAN;
   v_contagem        INTEGER;
-  v_limite          INTEGER;
-  v_periodo         TEXT;
   v_inicio_periodo  DATE;
   v_fim_periodo     DATE;
-  v_lock_key        BIGINT;
-  v_lock_result     BOOLEAN;
+  v_lock_hash       BIGINT;
 BEGIN
 
-  -- === CONCURRENCY CONTROL ===
-  -- Advisory lock prevents two simultaneous inserts for the same
-  -- institution+date+turno from both succeeding.
-  -- Uses composite key: hash of (instituicao_id, data, turno)
-  v_lock_key := hashtextequals(
+  -- ============================================================
+  -- CONCURRENCY CONTROL
+  -- Advisory lock on composite key (instituicao_id, data, turno).
+-- Prevents two simultaneous inserts/updates for the same slot.
+  -- Lock is session-level: auto-released when transaction ends
+  -- (commit or rollback), so no explicit unlock needed.
+  -- ============================================================
+  v_lock_hash := hashtext(
     COALESCE(NEW.instituicao_id::TEXT, '') || '|' ||
     COALESCE(NEW.data::TEXT, '') || '|' ||
     COALESCE(NEW.turno, '')
   );
-  v_lock_result := pg_try_advisory_lock(hashtext(v_lock_key::text));
-  IF NOT v_lock_result THEN
-    RAISE EXCEPTION 'Bloqueio de concorrência: outro agendamento está sendo criado para esta mesma instituição, data e turno. Aguarde um momento e tente novamente.';
+  PERFORM pg_advisory_xact_lock(v_lock_hash);
+
+  -- ============================================================
+  -- RULE 0: Determine which centro serves this institution
+  -- ============================================================
+  SELECT public.get_centro_for_cidade(i.cidade)
+  INTO v_centro
+  FROM public.instituicoes i
+  WHERE i.id = NEW.instituicao_id;
+
+  IF v_centro IS NULL THEN
+    RAISE EXCEPTION 'Nao foi possivel determinar o centro para a instituicao do agendamento.';
   END IF;
 
-  BEGIN
-    -- === RULE 0: Determine which centro serves this institution ===
-    SELECT public.get_centro_for_cidade(i.cidade)
-    INTO v_centro
-    FROM public.instituicoes i
-    WHERE i.id = NEW.instituicao_id;
+  -- ============================================================
+  -- Load centro config
+  -- ============================================================
+  SELECT * INTO v_cfg
+  FROM public.centro_config
+  WHERE centro = v_centro AND ativo = true;
 
-    IF v_centro IS NULL THEN
-      RAISE EXCEPTION 'Não foi possível determinar o centro para a instituição do agendamento.';
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Centro "%" nao encontrado ou inativo para agendamentos.', v_centro;
+  END IF;
+
+  -- ============================================================
+  -- RULE 1: Centro must be active
+  -- ============================================================
+  IF NOT v_cfg.ativo THEN
+    RAISE EXCEPTION 'O Centro % esta temporariamente inativo para agendamentos.', v_centro;
+  END IF;
+
+  -- ============================================================
+  -- RULE 2: Minimum advance notice
+  -- ============================================================
+  IF NEW.data < (CURRENT_DATE + v_cfg.antecedencia_minima_dias * INTERVAL '1 day')::DATE THEN
+    RAISE EXCEPTION 'Agendamento requer minimo de % dia(s) de antecedencia. Data escolhida: %.',
+      v_cfg.antecedencia_minima_dias, NEW.data;
+  END IF;
+
+  -- ============================================================
+  -- RULE 3: Maximum advance notice
+  -- ============================================================
+  IF NEW.data > (CURRENT_DATE + v_cfg.antecedencia_maxima_dias * INTERVAL '1 day')::DATE THEN
+    RAISE EXCEPTION 'Agendamento deve ser feito com no maximo % dia(s) de antecedencia.',
+      v_cfg.antecedencia_maxima_dias;
+  END IF;
+
+  -- ============================================================
+  -- RULE 4: Date not blocked
+  -- ============================================================
+  SELECT EXISTS (
+    SELECT 1 FROM public.centro_bloqueios
+    WHERE centro = v_centro AND data = NEW.data
+  ) INTO v_eh_bloqueio;
+
+  IF v_eh_bloqueio THEN
+    RAISE EXCEPTION 'A data % esta bloqueada para agendamentos neste centro.', NEW.data;
+  END IF;
+
+  -- ============================================================
+  -- RULE 5: Day of week must be a working day
+  -- PostgreSQL DOW: 0=Sun, 1=Mon, ..., 6=Sat
+  -- centro_dias_funcionamento.dia_semana: 0=Dom, 1=Seg, ..., 6=Sab
+  -- ============================================================
+  v_dia_semana := EXTRACT(DOW FROM NEW.data)::INTEGER;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.centro_dias_funcionamento
+    WHERE centro = v_centro
+      AND dia_semana = v_dia_semana
+      AND ativo = true
+  ) THEN
+    RAISE EXCEPTION 'O centro % nao funciona no dia da semana selecionado.', v_centro;
+  END IF;
+
+  -- ============================================================
+  -- RULE 6: Capacity check
+  -- ============================================================
+  v_total := COALESCE(NEW.quantidade_alunos, 0)
+           + COALESCE(NEW.quantidade_professores, 0)
+           + COALESCE(NEW.quantidade_acompanhantes, 0);
+
+  IF v_total > v_cfg.maxima_visitantes THEN
+    RAISE EXCEPTION 'Capacidade maxima do centro %: % pessoas. Total informado: %.',
+      v_centro, v_cfg.maxima_visitantes, v_total;
+  END IF;
+
+  -- ============================================================
+  -- RULE 7: Institution booking limit (per month or week)
+  -- ============================================================
+  IF v_cfg.maxima_agendamentos_inst IS NOT NULL AND v_cfg.maxima_agendamentos_inst > 0 THEN
+    IF v_cfg.periodo_limite = 'semana' THEN
+      v_inicio_periodo := date_trunc('week', NEW.data)::DATE;
+      v_fim_periodo    := (v_inicio_periodo + INTERVAL '6 days')::DATE;
+    ELSE
+      v_inicio_periodo := date_trunc('month', NEW.data)::DATE;
+      v_fim_periodo    := (v_inicio_periodo + INTERVAL '1 month - 1 day')::DATE;
     END IF;
 
-    -- === Load centro config ===
-    SELECT * INTO v_cfg
-    FROM public.centro_config
-    WHERE centro = v_centro AND ativo = true;
+    SELECT COUNT(*)
+    INTO v_contagem
+    FROM public.agendamentos a
+    JOIN public.instituicoes i ON i.id = a.instituicao_id
+    WHERE a.instituicao_id = NEW.instituicao_id
+      AND a.status IN ('pendente', 'confirmado')
+      AND a.data BETWEEN v_inicio_periodo AND v_fim_periodo
+      AND public.get_centro_for_cidade(i.cidade) = v_centro
+      AND (TG_OP = 'UPDATE' AND a.id != NEW.id);  -- exclude self on UPDATE
 
-    IF NOT FOUND THEN
-      RAISE EXCEPTION 'Centro "%" não encontrado ou inativo para agendamentos.', v_centro;
+    IF v_contagem >= v_cfg.maxima_agendamentos_inst THEN
+      RAISE EXCEPTION
+        'Limite de % agendamento(s) por % atingido para esta instituicao neste centro. Limite atual: %.',
+        v_cfg.maxima_agendamentos_inst,
+        CASE WHEN v_cfg.periodo_limite = 'mes' THEN 'mes' ELSE 'semana' END,
+        v_cfg.maxima_agendamentos_inst;
     END IF;
+  END IF;
 
-    -- === RULE 1: Centro must be active ===
-    IF NOT v_cfg.ativo THEN
-      RAISE EXCEPTION 'O Centro % está temporariamente inativo para agendamentos.', v_centro;
-    END IF;
-
-    -- === RULE 2 & 3: Advance notice limits ===
-    IF NEW.data < (CURRENT_DATE + v_cfg.antecedencia_minima_dias * INTERVAL '1 day')::DATE THEN
-      RAISE EXCEPTION 'Agendamento requer mínimo de % dia(s) de antecedência. Data escolhida: %.',
-        v_cfg.antecedencia_minima_dias, NEW.data;
-    END IF;
-
-    IF NEW.data > (CURRENT_DATE + v_cfg.antecedencia_maxima_dias * INTERVAL '1 day')::DATE THEN
-      RAISE EXCEPTION 'Agendamento deve ser feito com no máximo % dia(s) de antecedência.',
-        v_cfg.antecedencia_maxima_dias;
-    END IF;
-
-    -- === RULE 4: Date not blocked ===
-    SELECT EXISTS (
-      SELECT 1 FROM public.centro_bloqueios
-      WHERE centro = v_centro AND data = NEW.data
-    ) INTO v_eh_bloqueio;
-
-    IF v_eh_bloqueio THEN
-      RAISE EXCEPTION 'A data % está bloqueada para agendamentos neste centro.', NEW.data;
-    END IF;
-
-    -- === RULE 5: Day of week must be a working day ===
-    v_dia_semana := EXTRACT(DOW FROM NEW.data)::INTEGER;
-    -- PostgreSQL DOW: 0=Sunday, 1=Monday...6=Saturday
-    -- centro_dias_funcionamento: 0=Dom, 1=Seg...6=Sáb
+  -- ============================================================
+  -- RULE 8: Time slot exists for this turno
+  -- manha = morning slots (before 12:00)
+  -- tarde = afternoon slots (12:00 or later)
+  -- ============================================================
+  IF EXISTS (SELECT 1 FROM public.centro_horarios WHERE centro = v_centro AND ativo = true LIMIT 1) THEN
     IF NOT EXISTS (
-      SELECT 1 FROM public.centro_dias_funcionamento
+      SELECT 1 FROM public.centro_horarios
       WHERE centro = v_centro
-        AND dia_semana = v_dia_semana
         AND ativo = true
-    ) THEN
-      RAISE EXCEPTION 'O centro % não funciona no dia da semana selecionado.', v_centro;
-    END IF;
-
-    -- === RULE 6: Capacity check ===
-    v_total := COALESCE(NEW.quantidade_alunos, 0)
-             + COALESCE(NEW.quantidade_professores, 0)
-             + COALESCE(NEW.quantidade_acompanhantes, 0);
-
-    IF v_total > v_cfg.maxima_visitantes THEN
-      RAISE EXCEPTION 'Capacidade máxima do centro %: % pessoas. Total informado: %.',
-        v_centro, v_cfg.maxima_visitantes, v_total;
-    END IF;
-
-    -- === RULE 7: Institution booking limit ===
-    IF v_cfg.maxima_agendamentos_inst IS NOT NULL AND v_cfg.maxima_agendamentos_inst > 0 THEN
-      -- Calculate period boundaries
-      IF v_cfg.periodo_limite = 'semana' THEN
-        v_inicio_periodo := date_trunc('week', NEW.data)::DATE;
-        v_fim_periodo    := (v_inicio_periodo + INTERVAL '6 days')::DATE;
-      ELSE
-        v_inicio_periodo := (date_trunc('month', NEW.data))::DATE;
-        v_fim_periodo    := (v_inicio_periodo + INTERVAL '1 month - 1 day')::DATE;
-      END IF;
-
-      -- Count active bookings in this period for this institution at this centro
-      SELECT COUNT(*)
-      INTO v_contagem
-      FROM public.agendamentos a
-      JOIN public.instituicoes i ON i.id = a.instituicao_id
-      WHERE a.instituicao_id = NEW.instituicao_id
-        AND a.status IN ('pendente', 'confirmado')
-        AND a.data BETWEEN v_inicio_periodo AND v_fim_periodo
-        AND public.get_centro_for_cidade(i.cidade) = v_centro
-        AND (TG_OP = 'INSERT' OR a.id != NEW.id);  -- exclude self for UPDATE
-
-      IF v_contagem >= v_cfg.maxima_agendamentos_inst THEN
-        RAISE EXCEPTION
-          'Limite de % agendamento(s) por % atingido para esta instituição neste centro. Limite atual: %.',
-          v_cfg.maxima_agendamentos_inst,
-          CASE WHEN v_cfg.periodo_limite = 'mes' THEN 'mês' ELSE 'semana' END,
-          v_cfg.maxima_agendamentos_inst;
-      END IF;
-    END IF;
-
-    -- === RULE 8: Time slot exists for this turno ===
-    -- If centro_horarios has entries, verify there's at least one
-    -- slot matching the requested turno (manha < 12:00, tarde >= 12:00)
-    IF EXISTS (SELECT 1 FROM public.centro_horarios WHERE centro = v_centro AND ativo = true LIMIT 1) THEN
-      IF NOT EXISTS (
-        SELECT 1 FROM public.centro_horarios
-        WHERE centro = v_centro
-          AND ativo = true
-          AND (
-            (NEW.turno = 'manha' AND EXTRACT(HOUR FROM horario::time) < 12)
-            OR
-            (NEW.turno = 'tarde' AND EXTRACT(HOUR FROM horario::time) >= 12)
-          )
-        LIMIT 1
-      ) THEN
-        RAISE EXCEPTION 'Nenhum horário disponível para o turno % neste centro.', NEW.turno;
-      END IF;
-    END IF;
-
-    -- === RULE 9: Legacy disponibilidade slot must not be blocked ===
-    IF EXISTS (
-      SELECT 1 FROM public.disponibilidade d
-      WHERE d.data = NEW.data
-        AND d.turno = NEW.turno
-        AND d.status IN ('bloqueado', 'evento', 'manutencao', 'cheio')
+        AND (
+          (NEW.turno = 'manha' AND EXTRACT(HOUR FROM horario::time) < 12)
+          OR
+          (NEW.turno = 'tarde' AND EXTRACT(HOUR FROM horario::time) >= 12)
+        )
       LIMIT 1
     ) THEN
-      RAISE EXCEPTION 'Este turno não está disponível na data selecionada (status bloqueado/cheio/evento).';
+      RAISE EXCEPTION 'Nenhum horario disponivel para o turno % neste centro.', NEW.turno;
     END IF;
+  END IF;
 
-    -- === All validations passed ===
-    RETURN NEW;
+  -- ============================================================
+  -- RULE 9: Legacy disponibilidade slot must not be blocked
+  -- ============================================================
+  IF EXISTS (
+    SELECT 1 FROM public.disponibilidade d
+    WHERE d.data = NEW.data
+      AND d.turno = NEW.turno
+      AND d.status IN ('bloqueado', 'evento', 'manutencao', 'cheio')
+    LIMIT 1
+  ) THEN
+    RAISE EXCEPTION 'Este turno nao esta disponivel na data selecionada (status bloqueado/cheio/evento).';
+  END IF;
 
-  FINALLY
-    -- Always release the advisory lock
-    PERFORM pg_advisory_unlock(hashtext(v_lock_key::text));
-  END;
+  -- ============================================================
+  -- ALL VALIDATIONS PASSED - allow the insert/update
+  -- Advisory lock auto-released when transaction commits/rolls back
+  -- ============================================================
+  RETURN NEW;
+
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
