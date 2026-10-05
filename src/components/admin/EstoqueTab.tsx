@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { db } from "@/lib/operacao";
-import { Plus, Pencil, Package, UtensilsCrossed, BookOpen, Trash2, CalendarDays } from "lucide-react";
+import { Plus, Pencil, Package, UtensilsCrossed, BookOpen, Trash2, CalendarDays, RotateCcw, Loader2 } from "lucide-react";
 
 const TIPO_LABELS: Record<string, { label: string; icon: any; color: string }> = {
   lanche: { label: "Lanche", icon: UtensilsCrossed, color: "bg-orange-100 text-orange-700" },
@@ -42,6 +42,10 @@ interface EstoqueMov {
   motivo: string;
   usuario_id: string | null;
   created_at: string;
+  movimento_origem_id: string | null;
+  tipo_cancelamento: string | null;
+  agendamento_id: string | null;
+  origem: string;
 }
 
 export function EstoqueTab({ podeEditar }: { podeEditar: boolean }) {
@@ -49,6 +53,7 @@ export function EstoqueTab({ podeEditar }: { podeEditar: boolean }) {
   const [movs, setMovs] = useState<EstoqueMov[]>([]);
   const [nomes, setNomes] = useState<Record<string, string>>({});
   const [f, setF] = useState({ item_id: "", tipo: "entrada", quantidade: "", motivo: "", data_mov: format(new Date(), "yyyy-MM-dd") });
+  const [estornando, setEstornando] = useState<string | null>(null);
 
   // Item catalog dialog
   const [itemDialog, setItemDialog] = useState(false);
@@ -91,6 +96,7 @@ export function EstoqueTab({ podeEditar }: { podeEditar: boolean }) {
     const { error } = await db.from("estoque_movimentos").insert({
       item_id: f.item_id, tipo: f.tipo, quantidade: q, motivo: f.motivo.trim(),
       created_at: f.data_mov + "T12:00:00Z", // Use selected date instead of NOW()
+      origem: "manual",
     });
     if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
     toast({ title: "Movimentação registrada" });
@@ -151,6 +157,23 @@ export function EstoqueTab({ podeEditar }: { podeEditar: boolean }) {
 
   const getItemNome = (itemId: string) => itens.find((i) => i.id === itemId)?.nome ?? itemId;
   const getItemTipo = (itemId: string) => itens.find((i) => i.id === itemId)?.tipo ?? "outro";
+
+  // --- Estornar (reversal) ---
+  const estornar = async (mov: EstoqueMov) => {
+    if (!confirm(`Estornar ${mov.tipo === 'entrada' ? 'entrada' : 'saída'} de ${mov.quantidade} unidades (${getItemNome(mov.item_id)})?\nO estoque será ajustado automaticamente.`)) return;
+    setEstornando(mov.id);
+    const { data, error } = await db.rpc("estoque_estornar", {
+      p_movimento_id: mov.id,
+      p_tipo_cancelamento: "cancelamento",
+    });
+    setEstornando(null);
+    if (error) {
+      toast({ title: "Erro ao estornar", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Estorno registrado", description: `ID: ${data}. Saldo atualizado automaticamente.` });
+      load();
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -324,25 +347,50 @@ export function EstoqueTab({ podeEditar }: { podeEditar: boolean }) {
                 <TableHead>Tipo</TableHead>
                 <TableHead className="text-right">Qtd.</TableHead>
                 <TableHead className="text-right">Saldo</TableHead>
+                <TableHead>Origem</TableHead>
                 <TableHead>Motivo</TableHead>
                 <TableHead>Usuário</TableHead>
+                {podeEditar && <TableHead className="text-right">Ações</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
               {movs.map((m) => {
                 const tipoInfo = TIPO_LABELS[getItemTipo(m.item_id)] || TIPO_LABELS.outro;
+                const isReversal = m.movimento_origem_id !== null;
+                const origemBadge = {
+                  manual: { label: "Manual", className: "bg-gray-100 text-gray-700" },
+                  atendimento: { label: "Atendimento", className: "bg-green-100 text-green-700" },
+                  estorno: { label: "Estorno", className: "bg-yellow-100 text-yellow-700" },
+                }[m.origem] ?? { label: m.origem ?? "—", className: "bg-gray-100 text-gray-500" };
+                const qtdDisplay = m.tipo === "saida" ? `-${m.quantidade}`
+                  : m.tipo === "ajuste" && m.quantidade < 0 ? `${m.quantidade}`
+                  : `+${m.quantidade}`;
                 return (
-                  <TableRow key={m.id}>
+                  <TableRow key={m.id} className={isReversal ? "opacity-60 bg-muted/20" : ""}>
                     <TableCell className="whitespace-nowrap">{format(new Date(m.created_at), "dd/MM/yyyy HH:mm")}</TableCell>
                     <TableCell>
                       <span className="font-medium">{getItemNome(m.item_id)}</span>
                       <Badge variant="secondary" className={`ml-2 ${tipoInfo.color}`}>{tipoInfo.label}</Badge>
+                      {isReversal && <Badge variant="outline" className="ml-2 text-xs">Estornado</Badge>}
                     </TableCell>
                     <TableCell className="capitalize">{m.tipo}</TableCell>
-                    <TableCell className="text-right font-mono">{m.tipo === "saida" ? `-${m.quantidade}` : m.tipo === "ajuste" && m.quantidade < 0 ? m.quantidade : `+${m.quantidade}`}</TableCell>
+                    <TableCell className={`text-right font-mono ${m.tipo === "saida" ? "text-red-600" : "text-green-600"}`}>{qtdDisplay}</TableCell>
                     <TableCell className="text-right font-semibold">{m.saldo_apos ?? "—"}</TableCell>
-                    <TableCell className="max-w-[250px] truncate">{m.motivo}</TableCell>
+                    <TableCell>
+                      <Badge variant="secondary" className={origemBadge.className}>{origemBadge.label}</Badge>
+                    </TableCell>
+                    <TableCell className="max-w-[200px] truncate" title={m.motivo}>{m.motivo}</TableCell>
                     <TableCell>{nomes[m.usuario_id] ?? "—"}</TableCell>
+                    {podeEditar && (
+                      <TableCell className="text-right">
+                        {!isReversal && m.origem !== "estorno" && (
+                          <Button size="sm" variant="ghost" title="Estornar esta movimentação"
+                            onClick={() => estornar(m)} disabled={estornando === m.id}>
+                            {estornando === m.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="h-3.5 w-3.5" />}
+                          </Button>
+                        )}
+                      </TableCell>
+                    )}
                   </TableRow>
                 );
               })}
