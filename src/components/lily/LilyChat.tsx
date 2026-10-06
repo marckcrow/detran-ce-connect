@@ -191,6 +191,8 @@ function buildRestrictedResponse(whatsappUrl: string | null): string {
 }
 
 // ── Component ─────────────────────────────────────────────────────────────
+// LILY_RBAC_DEPLOYED_V3_20261006_132158
+// RBAC_BUNDLE_TEST_1833712434
 export function LilyChat() {
   const {
     isOpen,
@@ -251,7 +253,7 @@ export function LilyChat() {
         role: "lily",
         text: buildRestrictedResponse(whatsappUrl),
       };
-      setTimeout(() => setMessages((prev) => [...prev, lilyMsg]), 400);
+      setTimeout(() => setMessages((prev) => [...prev, lilyMsg]), 1200);
       setInput("");
       return;
     }
@@ -272,7 +274,7 @@ export function LilyChat() {
         suggestedAction: response.suggestedAction,
         navigateTo: response.navigateTo,
       };
-      setTimeout(() => setMessages((prev) => [...prev, lilyMsg]), 400);
+      setTimeout(() => setMessages((prev) => [...prev, lilyMsg]), 1200);
     } else {
       const fallback: Message = {
         id: crypto.randomUUID(),
@@ -283,7 +285,7 @@ export function LilyChat() {
             ? "\n\nPrecisa de mais ajuda? Fale com nossa equipe pelo WhatsApp."
             : ""),
       };
-      setTimeout(() => setMessages((prev) => [...prev, fallback]), 400);
+      setTimeout(() => setMessages((prev) => [...prev, fallback]), 1200);
     }
     setInput("");
   };
@@ -315,8 +317,10 @@ export function LilyChat() {
           navigateTo: route ?? undefined,
         },
       ]);
-      // Navigate WITHOUT closing panel — panel stays open and follows route
-      if (route) navigate(route);
+      // Navigate WITHOUT closing panel — delay lets user see response first
+      if (route) {
+        setTimeout(() => navigate(route), 1200);
+      }
     } else if (result.type === "tela") {
       const currentRoute = location.pathname;
       const allArticles = getContextualArticles(currentRoute, userRole);
@@ -565,7 +569,7 @@ export function LilyChat() {
               />
               <Button
                 size="sm"
-                onClick={() => sendMessage(input)}
+                onClick={(e) => { e.preventDefault(); sendMessage(input); }}
                 disabled={!input.trim() || isLoadingProfile}
                 className="shrink-0 bg-gradient-hero"
                 aria-label="Enviar"
