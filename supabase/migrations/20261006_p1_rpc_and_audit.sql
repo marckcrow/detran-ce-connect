@@ -132,7 +132,7 @@ BEGIN
     LEFT JOIN public.instituicoes i ON i.id = a.instituicao_id
     LEFT JOIN public.ordens_servico o ON o.agendamento_id = a.id
     WHERE
-      (p_status IS NULL OR CASE WHEN p_status::text IS NOT NULL THEN a.status = p_status::public.status_agendamento ELSE TRUE END)
+      (p_status IS NULL OR a.status::TEXT = p_status)
       AND (p_cidade IS NULL OR i.cidade ILIKE '%' || p_cidade || '%')
       AND (p_data_ini IS NULL OR a.data >= p_data_ini)
       AND (p_data_fim IS NULL OR a.data <= p_data_fim)
@@ -227,7 +227,7 @@ BEGIN
   LEFT JOIN public.instituicoes i ON i.id = a.instituicao_id
   LEFT JOIN public.ordens_servico o ON o.agendamento_id = a.id
   WHERE
-    (p_status IS NULL OR CASE WHEN p_status::text IS NOT NULL THEN a.status = p_status::public.status_agendamento ELSE TRUE END)
+    (p_status IS NULL OR a.status::TEXT = p_status)
     AND (p_cidade IS NULL OR i.cidade ILIKE '%' || p_cidade || '%')
     AND (p_data_ini IS NULL OR a.data >= p_data_ini)
     AND (p_data_fim IS NULL OR a.data <= p_data_fim)
