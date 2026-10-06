@@ -1,11 +1,12 @@
 -- ============================================================
--- P1 RPC + EDIT AUDIT FIX — Complete, self-contained
+-- P1 RPC + EDIT AUDIT FIX — Complete corrected migration
+-- Commit: 74586e3
 -- Run in: Supabase SQL Editor (single atomic transaction)
+-- Re-run safe: YES (all objects use CREATE OR REPLACE / ADD IF NOT EXISTS)
 -- ============================================================
 
 -- ============================================================
--- STEP 1: Add edit-audit columns to agendamentos
--- These were missing from the base schema
+-- STEP 1: Add edit-audit columns
 -- ============================================================
 DO $$ BEGIN
   ALTER TABLE public.agendamentos
@@ -13,16 +14,15 @@ DO $$ BEGIN
     ADD COLUMN IF NOT EXISTS edit_data TIMESTAMPTZ,
     ADD COLUMN IF NOT EXISTS edit_valores_anteriores JSONB;
 EXCEPTION
-  WHEN duplicate_column THEN RAISE NOTICE 'edit columns already exist';
+  WHEN duplicate_column THEN RAISE NOTICE 'Columns already exist';
 END $$;
 
-COMMENT ON COLUMN public.agendamentos.edit_autor IS 'Nome do usuário que fez a última edição';
-COMMENT ON COLUMN public.agendamentos.edit_data IS 'Data/hora da última edição';
-COMMENT ON COLUMN public.agendamentos.edit_valores_anteriores IS 'JSON com valores anteriores à última edição';
+COMMENT ON COLUMN public.agendamentos.edit_autor IS 'Usuario que fez a ultima edicao';
+COMMENT ON COLUMN public.agendamentos.edit_data IS 'Data/hora da ultima edicao';
+COMMENT ON COLUMN public.agendamentos.edit_valores_anteriores IS 'JSON com valores anteriores a ultima edicao';
 
 -- ============================================================
--- STEP 2: Trigger — auto-update edit audit fields on UPDATE
--- Fires BEFORE UPDATE. Records old values as JSONB.
+-- STEP 2: Audit trigger
 -- ============================================================
 CREATE OR REPLACE FUNCTION public.trg_agendamentos_audit()
 RETURNS TRIGGER AS $$
@@ -65,8 +65,8 @@ CREATE TRIGGER trg_agendamentos_audit
 
 -- ============================================================
 -- STEP 3: RPC — paginated + filtered listing
--- Returns total count + page of rows with JOINed fields.
--- Security: returns only rows the current user can see via RLS.
+-- Key fix: a.status::TEXT = p_status (enum column cast to TEXT, then compared)
+-- Invalid status values return 0 rows (not an error) — by design
 -- ============================================================
 CREATE OR REPLACE FUNCTION public.rpc_agendamentos_list(
   p_limit     INTEGER DEFAULT 50,
@@ -162,8 +162,8 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- ============================================================
--- STEP 4: RPC — export all filtered records (no pagination)
--- Used for XLSX/CSV export.
+-- STEP 4: RPC — export (no pagination)
+-- Same enum fix: a.status::TEXT = p_status
 -- ============================================================
 CREATE OR REPLACE FUNCTION public.rpc_agendamentos_export(
   p_status   TEXT DEFAULT NULL,
@@ -236,11 +236,8 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- ============================================================
--- STEP 5: RPC — update booking (edit dialog)
--- - Only PENDENTE/CONFIRMADO can be edited
--- - Records audit trail (edit_autor, edit_data, edit_valores_anteriores)
---   via trg_agendamentos_audit trigger (fires automatically)
--- - Returns updated row or raises exception
+-- STEP 5: RPC — update booking
+-- Unchanged (already working before this bug)
 -- ============================================================
 CREATE OR REPLACE FUNCTION public.rpc_agendamento_update(
   p_id                        UUID,
@@ -262,22 +259,20 @@ DECLARE
   v_result public.agendamentos;
   v_lock_hash BIGINT;
 BEGIN
-  -- Advisory lock prevents concurrent edits to same row
   v_lock_hash := hashtext('ag_update_' || p_id::TEXT);
   PERFORM pg_advisory_xact_lock(v_lock_hash);
 
-  -- Load existing booking
   SELECT * INTO v_result FROM public.agendamentos WHERE id = p_id;
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Agendamento não encontrado.';
   END IF;
 
-  -- Only PENDENTE or CONFIRMADO can be edited
+  -- Note: NOT IN ('pendente','confirmado') works because PostgreSQL
+  -- implicitly casts TEXT literals to ENUM in IN() expressions
   IF v_result.status NOT IN ('pendente', 'confirmado') THEN
     RAISE EXCEPTION 'Apenas agendamentos pendentes ou confirmados podem ser editados.';
   END IF;
 
-  -- Apply updates (NULL fields = no change)
   UPDATE public.agendamentos SET
     data                        = COALESCE(p_data,                          data),
     turno                       = COALESCE(p_turno::public.turno,           turno),
@@ -300,16 +295,6 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- ============================================================
--- STEP 6: Verify
+-- STEP 6: Reload PostgREST schema cache
 -- ============================================================
--- SELECT 'Columns added:' as info;
--- SELECT column_name FROM information_schema.columns
---   WHERE table_name = 'agendamentos'
---   AND column_name IN ('edit_autor','edit_data','edit_valores_anteriores');
-
--- SELECT 'Functions created:' as info;
--- SELECT proname FROM pg_proc
---   WHERE proname IN ('rpc_agendamentos_list','rpc_agendamentos_export','rpc_agendamento_update','trg_agendamentos_audit')
---   AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public');
-
 NOTIFY pgrst, 'reload schema';
