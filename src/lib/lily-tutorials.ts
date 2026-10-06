@@ -1,4 +1,5 @@
 import type { TutorialDefinition, TutorialStep } from "@/components/lily/TutorialOverlay";
+import { isRoleAtLeast } from "./lily-knowledge";
 
 export type Tutorial = {
   id: string;
@@ -282,10 +283,9 @@ export const TUTORIALS: Tutorial[] = [
 export function getAllTutorials(
   role: "admin" | "operador" | "logistica" | "consulta" | "instituicao" | "any"
 ): Tutorial[] {
-  const hierarchy: Array<typeof role> = ["any", "instituicao", "consulta", "logistica", "operador", "admin"];
   return TUTORIALS.filter((t) => {
     if (!t.requiredRole) return true;
-    return hierarchy.indexOf(role) <= hierarchy.indexOf(t.requiredRole);
+    return isRoleAtLeast(role, t.requiredRole);
   });
 }
 

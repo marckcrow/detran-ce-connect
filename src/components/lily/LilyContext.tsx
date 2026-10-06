@@ -35,8 +35,39 @@ export type ActiveTutorial = {
   step: number;
 };
 
+export type LilyUserRole =
+  | "admin"
+  | "operador"
+  | "logistica"
+  | "consulta"
+  | "instituicao"
+  | "any";
+
+/**
+ * Role hierarchy — used to filter help content by permission level.
+ * Higher index = more access. isRoleAtLeast() checks if a user has
+ * at least the minimum required role for a given feature.
+ */
+const ROLE_HIERARCHY: LilyUserRole[] = [
+  "any",
+  "instituicao",
+  "consulta",
+  "logistica",
+  "operador",
+  "admin",
+];
+
+export function isRoleAtLeast(
+  userRole: LilyUserRole,
+  minRole: LilyUserRole
+): boolean {
+  return ROLE_HIERARCHY.indexOf(userRole) >= ROLE_HIERARCHY.indexOf(minRole);
+}
+
 type LilyContextValue = {
   isOpen: boolean;
+  /** True while roles are being fetched from DB — show only public content */
+  isLoadingProfile: boolean;
   currentScreen: string;
   open: (screen?: string) => void;
   close: () => void;
@@ -53,27 +84,32 @@ type LilyContextValue = {
   tutorialStatus: (id: string) => TutorialStatus;
   resetTutorials: () => void;
   // Role
-  userRole: "admin" | "operador" | "logistica" | "consulta" | "instituicao" | "any";
+  userRole: LilyUserRole;
 };
 
-const LilyContext = createContext< LilyContextValue | null>(null);
+const LilyContext = createContext<LilyContextValue | null>(null);
 
 export function LilyProvider({ children }: { children: ReactNode }) {
-  const { isAdmin, isOperador, isLogistica, isStaff, isInstituicao, roles } = useRoles();
+  const { isAdmin, isOperador, isLogistica, isStaff, isInstituicao, roles, loading: rolesLoading } =
+    useRoles();
   const [isOpen, setIsOpen] = useState(false);
   const [currentScreen, setCurrentScreen] = useState("/");
-  const [tutorialsSeen, setTutorialsSeen] = useState<string[]>(loadTutorialsSeen);
-  const [activeTutorial, setActiveTutorial] = useState<ActiveTutorial | null>(null);
+  const [tutorialsSeen, setTutorialsSeen] = useState<string[]>(
+    loadTutorialsSeen
+  );
+  const [activeTutorial, setActiveTutorial] =
+    useState<ActiveTutorial | null>(null);
 
-  // Derive user role
-  const userRole = useMemo(() => {
+  // Derive user role — use "any" while loading to hide restricted content
+  const userRole = useMemo<LilyUserRole>(() => {
+    if (rolesLoading) return "any";
     if (isAdmin) return "admin";
     if (isOperador && roles.includes("operador")) return "operador";
     if (isLogistica && roles.includes("logistica")) return "logistica";
     if (isStaff) return "consulta";
     if (isInstituicao) return "instituicao";
     return "any";
-  }, [isAdmin, isOperador, isLogistica, isStaff, isInstituicao, roles]);
+  }, [isAdmin, isOperador, isLogistica, isStaff, isInstituicao, roles, rolesLoading]);
 
   const open = useCallback((screen = "/") => {
     setCurrentScreen(screen);
@@ -84,23 +120,29 @@ export function LilyProvider({ children }: { children: ReactNode }) {
 
   const toggle = useCallback(() => setIsOpen((v) => !v), []);
 
-  const startTutorial = useCallback((id: string) => {
-    setActiveTutorial({ id, step: 0 });
-    if (!tutorialsSeen.includes(id)) {
-      const next = [...tutorialsSeen, id];
-      setTutorialsSeen(next);
-      saveTutorialsSeen(next);
-    }
-  }, [tutorialsSeen]);
+  const startTutorial = useCallback(
+    (id: string) => {
+      setActiveTutorial({ id, step: 0 });
+      if (!tutorialsSeen.includes(id)) {
+        const next = [...tutorialsSeen, id];
+        setTutorialsSeen(next);
+        saveTutorialsSeen(next);
+      }
+    },
+    [tutorialsSeen]
+  );
 
-  const completeTutorial = useCallback((id: string) => {
-    setActiveTutorial(null);
-    if (!tutorialsSeen.includes(id)) {
-      const next = [...tutorialsSeen, id];
-      setTutorialsSeen(next);
-      saveTutorialsSeen(next);
-    }
-  }, [tutorialsSeen]);
+  const completeTutorial = useCallback(
+    (id: string) => {
+      setActiveTutorial(null);
+      if (!tutorialsSeen.includes(id)) {
+        const next = [...tutorialsSeen, id];
+        setTutorialsSeen(next);
+        saveTutorialsSeen(next);
+      }
+    },
+    [tutorialsSeen]
+  );
 
   const nextTutorialStep = useCallback(() => {
     setActiveTutorial((prev) =>
@@ -135,6 +177,7 @@ export function LilyProvider({ children }: { children: ReactNode }) {
     <LilyContext.Provider
       value={{
         isOpen,
+        isLoadingProfile: rolesLoading,
         currentScreen,
         open,
         close,

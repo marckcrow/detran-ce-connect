@@ -429,12 +429,20 @@ export function getContextualArticles(
 
   return KNOWLEDGE_BASE.filter((a) => {
     if (!categories.includes(a.category)) return false;
-    if (!a.requiredRole || a.requiredRole === "any" || role === "admin") return true;
-    const roleHierarchy = ["consulta", "logistica", "operador", "admin"];
-    const requiredIdx = roleHierarchy.indexOf(a.requiredRole);
-    const userIdx = roleHierarchy.indexOf(role);
-    return userIdx <= requiredIdx;
+    if (!a.requiredRole || a.requiredRole === "any") return true;
+    return isRoleAtLeast(role, a.requiredRole);
   });
+}
+
+// ── Shared role hierarchy (must match LilyContext.ROLE_HIERARCHY) ────────────────
+// IMPORTANT: keep in sync with LilyContext.tsx
+const ROLE_HIERARCHY = ["any", "instituicao", "consulta", "logistica", "operador", "admin"];
+
+export function isRoleAtLeast(
+  userRole: string,
+  minRole: string
+): boolean {
+  return ROLE_HIERARCHY.indexOf(userRole) >= ROLE_HIERARCHY.indexOf(minRole);
 }
 
 // ── Build Lily response from article ─────────────────────────────────────────
@@ -450,7 +458,7 @@ export function buildLilyResponse(article: Article): LilyResponse {
   return {
     text: article.steps.join("\n"),
     article,
-    suggestedAction: "helpCenter",
-    navigateTo: "/ajuda",
+    suggestedAction: article.relatedScreen ? "navigate" : "helpCenter",
+    navigateTo: article.relatedScreen ?? "/ajuda",
   };
 }
