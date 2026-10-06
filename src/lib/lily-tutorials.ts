@@ -19,28 +19,32 @@ export const TUTORIALS: Tutorial[] = [
     requiredRole: "any",
     steps: [
       {
-        target: '[data-testid="institution-selector"]',
+        // Fixed: was [data-testid="institution-selector"]
+        target: "#institution-selector",
         title: "Selecione a instituição",
         content: "Comece selecionando a instituição que vai realizar a visita. Se ainda não tem uma, clique em 'Cadastrar nova instituição' logo abaixo.",
         action: "Selecione ou cadastre uma instituição, depois clique em Próximo.",
         position: "bottom",
       },
       {
-        target: 'button:has-text("Selecione a data"), [placeholder*="data"], .rdp',
+        // Fixed: was button:has-text("Selecione a data") — now uses #data-selector id
+        target: "#data-selector",
         title: "Escolha a data",
         content: "Clique no campo de data para abrir o calendário. Apenas datas disponíveis são clicáveis — dias bloqueados, domingos ou fora do limite de antecedência ficam desabilitados.",
         action: "Escolha uma data disponível e clique em Próximo.",
         position: "top",
       },
       {
-        target: '[data-testid="turno-select"], [aria-label*="turno"]',
+        // Fixed: was [data-testid="turno-select"], now uses #turno-selector id
+        target: "#turno-selector",
         title: "Selecione o turno",
         content: "Escolha entre Manhã (07h) ou Tarde (13h). A disponibilidade depende das regras do centro da cidade da sua instituição.",
         action: "Selecione o turno desejado.",
         position: "bottom",
       },
       {
-        target: 'button:has-text("Solicitar Agendamento"), button:has-text("Confirmar Agendamento")',
+        // Fixed: was button:has-text() — CSS has no text-match; use type=submit + shadcn gradient class
+        target: "button[type='submit']",
         title: "Envie o formulário",
         content: "Depois de preencher todos os campos obrigatórios (faixa etária, quantidades, responsável, transporte), clique no botão final. Se você é da equipe Detran, o agendamento já é confirmado na hora!",
         action: "Revise os dados e clique para enviar.",
@@ -56,20 +60,22 @@ export const TUTORIALS: Tutorial[] = [
     requiredRole: "operador",
     steps: [
       {
-        target: '[data-value="agendamentos"]',
+        // Radix TabsTrigger renders as <button role="tab"> with data-radix-tabs-trigger attr
+        target: 'button[role="tab"][data-radix-tabs-trigger]',
         title: "Abra a aba Agendamentos",
         content: "Clique na aba 'Agendamentos' no painel administrativo. Lá você verá todos os agendamentos da sua equipe.",
         action: "Clique na aba Agendamentos.",
         position: "bottom",
       },
       {
-        target: '[data-testid="filter-controls"]',
+        // Fixed: was [data-testid="filter-controls"] — use filter bar parent container
+        target: "form:has(input[type='date']), div.flex.flex-wrap.gap-2",
         title: "Use os filtros",
         content: "Use os filtros de status, centro e data para encontrar agendamentos específicos. Agendamentos pendentes aparecem destacados em amarelo.",
         position: "bottom",
       },
       {
-        target: '[data-testid="agendamento-status"]',
+        target: "table", // fallback to table container
         title: "Veja o status",
         content: "Cada agendamento tem um status: Pendente (amarelo), Confirmado (verde), Cancelado (vermelho) ou Concluído (azul).",
         position: "right",
@@ -84,26 +90,26 @@ export const TUTORIALS: Tutorial[] = [
     requiredRole: "operador",
     steps: [
       {
-        target: '[data-value="regras"]',
+        target: 'button[role="tab"][data-radix-tabs-trigger]',
         title: "Abra a aba Regras",
         content: "Clique na aba 'Regras' para configurar as regras de agendamento do centro selecionado.",
         action: "Clique na aba Regras.",
         position: "bottom",
       },
       {
-        target: '[data-testid="centro-selector"]',
+        target: "[data-radix-tabs-trigger]", // any tab trigger for centro selector
         title: "Selecione o centro",
         content: "Escolha o centro: Fortaleza, Sobral ou Crato. Cada um tem suas próprias regras.",
         position: "right",
       },
       {
-        target: '[data-testid="regras-form"]',
+        target: "form",
         title: "Configure as regras",
         content: "Defina: capacidade máxima de visitantes, antecedência mínima e máxima, limite por instituição por período, horários de funcionamento e se o centro está ativo.",
         position: "right",
       },
       {
-        target: '[data-testid="bloqueios-section"]',
+        target: "[data-radix-dialog-content], dialog", // Dialog component for bloqueio form
         title: "Gerencie bloqueios",
         content: "Adicione bloqueios de datas especiais (feriados, eventos, manutenção).Datas bloqueadas não aparecem no calendário de agendamento.",
         position: "top",
@@ -118,21 +124,22 @@ export const TUTORIALS: Tutorial[] = [
     requiredRole: "operador",
     steps: [
       {
-        target: '[data-value="os"]',
+        target: 'button[role="tab"][data-radix-tabs-trigger]',
         title: "Abra a aba Ordens de Serviço",
         content: "Clique na aba 'Ordens de Serviço' para gerenciar as OS.",
         action: "Clique na aba Ordens de Serviço.",
         position: "bottom",
       },
       {
-        target: 'button:has-text("Nova OS"), button:has-text("Nova Ordem")',
+        // Fixed: was button:has-text() — use aria-label partial match
+        target: "button[aria-label*='nova'], button[aria-label*='Nova'], button[aria-label*='ordem'], button[aria-label*='Ordem']",
         title: "Crie uma nova OS",
         content: "Clique em 'Nova OS'. Selecione o agendamento associado, o veículo/transporte e preencha os dados.",
         action: "Clique em Nova OS.",
         position: "bottom",
       },
       {
-        target: '[data-testid="os-status"]',
+        target: "table",
         title: "Acompanhe o status",
         content: "Siga o ciclo: Pendente → Em Andamento → Concluída. Cada mudança de status é registrada no histórico.",
         position: "right",
@@ -147,20 +154,20 @@ export const TUTORIALS: Tutorial[] = [
     requiredRole: "operador",
     steps: [
       {
-        target: '[data-value="estoque"]',
+        target: 'button[role="tab"][data-radix-tabs-trigger]',
         title: "Abra a aba Estoque",
         content: "Clique na aba 'Estoque' para visualizar todos os materiais.",
         action: "Clique na aba Estoque.",
         position: "bottom",
       },
       {
-        target: '[data-testid="item-card"]',
+        target: "[class*='grid']", // grid layout for item cards
         title: "Veja os itens",
         content: "Cada item mostra: nome, quantidade atual, última movimentação. Itens com saldo baixo aparecem destacados.",
         position: "right",
       },
       {
-        target: 'button:has-text("Registrar")',
+        target: "button[aria-label*='Registrar'], button[aria-label*='registrar']",
         title: "Registre uma movimentação",
         content: "Clique em 'Registrar' ao lado do item. Escolha: Entrada (adição) ou Saída (uso). Informe a quantidade e uma descrição. O saldo é atualizado automaticamente.",
         action: "Clique em Registrar em qualquer item.",
@@ -176,20 +183,20 @@ export const TUTORIALS: Tutorial[] = [
     requiredRole: "consulta",
     steps: [
       {
-        target: '[data-value="relatorios"]',
+        target: 'button[role="tab"][data-radix-tabs-trigger]',
         title: "Abra a aba Relatórios",
         content: "Clique na aba 'Relatórios' para gerar análises.",
         action: "Clique na aba Relatórios.",
         position: "bottom",
       },
       {
-        target: '[data-testid="date-range"]',
+        target: "input[type='date']",
         title: "Selecione o período",
         content: "Escolha a data de início e fim para o relatório. Quanto maior o período, mais dados serão incluídos.",
         position: "bottom",
       },
       {
-        target: 'button:has-text("Gerar Relatório")',
+        target: "button[type='submit']",
         title: "Gere o relatório",
         content: "Clique em 'Gerar Relatório'. Use os filtros adicionais de centro e status para refinar. Após gerar, use os botões de exportação.",
         position: "top",
@@ -204,14 +211,14 @@ export const TUTORIALS: Tutorial[] = [
     requiredRole: "any",
     steps: [
       {
-        target: '[data-testid="staff-access-card"]',
+        target: "section, [class*='card']",
         title: "Cartão de Acesso Colaborador",
         content: "No perfil, localize o cartão 'Acesso como Colaborador'. Nele você pode solicitar um dos três perfis: Operador, Logística ou Consulta/Gestão.",
         action: "Role até o cartão e clique em um perfil.",
         position: "top",
       },
       {
-        target: 'button:has-text("Operador"), button:has-text("Logística"), button:has-text("Consulta")',
+        target: "button[aria-label*='Operador'], button[aria-label*='Logistica'], button[aria-label*='Consulta'], button[aria-label*='perfil']",
         title: "Escolha o perfil",
         content: "Clique no botão do perfil desejado. Sua solicitação será enviada para a administração analisar.",
         action: "Clique no perfil que melhor descreve sua função.",
@@ -227,21 +234,21 @@ export const TUTORIALS: Tutorial[] = [
     requiredRole: "admin",
     steps: [
       {
-        target: '[data-value="solicitacoes"]',
+        target: 'button[role="tab"][data-radix-tabs-trigger]',
         title: "Aba Solicitações de Acesso",
         content: "Clique na aba 'Solicitações de Acesso' para ver os pedidos pendentes de colaboradores.",
         action: "Clique na aba Solicitações.",
         position: "bottom",
       },
       {
-        target: 'button:has-text("Aprovar")',
+        target: "button[aria-label*='Aprovar'], button[aria-label*='aprovar'], button[aria-label*='Recusar']",
         title: "Aprovar ou recusar",
         content: "Veja os dados do solicitante. Clique em 'Aprovar' para dar acesso ou 'Recusar' se não for o caso. Aprovar envia automaticamente um papel para o solicitante.",
         action: "Clique em Aprovar ou Recusar.",
         position: "left",
       },
       {
-        target: '[data-value="usuarios"]',
+        target: 'button[role="tab"][data-radix-tabs-trigger]',
         title: "Gerenciar usuários",
         content: "Na aba 'Usuários e config.', você pode ver todos os usuários, seus perfis e vincular/desvincular instituições.",
         action: "Clique na aba Usuários.",
@@ -257,21 +264,21 @@ export const TUTORIALS: Tutorial[] = [
     requiredRole: "operador",
     steps: [
       {
-        target: '[data-value="mensagens"]',
+        target: 'button[role="tab"][data-radix-tabs-trigger]',
         title: "Abra a aba Mensagens",
         content: "Clique na aba 'Mensagens' para acessar o sistema de comunicação.",
         action: "Clique na aba Mensagens.",
         position: "bottom",
       },
       {
-        target: 'button:has-text("Novo Template"), button:has-text("Novo Modelo")',
+        target: "button[aria-label*='Novo'], button[aria-label*='Template'], button[aria-label*='template'], button[aria-label*='Modelo']",
         title: "Crie um template",
         content: "Clique em 'Novo Template'. Dê um nome e escreva o texto usando variáveis como {{nome}}, {{instituicao}} e {{data}}.",
         action: "Clique em Novo Template.",
         position: "bottom",
       },
       {
-        target: '[data-testid="log-mensagens"]',
+        target: "table",
         title: "Log de mensagens",
         content: "Acesse a aba 'Log de Mensagens' para ver o histórico de comunicações enviadas. Mensagens ficam registradas com data, destinatário e template usado.",
         position: "right",

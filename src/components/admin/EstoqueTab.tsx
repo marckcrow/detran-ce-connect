@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -52,6 +52,18 @@ export function EstoqueTab({ podeEditar }: { podeEditar: boolean }) {
   const [itens, setItens] = useState<EstoqueItem[]>([]);
   const [movs, setMovs] = useState<EstoqueMov[]>([]);
   const [nomes, setNomes] = useState<Record<string, string>>({});
+
+  // Compute current saldo for each item from the latest saldo_apos in movements
+  // (trigger trg_calc_saldo_apos writes saldo_apos on every insert)
+  const saldoPorItem = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const m of movs) {
+      if (m.saldo_apos != null && !(m.item_id in map)) {
+        map[m.item_id] = m.saldo_apos;
+      }
+    }
+    return map;
+  }, [movs]);
   const [f, setF] = useState({ item_id: "", tipo: "entrada", quantidade: "", motivo: "", data_mov: format(new Date(), "yyyy-MM-dd") });
   const [estornando, setEstornando] = useState<string | null>(null);
 
@@ -195,7 +207,7 @@ export function EstoqueTab({ podeEditar }: { podeEditar: boolean }) {
                 {i.descricao && <p className="text-xs text-muted-foreground mt-1">{i.descricao}</p>}
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">{i.quantidade}</div>
+                <div className="text-3xl font-bold">{saldoPorItem[i.id] ?? i.quantidade ?? 0}</div>
                 <p className="text-xs text-muted-foreground">unidades em estoque</p>
               </CardContent>
             </Card>
@@ -311,7 +323,7 @@ export function EstoqueTab({ podeEditar }: { podeEditar: boolean }) {
                       <TableCell className="font-medium">{i.nome}</TableCell>
                       <TableCell><Badge variant="secondary" className={tInfo.color}>{tInfo.label}</Badge></TableCell>
                       <TableCell className="text-muted-foreground max-w-[300px] truncate">{i.descricao || "—"}</TableCell>
-                      <TableCell className="text-center font-semibold">{i.quantidade}</TableCell>
+                      <TableCell className="text-center font-semibold">{saldoPorItem[i.id] ?? i.quantidade ?? 0}</TableCell>
                       <TableCell className="text-center">
                         <Badge variant={i.ativa ? "default" : "outline"}>{i.ativa ? "Ativa" : "Inativa"}</Badge>
                       </TableCell>

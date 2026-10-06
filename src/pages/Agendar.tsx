@@ -691,7 +691,7 @@ export default function Agendar() {
                     ) : (
                       /* Institution user: dropdown */
                       <Select value={selectedInstitutionId} onValueChange={setSelectedInstitutionId}>
-                        <SelectTrigger>
+                        <SelectTrigger id="institution-selector">
                           <SelectValue placeholder="Selecione a instituição" />
                         </SelectTrigger>
                         <SelectContent>
@@ -864,6 +864,7 @@ export default function Agendar() {
                             <FormControl>
                               <Button
                                 variant="outline"
+                                id="data-selector"
                                 className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
                               >
                                 {field.value ? format(field.value, "dd 'de' MMMM 'de' yyyy", { locale: ptBR }) : "Selecione a data"}
@@ -899,7 +900,7 @@ export default function Agendar() {
                         <FormLabel>Turno</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
-                            <SelectTrigger>
+                            <SelectTrigger id="turno-selector">
                               <SelectValue placeholder="Selecione o turno" />
                             </SelectTrigger>
                           </FormControl>
