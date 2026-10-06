@@ -1,5 +1,6 @@
 import { Label } from "@/components/ui/label";
 import { useEffect, useState } from "react";
+import { ScreenHelpButton } from "@/components/lily/ScreenHelpButton";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -581,6 +582,15 @@ export default function Agendar() {
       <Navbar />
       <main className="flex-1 py-12 px-4">
         <div className="container mx-auto max-w-2xl">
+          {/* Page header */}
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">Agendar Visita</h1>
+              <p className="text-muted-foreground text-sm">Solicite uma visita educativa ao DETRAN-CE</p>
+            </div>
+            <ScreenHelpButton screenName="Agendar Visita" />
+          </div>
+
           {/* Rules info banner */}
           {centroConfig && !rulesLoading && (
             <div className="mb-4 rounded-lg border bg-card p-3 text-sm">
@@ -608,7 +618,7 @@ export default function Agendar() {
 
           <Card className="shadow-elevated">
             <CardHeader>
-              <CardTitle className="text-2xl">Agendar Visita</CardTitle>
+              <CardTitle className="text-xl">Formulário de Agendamento</CardTitle>
               <CardDescription>
                 Preencha o formulário para solicitar uma visita educativa.
                 {centroConfig ? ` Capacidade máxima de ${maxPessoas} pessoas.` : " Carregando regras..."}

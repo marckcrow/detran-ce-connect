@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Calendar, LayoutDashboard, LogIn, LogOut, User } from "lucide-react";
+import { Calendar, HelpCircle, LayoutDashboard, LogIn, LogOut, User } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRoles } from "@/hooks/useRoles";
 import {
@@ -45,6 +45,10 @@ export const Navbar = () => {
             </Link>
             <Link to="/perfil" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
               Meu Perfil
+            </Link>
+            {/* Ajuda link */}
+            <Link to="/ajuda" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+              Ajuda
             </Link>
             {/* Admin link only visible to staff (admin, operador, logistica, consulta) */}
             {isStaff && (

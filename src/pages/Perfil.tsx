@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
+import { ScreenHelpButton } from "@/components/lily/ScreenHelpButton";
 import type { Database } from "@/integrations/supabase/types";
 
 type TipoInstituicao = Database["public"]["Enums"]["tipo_instituicao"];
@@ -277,11 +278,14 @@ export default function Perfil() {
       <Navbar />
       <main className="flex-1 py-12 px-4">
         <div className="container mx-auto max-w-3xl space-y-6">
-          <div>
-            <h1 className="text-3xl font-bold">Meu Perfil</h1>
-            <p className="text-muted-foreground">
-              Gerencie seus dados e o vínculo com sua instituição.
-            </p>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold">Meu Perfil</h1>
+              <p className="text-muted-foreground">
+                Gerencie seus dados e o vínculo com sua instituição.
+              </p>
+            </div>
+            <ScreenHelpButton screenName="Meu Perfil" className="mt-1" />
           </div>
 
           {/* LGPD notice */}

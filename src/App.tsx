@@ -10,7 +10,12 @@ import MinhaEscola from "./pages/MinhaEscola";
 import Perfil from "./pages/Perfil";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
+import Ajuda from "./pages/Ajuda";
 import { WhatsAppFloat } from "./components/layout/WhatsAppFloat";
+import { LilyProvider } from "./components/lily/LilyContext";
+import { LilyFloat } from "./components/lily/LilyFloat";
+import { LilyChat } from "./components/lily/LilyChat";
+import { LilyTutorialManager } from "./components/lily/LilyTutorialManager";
 
 const queryClient = new QueryClient();
 
@@ -19,19 +24,25 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/agendar" element={<Agendar />} />
-          <Route path="/minha-escola" element={<MinhaEscola />} />
-          <Route path="/perfil" element={<Perfil />} />
-          <Route path="/admin" element={<Admin />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        <WhatsAppFloat />
-      </BrowserRouter>
+      <LilyProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/agendar" element={<Agendar />} />
+            <Route path="/minha-escola" element={<MinhaEscola />} />
+            <Route path="/perfil" element={<Perfil />} />
+            <Route path="/admin" element={<Admin />} />
+            <Route path="/ajuda" element={<Ajuda />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <WhatsAppFloat />
+          <LilyFloat />
+          <LilyChat />
+          <LilyTutorialManager />
+        </BrowserRouter>
+      </LilyProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
