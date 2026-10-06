@@ -1,5 +1,4 @@
 import { useLily } from "./LilyContext";
-import { MessageCircleQuestion } from "lucide-react";
 
 export function LilyFloat() {
   const { open, isOpen } = useLily();
@@ -10,7 +9,7 @@ export function LilyFloat() {
       aria-label="Abrir ajuda da Lily"
       title="Lily — Assistente Virtual"
       className={`
-        fixed bottom-20 right-4 z-40
+        fixed bottom-6 right-6 z-50
         flex items-center justify-center
         rounded-full shadow-elevated
         bg-primary hover:bg-primary/90 text-primary-foreground
@@ -21,8 +20,8 @@ export function LilyFloat() {
         ${isOpen ? "opacity-0 pointer-events-none scale-75" : "opacity-100 scale-100"}
       `}
       style={{
-        width: "clamp(48px, 8vw, 60px)",
-        height: "clamp(48px, 8vw, 60px)",
+        width: "clamp(52px, 9vw, 60px)",
+        height: "clamp(52px, 9vw, 60px)",
       }}
     >
       {/* Pulse ring animation */}
@@ -34,7 +33,7 @@ export function LilyFloat() {
       <img
         src="/lily-avatar.png"
         alt="Lily — Assistente Virtual"
-        className="relative z-10 w-10 h-10 rounded-full object-cover border-2 border-white/30"
+        className="relative z-10 w-[clamp(40px,7.5vw,48px)] h-[clamp(40px,7.5vw,48px)] rounded-full object-cover border-2 border-white/30"
         onError={(e) => {
           // Fallback to icon if image fails
           (e.currentTarget as HTMLImageElement).style.display = "none";

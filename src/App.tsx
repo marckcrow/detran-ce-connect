@@ -11,7 +11,6 @@ import Perfil from "./pages/Perfil";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import Ajuda from "./pages/Ajuda";
-import { WhatsAppFloat } from "./components/layout/WhatsAppFloat";
 import { LilyProvider } from "./components/lily/LilyContext";
 import { LilyFloat } from "./components/lily/LilyFloat";
 import { LilyChat } from "./components/lily/LilyChat";
@@ -37,7 +36,6 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
-          <WhatsAppFloat />
           <LilyFloat />
           <LilyChat />
           <LilyTutorialManager />

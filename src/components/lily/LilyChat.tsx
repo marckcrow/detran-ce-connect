@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Send, X, Minus, GraduationCap, BookOpen, AlertCircle, User, Play, ExternalLink } from "lucide-react";
+import { Send, X, Minus, GraduationCap, BookOpen, AlertCircle, User, Play, ExternalLink, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useLily } from "./LilyContext";
@@ -12,6 +12,16 @@ import {
   type LilyResponse,
 } from "@/lib/lily-knowledge";
 import { getAllTutorials } from "@/lib/lily-tutorials";
+
+// ── WhatsApp config ──────────────────────────────────────────────────────
+const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER || "5585985035473";
+const WHATSAPP_DEFAULT_MSG =
+  "Olá! Estou usando o sistema e gostaria de ajuda da equipe.";
+
+function getWhatsAppUrl(): string | null {
+  if (!WHATSAPP_NUMBER || WHATSAPP_NUMBER === "DISABLED") return null;
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(WHATSAPP_DEFAULT_MSG)}`;
+}
 
 type Message = {
   id: string;
@@ -68,6 +78,7 @@ export function LilyChat() {
   const [isMinimized, setIsMinimized] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const whatsappUrl = getWhatsAppUrl();
 
   // Add greeting on first open
   useEffect(() => {
@@ -103,7 +114,11 @@ export function LilyChat() {
       const fallback: Message = {
         id: crypto.randomUUID(),
         role: "lily",
-        text: "Não encontrei uma orientação confirmada para esse caso. Você pode consultar a central de ajuda ou procurar o administrador.",
+        text:
+          "Não encontrei uma orientação confirmada para esse caso. Você pode consultar a central de ajuda ou procurar o administrador." +
+          (whatsappUrl
+            ? "\n\nPrecisa de mais ajuda? Você pode falar com nossa equipe pelo WhatsApp."
+            : ""),
       };
       setTimeout(() => setMessages((prev) => [...prev, fallback]), 400);
     }
@@ -122,7 +137,14 @@ export function LilyChat() {
         {
           id: crypto.randomUUID(),
           role: "lily",
-          text: `Claro! Vou abrir a página de ${result.route === "/agendar" ? "agendamento" : result.route === "/perfil" ? "perfil" : "ajuda"}.`,
+          text:
+            `Claro! Vou abrir a página de ${
+              result.route === "/agendar"
+                ? "agendamento"
+                : result.route === "/perfil"
+                  ? "perfil"
+                  : "ajuda"
+            }.`,
           navigateTo: result.route,
         },
       ]);
@@ -151,7 +173,8 @@ export function LilyChat() {
           {
             id: crypto.randomUUID(),
             role: "lily",
-            text: "Esta tela não tem uma explicação detalhada ainda. Tente usar a barra de busca acima para encontrar o que precisa!",
+            text:
+              "Esta tela não tem uma explicação detalhada ainda. Tente usar a barra de busca acima para encontrar o que precisa!",
           },
         ]);
       }
@@ -162,7 +185,11 @@ export function LilyChat() {
         {
           id: crypto.randomUUID(),
           role: "lily",
-          text: "Sinto muito pelo transtorno! Alguns erros comuns:\n\n• Verifique se você está logado corretamente.\n• Confira se a instituição está selecionada.\n• Se o erro persistir, tente recarregar a página.\n\nSe o problema continuar, entre em contato pelo WhatsApp da equipe DETRAN.",
+          text:
+            "Sinto muito pelo transtorno! Alguns erros comuns:\n\n• Verifique se você está logado corretamente.\n• Confira se a instituição está selecionada.\n• Se o erro persistir, tente recarregar a página.\n\n" +
+            (whatsappUrl
+              ? "Se o problema continue, fale com nossa equipe pelo WhatsApp."
+              : "Se o problema continue, entre em contato com o administrador."),
         },
       ]);
     } else if (result.type === "tutoriais") {
@@ -197,7 +224,7 @@ export function LilyChat() {
     ${isMinimized ? "h-14" : "h-[70vh] max-h-[600px]"}
     bottom-0 right-0
     w-full sm:w-[400px] md:w-[440px]
-    sm:bottom-20 sm:right-4 sm:rounded-xl sm:h-[580px]
+    sm:bottom-20 sm:right-6 sm:rounded-xl sm:h-[580px]
   `;
 
   if (!isOpen) return null;
@@ -322,7 +349,7 @@ export function LilyChat() {
           </div>
 
           {/* Input */}
-          <div className="px-4 pb-4 shrink-0 border-t pt-3">
+          <div className="px-4 pb-3 shrink-0 border-t pt-3">
             <div className="flex gap-2 items-end">
               <textarea
                 ref={inputRef}
@@ -347,6 +374,38 @@ export function LilyChat() {
               </Button>
             </div>
           </div>
+
+          {/* ── WhatsApp CTA bar ──────────────────────────────────────────── */}
+          {whatsappUrl ? (
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="
+                flex items-center justify-center gap-2 px-4 py-2.5
+                bg-[#25D366] hover:bg-[#20BD5A] text-white
+                text-sm font-medium transition-colors
+                rounded-b-xl sm:rounded-bl-xl sm:rounded-br-xl
+                shrink-0 no-underline
+              "
+              aria-label="Falar com a equipe pelo WhatsApp"
+            >
+              <MessageCircle className="h-4 w-4" />
+              💬 Falar com a equipe pelo WhatsApp
+            </a>
+          ) : (
+            <div
+              className="
+                flex items-center justify-center px-4 py-2.5
+                bg-muted text-muted-foreground
+                text-xs italic
+                rounded-b-xl sm:rounded-bl-xl sm:rounded-br-xl
+                shrink-0
+              "
+            >
+              Atendimento por WhatsApp indisponível no momento.
+            </div>
+          )}
         </>
       )}
     </div>
