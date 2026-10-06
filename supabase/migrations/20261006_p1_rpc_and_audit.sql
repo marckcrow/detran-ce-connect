@@ -132,7 +132,7 @@ BEGIN
     LEFT JOIN public.instituicoes i ON i.id = a.instituicao_id
     LEFT JOIN public.ordens_servico o ON o.agendamento_id = a.id
     WHERE
-      (p_status IS NULL OR a.status = p_status)
+      (p_status IS NULL OR a.status = p_status::public.status_agendamento)
       AND (p_cidade IS NULL OR i.cidade ILIKE '%' || p_cidade || '%')
       AND (p_data_ini IS NULL OR a.data >= p_data_ini)
       AND (p_data_fim IS NULL OR a.data <= p_data_fim)
@@ -145,7 +145,7 @@ BEGIN
       CASE WHEN p_order_dir = 'DESC' THEN sort_inst   END DESC NULLS LAST
   )
   SELECT
-    COUNT(*)::BIGINT OVER (),
+    COUNT(*) OVER()::BIGINT,
     b.id, b.instituicao_id, b.data, b.horario, b.turno,
     b.quantidade_alunos, b.quantidade_professores, b.quantidade_acompanhantes,
     b.faixa_etaria::TEXT, b.transporte_status::TEXT, b.status::TEXT,
@@ -227,7 +227,7 @@ BEGIN
   LEFT JOIN public.instituicoes i ON i.id = a.instituicao_id
   LEFT JOIN public.ordens_servico o ON o.agendamento_id = a.id
   WHERE
-    (p_status IS NULL OR a.status = p_status)
+    (p_status IS NULL OR a.status = p_status::public.status_agendamento)
     AND (p_cidade IS NULL OR i.cidade ILIKE '%' || p_cidade || '%')
     AND (p_data_ini IS NULL OR a.data >= p_data_ini)
     AND (p_data_fim IS NULL OR a.data <= p_data_fim)
