@@ -137,7 +137,7 @@ const redeLabels: Record<Rede, string> = {
   outra: "Outra",
 };
 
-const UNIDADES = ["Fortaleza", "Sobral", "Crato"];
+type Unidade = { id: string; nome: string; sigla: string; cidade: string; macrorregiao: string | null; ativo: boolean; aceita_solicitacoes: boolean };
 
 export default function Agendar() {
   const { user, loading: authLoading } = useAuth();
@@ -150,6 +150,8 @@ export default function Agendar() {
   const [institutions, setInstitutions] = useState<InstituicaoSearch[]>([]);
   const [selectedInstitutionId, setSelectedInstitutionId] = useState<string>("");
   const [cidadeAtual, setCidadeAtual] = useState<string | null>(null);
+  const [unidades, setUnidades] = useState<Unidade[]>([]);
+  const [selectedUnidadeId, setSelectedUnidadeId] = useState<string>("");
   const [institutionsLoading, setInstitutionsLoading] = useState(true);
   const [institutionSearch, setInstitutionSearch] = useState("");
 
@@ -201,23 +203,23 @@ export default function Agendar() {
     setInstitutionsLoading(true);
 
     (async () => {
-      if (isStaff) {
-        // Staff: load ALL institutions
-        const { data } = await (supabase as any)
-          .from("instituicoes")
-          .select("*")
-          .order("nome");
-        setInstitutions(data ?? []);
-      } else {
-        // Institution user: load only accessible institutions via instituicao_access
-        const { data } = await (supabase as any)
-          .from("instituicoes")
-          .select("instituicoes.*")
-          .innerJoin("instituicao_access", "instituicao_access.instituicao_id", "instituicoes.id")
-          .eq("instituicao_access.user_id", user.id)
-          .order("instituicoes.nome");
-        setInstitutions(data ?? []);
-      }
+      const [{ data: unidadesData }, instData] = await Promise.all([
+        (supabase as any).rpc("rpc_unidades_list"),
+        isStaff
+          ? (supabase as any).from("instituicoes").select("*").order("nome")
+          : (supabase as any)
+              .from("instituicoes")
+              .select("instituicoes.*")
+              .innerJoin("instituicao_access", "instituicao_access.instituicao_id", "instituicoes.id")
+              .eq("instituicao_access.user_id", user.id)
+              .order("instituicoes.nome"),
+      ]);
+
+      setUnidades((unidadesData as Unidade[]) ?? []);
+      const accepting = ((unidadesData as Unidade[]) ?? []).filter((u: Unidade) => u.aceita_solicitacoes !== false);
+      if (accepting.length === 1) setSelectedUnidadeId(accepting[0].id);
+
+      setInstitutions(instData.data ?? []);
       setInstitutionsLoading(false);
     })();
   }, [user, isStaff]);
@@ -231,51 +233,46 @@ export default function Agendar() {
 
   // ---- Load availability rules from the new rules engine ----
   useEffect(() => {
-    if (!user || !cidadeAtual) return;
+    if (!user || !selectedUnidadeId) return;
     setRulesLoading(true);
 
-    (supabase as any)
-      .rpc("get_centro_for_cidade", { p_cidade: cidadeAtual })
-      .then(async ({ data: centroName }) => {
-        if (!centroName) {
-          setRulesLoading(false);
-          return;
-        }
+    const unidade = unidades.find((u) => u.id === selectedUnidadeId);
+    const centroName = unidade?.cidade ?? null;
 
-        const [cfgRes, horRes, blkRes, diaRes] = await Promise.all([
-          (supabase as any).from("centro_config").select("*").eq("centro", centroName).maybeSingle(),
-          (supabase as any).from("centro_horarios").select("*").eq("centro", centroName).eq("ativo", true).order("horario"),
-          (supabase as any).from("centro_bloqueios").select("*").eq("centro", centroName).order("data"),
-          (supabase as any).from("centro_dias_funcionamento").select("*").eq("centro", centroName).order("dia_semana"),
-        ]);
+    (async () => {
+      if (!centroName) {
+        setCentroConfig(null); setHorarios([]); setBloqueios([]); setDiasFunc([]); setRulesLoading(false); return;
+      }
 
-        if (cfgRes.data) setCentroConfig(cfgRes.data as CentroConfig);
-        setHorarios((horRes.data ?? []) as CentroHorario[]);
-        setBloqueios((blkRes.data ?? []) as CentroBloqueio[]);
-        setDiasFunc((diaRes.data ?? []) as DiaFuncionamento[]);
-        setRulesLoading(false);
-      });
+      const [cfgRes, horRes, blkRes, diaRes] = await Promise.all([
+        (supabase as any).from("centro_config").select("*").eq("centro", centroName).maybeSingle(),
+        (supabase as any).from("centro_horarios").select("*").eq("centro", centroName).eq("ativo", true).order("horario"),
+        (supabase as any).from("centro_bloqueios").select("*").eq("centro", centroName).order("data"),
+        (supabase as any).from("centro_dias_funcionamento").select("*").eq("centro", centroName).order("dia_semana"),
+      ]);
 
-    const start = format(new Date(), "yyyy-MM-dd");
-    const end = format(addDays(new Date(), 90), "yyyy-MM-dd");
-    (supabase as any)
-      .from("disponibilidade")
-      .select("data, turno, status, capacidade, vagas_ocupadas")
-      .gte("data", start)
-      .lte("data", end)
-      .then(({ data }) => {
-        if (!data) return;
+      if (cfgRes.data) setCentroConfig(cfgRes.data as CentroConfig);
+      setHorarios((horRes.data ?? []) as CentroHorario[]);
+      setBloqueios((blkRes.data ?? []) as CentroBloqueio[]);
+      setDiasFunc((diaRes.data ?? []) as DiaFuncionamento[]);
+
+      const start = format(new Date(), "yyyy-MM-dd");
+      const end = format(addDays(new Date(), 90), "yyyy-MM-dd");
+      const slotsRes = await (supabase as any)
+        .from("disponibilidade").select("data, turno, status, capacidade, vagas_ocupadas")
+        .eq("unidade_id", selectedUnidadeId).gte("data", start).lte("data", end);
+
+      if (slotsRes.data) {
         const map: typeof slotsMap = {};
-        for (const s of data) {
-          map[`${s.data}::${s.turno}`] = {
-            status: s.status,
-            capacidade: s.capacidade ?? 46,
-            vagas_ocupadas: s.vagas_ocupadas ?? 0,
-          };
+        for (const s of slotsRes.data) {
+          map[`${s.data}::${s.turno}`] = { status: s.status, capacidade: s.capacidade ?? 46, vagas_ocupadas: s.vagas_ocupadas ?? 0 };
         }
         setSlotsMap(map);
-      });
-  }, [user, cidadeAtual]);
+      }
+
+      setRulesLoading(false);
+    })();
+  }, [user, selectedUnidadeId, unidades]);
 
   // Dynamic form schema based on DB rules
   const form = useForm<AgendamentoForm>({
@@ -309,11 +306,7 @@ export default function Agendar() {
   useEffect(() => {
     if (!selectedInstitutionId) return;
     const inst = institutions.find((i) => i.id === selectedInstitutionId);
-    if (inst?.cidade) {
-      setCidadeAtual(inst.cidade);
-    } else {
-      setCidadeAtual(null);
-    }
+    setCidadeAtual(inst?.cidade ?? null);
   }, [selectedInstitutionId, institutions]);
 
   // ---- Check for duplicate institution name as user types ----
@@ -485,6 +478,10 @@ export default function Agendar() {
       toast({ title: "Selecione uma instituição", description: "Escolha a instituição que fará a visita antes de agendar.", variant: "destructive" });
       return;
     }
+    if (!selectedUnidadeId) {
+      toast({ title: "Selecione a unidade", description: "Escolha a unidade do DETRAN-CE que recibirá a visita.", variant: "destructive" });
+      return;
+    }
 
     const result = await validateBooking(values);
     setValidationResult(result);
@@ -509,6 +506,7 @@ export default function Agendar() {
 
     const { error } = await (supabase as any).from("agendamentos").insert({
       instituicao_id: selectedInstitutionId,
+      unidade_id: selectedUnidadeId,
       data: format(values.data, "yyyy-MM-dd"),
       turno: values.turno,
       horario: values.turno === "manha" ? "07:00" : "13:00",
@@ -791,7 +789,7 @@ export default function Agendar() {
                       <Select value={newInstForm.cidade} onValueChange={(v) => setNewInstForm((f) => ({ ...f, cidade: v }))}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          {UNIDADES.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                          {unidades.map((u) => <SelectItem key={u.cidade} value={u.cidade}>{u.cidade}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>
@@ -850,6 +848,59 @@ export default function Agendar() {
               )}
 
               <SugestaoIA cidadeAtual={cidadeAtual} onAplicar={aplicarSugestao} />
+
+              {/* ---- UNIDADE SELECTOR (P2 — explicit, before form fields) ---- */}
+              <div id="unidade-selector" className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Building2 className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-semibold">Unidade de destino</span>
+                    <span className="text-destructive text-xs">*</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Escolha a unidade do DETRAN-CE que recibirá a visita. A disponibilidade e regras são específicas da unidade.
+                  </p>
+                  {unidades.length === 0 ? (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" /> Carregando unidades...
+                    </div>
+                  ) : (
+                    <div className="grid gap-2 sm:grid-cols-1">
+                      {unidades.filter((u) => u.ativo && u.aceita_solicitacoes !== false).map((u) => (
+                        <button
+                          key={u.id}
+                          type="button"
+                          onClick={() => setSelectedUnidadeId(u.id)}
+                          className={cn(
+                            "rounded-lg border px-4 py-3 text-left transition-all text-sm",
+                            "hover:border-primary/50 hover:bg-primary/5",
+                            selectedUnidadeId === u.id
+                              ? "border-primary bg-primary/10 ring-1 ring-primary"
+                              : "border-border"
+                          )}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold">{u.nome}</span>
+                            {selectedUnidadeId === u.id && (
+                              <Badge variant="default" className="text-xs">Selecionada</Badge>
+                            )}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            {u.cidade} · {u.macrorregiao ?? "Região " + u.sigla}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {selectedUnidadeId && (
+                    <div className="mt-2 rounded border border-primary/20 bg-primary/5 px-3 py-2 text-xs">
+                      ✅ Regras carregadas para{" "}
+                      <strong>{unidades.find((u) => u.id === selectedUnidadeId)?.nome}</strong>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                   {/* Data */}

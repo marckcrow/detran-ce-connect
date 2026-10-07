@@ -34,6 +34,10 @@ export type Database = {
           responsavel_nome: string | null
           responsavel_whatsapp: string | null
           status: Database["public"]["Enums"]["status_agendamento"] | null
+          unidade_id: string | null
+          edit_autor: string | null
+          edit_data: string | null
+          edit_valores_anteriores: Json | null
           transporte_status:
             | Database["public"]["Enums"]["transporte_status"]
             | null
@@ -43,6 +47,10 @@ export type Database = {
         Insert: {
           created_at?: string | null
           data: string
+          unidade_id?: string | null
+          edit_autor?: string | null
+          edit_data?: string | null
+          edit_valores_anteriores?: Json | null
           faixa_etaria: Database["public"]["Enums"]["faixa_etaria"]
           horario?: string | null
           id?: string

@@ -19,31 +19,34 @@ export const TUTORIALS: Tutorial[] = [
     requiredRole: "any",
     steps: [
       {
-        // Fixed: was [data-testid="institution-selector"]
         target: "#institution-selector",
         title: "Selecione a instituição",
         content: "Comece selecionando a instituição que vai realizar a visita. Se ainda não tem uma, clique em 'Cadastrar nova instituição' logo abaixo.",
-        action: "Selecione ou cadastre uma instituição, depois clique em Próximo.",
+        action: "Selecione ou cadastre uma instituição.",
         position: "bottom",
       },
       {
-        // Fixed: was button:has-text("Selecione a data") — now uses #data-selector id
+        target: "#unidade-selector",
+        title: "Escolha a unidade do DETRAN-CE",
+        content: "Agora escolha a unidade do DETRAN-CE que receberá a visita. Cada unidade tem suas próprias regras de disponibilidade, capacidade e funcionamento. Esta escolha define quais horários e datas estarão disponíveis.",
+        action: "Selecione a unidade desejada clicando em um dos cartões.",
+        position: "bottom",
+      },
+      {
         target: "#data-selector",
         title: "Escolha a data",
         content: "Clique no campo de data para abrir o calendário. Apenas datas disponíveis são clicáveis — dias bloqueados, domingos ou fora do limite de antecedência ficam desabilitados.",
-        action: "Escolha uma data disponível e clique em Próximo.",
+        action: "Escolha uma data disponível.",
         position: "top",
       },
       {
-        // Fixed: was [data-testid="turno-select"], now uses #turno-selector id
         target: "#turno-selector",
         title: "Selecione o turno",
-        content: "Escolha entre Manhã (07h) ou Tarde (13h). A disponibilidade depende das regras do centro da cidade da sua instituição.",
+        content: "Escolha entre Manhã (07h) ou Tarde (13h). A disponibilidade depende das regras da unidade selecionada.",
         action: "Selecione o turno desejado.",
         position: "bottom",
       },
       {
-        // Fixed: was button:has-text() — CSS has no text-match; use type=submit + shadcn gradient class
         target: "button[type='submit']",
         title: "Envie o formulário",
         content: "Depois de preencher todos os campos obrigatórios (faixa etária, quantidades, responsável, transporte), clique no botão final. Se você é da equipe Detran, o agendamento já é confirmado na hora!",
