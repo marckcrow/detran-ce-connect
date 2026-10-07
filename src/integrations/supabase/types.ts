@@ -472,6 +472,7 @@ export type Database = {
           status: Database["public"]["Enums"]["os_status"]
           ultimo_motivo: string | null
           updated_at: string
+          unidade_id: string | null
           veiculo: string | null
           whatsapp_envios: number
           whatsapp_ultimo_envio: string | null
@@ -493,6 +494,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["os_status"]
           ultimo_motivo?: string | null
           updated_at?: string
+          unidade_id?: string | null
           veiculo?: string | null
           whatsapp_envios?: number
           whatsapp_ultimo_envio?: string | null
@@ -514,6 +516,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["os_status"]
           ultimo_motivo?: string | null
           updated_at?: string
+          unidade_id?: string | null
           veiculo?: string | null
           whatsapp_envios?: number
           whatsapp_ultimo_envio?: string | null
@@ -524,6 +527,13 @@ export type Database = {
             columns: ["agendamento_id"]
             isOneToOne: true
             referencedRelation: "agendamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordens_servico_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
             referencedColumns: ["id"]
           },
         ]
@@ -671,6 +681,8 @@ export type Database = {
           instituicao_id: string | null
           nome: string
           telefone: string | null
+          lotacao_unidade_id: string | null
+          unidades_adicionais: string[]
         }
         Insert: {
           created_at?: string | null
@@ -678,6 +690,8 @@ export type Database = {
           instituicao_id?: string | null
           nome: string
           telefone?: string | null
+          lotacao_unidade_id?: string | null
+          unidades_adicionais?: string[]
         }
         Update: {
           created_at?: string | null
@@ -685,6 +699,8 @@ export type Database = {
           instituicao_id?: string | null
           nome?: string
           telefone?: string | null
+          lotacao_unidade_id?: string | null
+          unidades_adicionais?: string[]
         }
         Relationships: [
           {
@@ -692,6 +708,13 @@ export type Database = {
             columns: ["instituicao_id"]
             isOneToOne: false
             referencedRelation: "instituicoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_lotacao_unidade_id_fkey"
+            columns: ["lotacao_unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
             referencedColumns: ["id"]
           },
         ]
@@ -804,6 +827,80 @@ export type Database = {
             columns: ["agendamento_id"]
             isOneToOne: false
             referencedRelation: "agendamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      unidades: {
+        Row: {
+          ativo: boolean
+          cidade: string
+          created_at: string
+          id: string
+          macrorregiao: string | null
+          nome: string
+          sigla: string
+        }
+        Insert: {
+          ativo?: boolean
+          cidade: string
+          created_at?: string
+          id?: string
+          macrorregiao?: string | null
+          nome: string
+          sigla: string
+        }
+        Update: {
+          ativo?: boolean
+          cidade?: string
+          created_at?: string
+          id?: string
+          macrorregiao?: string | null
+          nome?: string
+          sigla?: string
+        }
+        Relationships: []
+      }
+      lotacao_audit: {
+        Row: {
+          alterado_por: string | null
+          alterado_por_nome: string | null
+          campo: string
+          created_at: string
+          id: string
+          motivo: string | null
+          profile_id: string
+          valor_anterior: string | null
+          valor_novo: string | null
+        }
+        Insert: {
+          alterado_por?: string | null
+          alterado_por_nome?: string | null
+          campo: string
+          created_at?: string
+          id?: string
+          motivo?: string | null
+          profile_id: string
+          valor_anterior?: string | null
+          valor_novo?: string | null
+        }
+        Update: {
+          alterado_por?: string | null
+          alterado_por_nome?: string | null
+          campo?: string
+          created_at?: string
+          id?: string
+          motivo?: string | null
+          profile_id?: string
+          valor_anterior?: string | null
+          valor_novo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lotacao_audit_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]

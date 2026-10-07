@@ -112,6 +112,9 @@ interface AgendamentoRow {
   os_numero: number | null;
   os_ano: number | null;
   os_status: string | null;
+  // Unidade
+  unidade_id: string | null;
+  unidade_nome: string | null;
 }
 
 interface Filters {
@@ -119,6 +122,7 @@ interface Filters {
   cidade: string;
   data_ini: string;
   data_fim: string;
+  unidade_id: string;
 }
 
 // --- Edit Dialog Form ---
@@ -144,9 +148,10 @@ export function AgendamentosTab({ podeEditar, onChange }: { podeEditar: boolean;
   const [saving, setSaving] = useState<string | null>(null);
   const [config, setConfig] = useState<any>(null);
   const [templates, setTemplates] = useState<any[]>([]);
-  const [filters, setFilters] = useState<Filters>({ status: "", cidade: "", data_ini: "", data_fim: "" });
+  const [filters, setFilters] = useState<Filters>({ status: "", cidade: "", data_ini: "", data_fim: "", unidade_id: "" });
   const [orderBy, setOrderBy] = useState("data");
   const [orderDir, setOrderDir] = useState("DESC");
+  const [unidades, setUnidades] = useState<{id: string; nome: string; sigla: string; cidade: string}[]>([]);
 
   // Edit dialog state
   const [editOpen, setEditOpen] = useState(false);
@@ -172,13 +177,16 @@ export function AgendamentosTab({ podeEditar, onChange }: { podeEditar: boolean;
       p_data_fim: filters.data_fim || null,
       p_order_by: orderBy,
       p_order_dir: orderDir,
+      p_unidade_id: filters.unidade_id || null,
     });
 
     // Load config + templates in parallel
-    const [cfgResult, tplsResult] = await Promise.all([
+    const [cfgResult, tplsResult, unidadesResult] = await Promise.all([
       db.from("config_sistema").select("*").eq("id", 1).maybeSingle(),
       db.from("mensagens_templates").select("*").eq("ativo", true),
+      db.rpc("rpc_unidades_list"),
     ]);
+    setUnidades((unidadesResult.data as any[]) ?? []);
 
     setConfig(cfgResult.data);
     setTemplates(tplsResult.data ?? []);
@@ -187,7 +195,6 @@ export function AgendamentosTab({ podeEditar, onChange }: { podeEditar: boolean;
       const rowsData = rpcData.data as any[];
       if (rowsData.length > 0) {
         setTotal(Number(rowsData[0].total));
-        // Remove the 'total' field from each row for display
         setRows(rowsData.map((r: any) => {
           const { total: _t, ...rest } = r;
           return rest as AgendamentoRow;
@@ -353,6 +360,7 @@ export function AgendamentosTab({ podeEditar, onChange }: { podeEditar: boolean;
       p_centro: null,
       p_data_ini: filters.data_ini || null,
       p_data_fim: filters.data_fim || null,
+      p_unidade_id: filters.unidade_id || null,
     });
 
     if (error || !data) {
@@ -364,6 +372,7 @@ export function AgendamentosTab({ podeEditar, onChange }: { podeEditar: boolean;
       { key: "instituicao_nome", label: "Escola" },
       { key: "instituicao_cidade", label: "Cidade" },
       { key: "instituicao_rede", label: "Rede" },
+      { key: "unidade_nome", label: "Unidade" },
       { key: "data", label: "Data" },
       { key: "turno", label: "Turno" },
       { key: "quantidade_alunos", label: "Alunos" },
@@ -404,6 +413,18 @@ export function AgendamentosTab({ podeEditar, onChange }: { podeEditar: boolean;
 
         {/* --- Filters --- */}
         <div className="flex flex-wrap gap-2 items-end">
+          <div className="space-y-1">
+            <Label className="text-xs">Unidade</Label>
+            <Select value={filters.unidade_id} onValueChange={(v) => { setFilters((f) => ({ ...f, unidade_id: v })); setPage(0); }}>
+              <SelectTrigger className="w-44"><SelectValue placeholder="Todas" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Todas as unidades</SelectItem>
+                {unidades.map((u) => (
+                  <SelectItem key={u.id} value={u.id}>{u.nome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="space-y-1">
             <Label className="text-xs">Status</Label>
             <Select value={filters.status} onValueChange={(v) => { setFilters((f) => ({ ...f, status: v })); setPage(0); }}>
@@ -482,6 +503,7 @@ export function AgendamentosTab({ podeEditar, onChange }: { podeEditar: boolean;
                   <TableHead>Data</TableHead>
                   <TableHead>Escola</TableHead>
                   <TableHead>Rede</TableHead>
+                  <TableHead>Unidade</TableHead>
                   <TableHead>Faixa</TableHead>
                   <TableHead className="text-center">Pax</TableHead>
                   <TableHead>PCD</TableHead>
@@ -504,6 +526,11 @@ export function AgendamentosTab({ podeEditar, onChange }: { podeEditar: boolean;
                       <div className="text-xs text-muted-foreground">{a.instituicao_cidade}</div>
                     </TableCell>
                     <TableCell>{a.instituicao_rede === "privada" ? "Privada" : "Pública"}</TableCell>
+                    <TableCell>
+                      {a.unidade_nome ? (
+                        <span className="text-xs bg-muted rounded px-1.5 py-0.5 font-medium">{a.unidade_nome}</span>
+                      ) : "—"}
+                    </TableCell>
                     <TableCell>{FAIXA[a.faixa_etaria] ?? a.faixa_etaria}</TableCell>
                     <TableCell className="text-center">
                       {a.quantidade_alunos + a.quantidade_professores + a.quantidade_acompanhantes}

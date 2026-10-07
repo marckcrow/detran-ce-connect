@@ -337,6 +337,76 @@ export const KNOWLEDGE_BASE: Article[] = [
       "Mensagens são simuladas (log) — não são enviadas automaticamente.",
     ],
   },
+  // ── UNIDADES ───────────────────────────────────────────────────────────────
+  {
+    id: "unid-01",
+    category: "geral",
+    title: "Quais são as unidades do DETRAN-CE?",
+    keywords: ["unidade", "unidades", "Fortaleza", "Sobral", "Cariri", "centro", "DETRAN-CE"],
+    requiredRole: "any",
+    steps: [
+      "O DETRAN-CE possui 3 unidades operacionais:",
+      "1. DETRAN-CE Fortaleza — Av. Monsenhor Tabosa, Fortaleza/CE (regiao Metropolitana)",
+      "2. DETRAN-CE Sobral — Sobral/CE (regiao Norte)",
+      "3. DETRAN-CE Cariri — Juazeiro do Norte/CE (regiao Sul)",
+      "Cada unidade gerencia os agendamentos e visitas da sua regiao de cobertura.",
+    ],
+  },
+  {
+    id: "unid-02",
+    category: "geral",
+    title: "Como a lotacao do colaborador funciona?",
+    keywords: ["lotacao", "lotacao", "unidade", "acesso", "colaborador", "operador", "admin"],
+    requiredRole: "operador",
+    steps: [
+      "1. Cada colaborador possui uma unidade de lotacao principal.",
+      "2. Administradores podem ver e gerenciar a lotacao na aba 'Usuarios e config.'.",
+      "3. Para definir a lotacao: clique no campo de lotacao na linha do colaborador.",
+      "4. Selecione a unidade principal e marque unidades adicionais quando necessario.",
+      "5. Alterar a lotacao NAO altera os dados historicos ja registrados.",
+      "6. Todas as alteracoes de lotacao sao registradas em auditoria.",
+    ],
+    restrictions: [
+      "Apenas administradores podem alterar a lotacao de colaboradores.",
+      "Colaboradores sem lotacao so veem dados se tiverem acesso adicional.",
+    ],
+  },
+  {
+    id: "unid-03",
+    category: "geral",
+    title: "Como filtrar agendamentos por unidade?",
+    keywords: ["filtrar", "unidade", "agendamentos", "painel", "relatorio", "Fortaleza", "Sobral", "Cariri"],
+    requiredRole: "operador",
+    relatedScreen: "/admin/agendamentos",
+    steps: [
+      "1. Acesse a aba 'Agendamentos' no painel Admin.",
+      "2. No topo, ha um filtro 'Unidade' com as opcoes:",
+      "   - 'Todas as unidades': mostra tudo que o colaborador tem acesso.",
+      "   - 'DETRAN-CE Fortaleza': so registros da unidade Fortaleza.",
+      "   - 'DETRAN-CE Sobral': so registros da unidade Sobral.",
+      "   - 'DETRAN-CE Cariri': so registros da unidade Cariri.",
+      "3. Administradores podem ver todas as unidades e filtrar por qualquer uma.",
+      "4. Exports (XLSX/CSV) respeitam o filtro de unidade selecionado.",
+    ],
+  },
+  {
+    id: "unid-04",
+    category: "geral",
+    title: "Escolas: o que veem sobre unidades?",
+    keywords: ["escola", "instituicao", "unidade", "visita", "agendamento"],
+    requiredRole: "instituicao",
+    steps: [
+      "Escolas continuam acessando SOMENTE seus proprios agendamentos.",
+      "O sistema identifica automaticamente a unidade da sua escola pela cidade.",
+      "Ao solicitar um agendamento, voce ve a disponibilidade da sua unidade.",
+      "Nao ha filtro de unidade no painel da escola — apenas os dados da propria instituicao.",
+    ],
+    restrictions: [
+      "Escolas nao veem dados de outras escolas ou unidades.",
+      "A lotacao dos colaboradores nao afeta o acesso das escolas.",
+    ],
+  },
+
   // ── GERAL ──────────────────────────────────────────────────────────────────
   {
     id: "geral-01",
@@ -349,6 +419,21 @@ export const KNOWLEDGE_BASE: Article[] = [
       "2. Permite que instituições solicitem visitas educativas de forma simples.",
       "3. A equipe do Detran gerencia agendamentos, disponibilidade e visitas.",
       "4. Oferece também painel administrativo para a equipe do Detran.",
+    ],
+  },
+  {
+    id: "geral-02b",
+    category: "geral",
+    title: "Perfis de acesso no DETRAN-CE Connect",
+    keywords: ["perfis", "permissoes", "admin", "operador", "logistica", "consulta", "instituicao"],
+    requiredRole: "any",
+    steps: [
+      "Administrador: acesso total a todas as funcionalidades e unidades.",
+      "Operador: gerencia agendamentos, disponibilidade, OS, estoque, mensagens e relatorios da sua unidade.",
+      "Logistica: focado em OS de transporte e relatorios da sua unidade.",
+      "Consulta/Gestão: pode visualizar relatorios e dados da sua unidade sem editar.",
+      "Instituicao: pode solicitar agendamentos para a propria escola.",
+      "Cada colaborador tem uma unidade de lotacao. Administradores veem todas as unidades.",
     ],
   },
   {
@@ -366,7 +451,7 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
   },
   {
-    id: "geral-03",
+    id: "geral-03b",
     category: "geral",
     title: "Como entrar em contato com a equipe do Detran?",
     keywords: ["contato", "suporte", "ajuda", "whatsapp", "telefone", "equipe"],
