@@ -22,28 +22,19 @@ export default defineConfig(({ mode }) => ({
     chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Split heavy vendor libs into separate chunks for faster mobile loading
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-supabase': ['@supabase/supabase-js', '@tanstack/react-query'],
-          'vendor-ui': [
-            '@radix-ui/react-accordion', '@radix-ui/react-alert-dialog', '@radix-ui/react-aspect-ratio',
-            '@radix-ui/react-avatar', '@radix-ui/react-checkbox', '@radix-ui/react-collapsible',
-            '@radix-ui/react-context-menu', '@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu',
-            '@radix-ui/react-hover-card', '@radix-ui/react-label', '@radix-ui/react-menubar',
-            '@radix-ui/react-navigation-menu', '@radix-ui/react-popover', '@radix-ui/react-progress',
-            '@radix-ui/react-radio-group', '@radix-ui/react-scroll-area', '@radix-ui/react-select',
-            '@radix-ui/react-separator', '@radix-ui/react-slider', '@radix-ui/react-slot',
-            '@radix-ui/react-switch', '@radix-ui/react-tabs', '@radix-ui/react-tooltip',
-            'class-variance-authority', 'clsx', 'tailwind-merge', 'tailwindcss-animate'
-          ],
-          'vendor-charts': ['recharts'],
-          'vendor-forms': ['react-hook-form', '@hookform/resolvers', 'zod'],
-          'vendor-date': ['date-fns', 'react-day-picker'],
-          'vendor-pdf': ['jspdf', 'jspdf-autotable'],
-          'vendor-carousel': ['embla-carousel-react', 'vaul'],
-          'vendor-lucide': ['lucide-react'],
-          'vendor-misc': ['cmdk', 'input-otp', 'next-themes', 'sonner', 'xlsx'],
+        // Safer code-split: only split HEAVY non-critical libs.
+        // Keep React/Router/Supabase/UI in main bundle to avoid TDZ/circular-dep crashes.
+        manualChunks(id) {
+          // PDF generation (heavy, only used on-demand for exports)
+          if (id.includes('jspdf') || id.includes('jspdf-autotable')) return 'vendor-pdf';
+          // Charts (heavy, only on dashboard/admin pages)
+          if (id.includes('recharts/') || id.includes('recharts.esm')) return 'vendor-charts';
+          // Excel export (only used on export actions)
+          if (id.includes('xlsx') || id.includes('sheetjs')) return 'vendor-xlsx';
+          // html2canvas (heavy, only for print/share)
+          if (id.includes('html2canvas')) return 'vendor-html2canvas';
+          // Lily AI knowledge base (large JSON data)
+          if (id.includes('lily-knowledge') || id.includes('lily-tutorials')) return 'vendor-lily-data';
         },
       },
       treeshake: {
