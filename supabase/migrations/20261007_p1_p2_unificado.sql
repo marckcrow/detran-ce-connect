@@ -977,12 +977,14 @@ UPDATE public.agendamentos a SET unidade_id = mapped.mapped_uid
 FROM mapped
 WHERE mapped.agend_id = a.id AND mapped.mapped_uid IS NOT NULL;
 
-RAISE NOTICE '[P2 LEGACY] Agendamentos sem unidade_id apos backfill (revisar admin): %',
-  (SELECT COUNT(*) FROM public.agendamentos WHERE unidade_id IS NULL);
-RAISE NOTICE '[P2 LEGACY] Ordens de servico sem unidade_id: %',
-  (SELECT COUNT(*) FROM public.ordens_servico WHERE unidade_id IS NULL);
-RAISE NOTICE '[P2 LEGACY] Atendimentos sem unidade_id: %',
-  (SELECT COUNT(*) FROM public.atendimentos WHERE unidade_id IS NULL);
+DO $$ BEGIN
+  RAISE NOTICE '[P2 LEGACY] Agendamentos sem unidade_id apos backfill (revisar admin): %',
+    (SELECT COUNT(*) FROM public.agendamentos WHERE unidade_id IS NULL);
+  RAISE NOTICE '[P2 LEGACY] Ordens de servico sem unidade_id: %',
+    (SELECT COUNT(*) FROM public.ordens_servico WHERE unidade_id IS NULL);
+  RAISE NOTICE '[P2 LEGACY] Atendimentos sem unidade_id: %',
+    (SELECT COUNT(*) FROM public.atendimentos WHERE unidade_id IS NULL);
+END $$;
 
 -- ============================================================
 -- SECTION 16: P2 — RLS policies (corrected logic)
