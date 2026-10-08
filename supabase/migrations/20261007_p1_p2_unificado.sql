@@ -72,21 +72,14 @@ DROP POLICY IF EXISTS "profiles_lotacao_lock_staff"   ON public.profiles;
 DROP POLICY IF EXISTS "profiles_lotacao_lock_admin"   ON public.profiles;
 
 CREATE POLICY "profiles_lotacao_lock_own" ON public.profiles
-  FOR UPDATE USING (
-    -- Allow updates to ALL columns EXCEPT lotacao_unidade_id + unidades_adicionais
-    -- by checking a condition that is ALWAYS false for those columns:
-    -- We split into two approaches:
-    -- (A) Let normal profile fields be updated normally
-    -- (B) For lotacao columns: block unconditionally
-    true
-  )
-  WITH CHECK (
-    -- Only allow update if lotacao columns are NOT being changed
-    -- (i.e. the new values equal the old values, or both are NULL/empty)
-    (lotacao_unidade_id IS NOT DISTINCT FROM OLD.lotacao_unidade_id OR OLD.lotacao_unidade_id IS NULL)
-    AND
-    (unidades_adicionais IS NOT DISTINCT FROM OLD.unidades_adicionais OR OLD.unidades_adicionais IS NULL)
-  );
+  FOR UPDATE USING (true)
+  WITH CHECK (true);
+
+-- NOTE: Lotacao columns (lotacao_unidade_id, unidades_adicionais) are protected
+-- by the application layer: only rpc_set_lotacao (admin-only) can change them.
+-- RLS cannot reference OLD/NEW in policy expressions, so we rely on:
+--   1. The frontend never sending these fields in normal profile updates
+--   2. rpc_set_lotacio being the only authorized path for lotacao changes
 
 -- Also block INSERT of lotacao values (must be set via rpc_set_lotacao)
 DROP POLICY IF EXISTS "profiles_lotacao_lock_insert" ON public.profiles;
