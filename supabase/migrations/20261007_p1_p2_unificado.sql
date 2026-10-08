@@ -100,16 +100,16 @@ CREATE POLICY "profiles_lotacao_lock_insert" ON public.profiles
 -- ============================================================
 
 -- agendamentos
-DO $ BEGIN
+DO $$ BEGIN
   ALTER TABLE public.agendamentos
     ADD COLUMN IF NOT EXISTS unidade_id UUID REFERENCES public.unidades(id);
 EXCEPTION WHEN duplicate_column THEN RAISE NOTICE 'agendamentos.unidade_id: %', SQLERRM;
-END $;
+END $$;
 
 -- NOT NULL: schools must always select a unidade at booking time.
-DO $ BEGIN ALTER TABLE public.agendamentos ALTER COLUMN unidade_id SET NOT NULL;
+DO $$ BEGIN ALTER TABLE public.agendamentos ALTER COLUMN unidade_id SET NOT NULL;
 EXCEPTION WHEN others THEN RAISE NOTICE 'unidade_id NOT NULL skip: %', SQLERRM;
-END $;
+END $$;
 
 -- ordens_servico
 DO $$ BEGIN
@@ -118,11 +118,19 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_column THEN RAISE NOTICE 'ordens_servico.unidade_id: %', SQLERRM;
 END $$;
 
+-- regras_agendamento (may not exist in all deployments — skip if missing)
+DO $$ BEGIN
+  ALTER TABLE public.regras_agendamento
+    ADD COLUMN IF NOT EXISTS unidade_id UUID REFERENCES public.unidades(id);
+EXCEPTION WHEN undefined_table THEN RAISE NOTICE 'regras_agendamento: table does not exist, skipping';
+  WHEN duplicate_column THEN RAISE NOTICE 'regras_agendamento.unidade_id: %', SQLERRM;
+END $$;
+
 -- atendimentos
 DO $$ BEGIN
   ALTER TABLE public.atendimentos
     ADD COLUMN IF NOT EXISTS unidade_id UUID REFERENCES public.unidades(id);
-EXCEPTION WHEN duplicate_column THEN RAISE NOTICE 'atendimentos.unidade_id: %', SQLERRM;
+EXCEPTION WHEN duplicate_column THEN RAISE NOTICE 'atendamentos.unidade_id: %', SQLERRM;
 END $$;
 
 -- disponibilidade
