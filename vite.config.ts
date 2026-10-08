@@ -18,8 +18,12 @@ export default defineConfig(({ mode }) => ({
   // Treat Lily modules as having side effects so Rollup doesn't tree-shake
   // the component bodies (used via dynamic event handlers / ref callbacks)
   build: {
-    commonjsOptions: { transformMixedEsModules: true },
     chunkSizeWarningLimit: 600,
+    // Ensure React modules are always evaluated first to prevent TDZ crashes.
+    // 'top' forces esbuild to hoist React+ReactDOM before other modules.
+    // This is the key fix for: "Cannot access 'X' before initialization".
+    esbuild: { order: 'top' },
+    // Note: transformMixedEsModules removed — it reorders CJS/ESM init and causes TDZ.
     rollupOptions: {
       output: {
         // Safer code-split: only split HEAVY non-critical libs.
