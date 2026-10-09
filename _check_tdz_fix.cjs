@@ -1,0 +1,11 @@
+var fs = require('fs');
+var c = fs.readFileSync('src/components/lily/LilyChat.tsx', 'utf8');
+var lines = c.split('\n');
+console.log('=== TDZ FIX CHECK ===');
+console.log('icon type line:', lines.findIndex(function(l){return l.includes('icon: () => React.ReactNode');}) + 1);
+console.log('{qa.icon()} line:', lines.findIndex(function(l){return l.includes('{qa.icon()}');}) + 1);
+console.log('ALL_QUICK_ACTIONS type:', lines.findIndex(function(l){return l.includes('const ALL_QUICK_ACTIONS');}) + 1);
+var iconType = lines.find(function(l){return l.includes('icon: React.ReactNode') || l.includes('icon: () => React.ReactNode');});
+console.log('icon type in source:', iconType ? iconType.trim() : 'NOT FOUND');
+var iconCall = lines.find(function(l){return l.includes('{qa.icon}') || l.includes('{qa.icon()}');});
+console.log('icon call in JSX:', iconCall ? iconCall.trim() : 'NOT FOUND');

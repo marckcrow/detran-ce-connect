@@ -211,15 +211,17 @@ export function AgendamentosTab({ podeEditar, onChange }: { podeEditar: boolean;
         p_unidade_id: filters.unidade_id || null,
       });
 
-      if (rpcData.data) {
-        setTotal(Number(rowsData[0].total));
+      if (rpcData.data && Array.isArray(rpcData.data) && rpcData.data.length > 0) {
+        const rowsData = rpcData.data as any[];
+        setTotal(Number(rowsData[0].total ?? rowsData.length));
         setRows(rowsData.map((r: any) => {
           const { total: _t, ...rest } = r;
           return rest as AgendamentoRow;
         }));
       } else {
-        setTotal(0);
-        setRows([]);
+        // RPC returned empty or error — use fallback
+        console.warn('RPC returned empty/error, using fallback query');
+        throw new Error('RPC_FALLBACK');
       }
     } catch (rpcError) {
       // Fallback: direct query when RPC not available (migration not applied yet)
