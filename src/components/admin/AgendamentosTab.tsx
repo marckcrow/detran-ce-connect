@@ -180,20 +180,38 @@ export function AgendamentosTab({ podeEditar, onChange }: { podeEditar: boolean;
       p_unidade_id: filters.unidade_id || null,
     });
 
-    // Load config + templates in parallel
-    const [cfgResult, tplsResult, unidadesResult] = await Promise.all([
+    // Load config + templates + unidades in parallel (independent of RPC)
+    const [cfgResult, tplsResult, unidadesResult] = await Promise.allSettled([
       db.from("config_sistema").select("*").eq("id", 1).maybeSingle(),
       db.from("mensagens_templates").select("*").eq("ativo", true),
-      db.rpc("rpc_unidades_list"),
+      db.rpc("rpc_unidades_list").catch(() => null), // fallback if RPC doesn't exist
     ]);
-    setUnidades((unidadesResult.data as any[]) ?? []);
 
-    setConfig(cfgResult.data);
-    setTemplates(tplsResult.data ?? []);
+    if (unidadesResult.status === 'fulfilled' && unidadesResult.value?.data) {
+      setUnidades(unidadesResult.value.data as any[]);
+    } else {
+      setUnidades([]); // No unidades until migration is applied
+    }
 
-    if (rpcData.data) {
-      const rowsData = rpcData.data as any[];
-      if (rowsData.length > 0) {
+    if (cfgResult.status === 'fulfilled') setConfig(cfgResult.value?.data ?? null);
+    if (tplsResult.status === 'fulfilled') setTemplates(tplsResult.value?.data ?? []);
+
+    // Try RPC first, fallback to direct query
+    try {
+      const rpcData = await db.rpc("rpc_agendamentos_list", {
+        p_limit: PAGE_SIZE,
+        p_offset: offset,
+        p_status: filters.status || null,
+        p_cidade: filters.cidade || null,
+        p_centro: null,
+        p_data_ini: filters.data_ini || null,
+        p_data_fim: filters.data_fim || null,
+        p_order_by: orderBy,
+        p_order_dir: orderDir,
+        p_unidade_id: filters.unidade_id || null,
+      });
+
+      if (rpcData.data) {
         setTotal(Number(rowsData[0].total));
         setRows(rowsData.map((r: any) => {
           const { total: _t, ...rest } = r;
@@ -203,12 +221,18 @@ export function AgendamentosTab({ podeEditar, onChange }: { podeEditar: boolean;
         setTotal(0);
         setRows([]);
       }
-    } else {
-      // Fallback: if RPC not available yet, use direct query (no pagination)
-      const { data } = await db
+    } catch (rpcError) {
+      // Fallback: direct query when RPC not available (migration not applied yet)
+      console.warn('rpc_agendamentos_list unavailable, using fallback query:', rpcError);
+      let query = db
         .from("agendamentos")
         .select("*, instituicoes(*), ordens_servico(id, numero, ano, status)")
         .order("data", { ascending: orderDir === "ASC" });
+
+      // Apply basic client-side filters for fallback
+      if (filters.status) { query = query.eq('status', filters.status); }
+
+      const { data } = await query;
       setTotal((data?.length ?? 0));
       setRows((data ?? []) as AgendamentoRow[]);
     }

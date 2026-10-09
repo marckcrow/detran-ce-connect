@@ -23,6 +23,7 @@ export default function Auth() {
   const [registerPassword, setRegisterPassword] = useState("");
   const [registerType, setRegisterType] = useState<"responsavel" | "colaborador">("responsavel");
   const [colaboradorPerfil, setColaboradorPerfil] = useState<string>("consulta");
+  const [isWhatsApp, setIsWhatsApp] = useState<boolean>(true);
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -64,6 +65,72 @@ export default function Auth() {
     });
 
     if (error) {
+      // Handle "User already registered" gracefully — catch all variants
+      const isDuplicate =
+        error.message?.toLowerCase().includes('already') ||
+        error.message?.toLowerCase().includes('registered') ||
+        error.message?.toLowerCase().includes('duplicate') ||
+        error.status === 400 ||
+        error.status === 422 ||
+        error.code === 'user_already_exists';
+
+      if (isDuplicate) {
+        // User exists but may need profile/access_request update
+        const { data: existingUser } = await supabase.auth.signInWithPassword({ email, password });
+        if (existingUser?.user) {
+          // Update profile (whatsapp column may not exist yet — ignore error)
+          const profileUpdate: any = { nome, telefone };
+          if (isWhatsApp && telefone) profileUpdate.whatsapp = telefone;
+          await (supabase as any).from("profiles").update(profileUpdate).eq("id", existingUser.user.id).catch((e: any) => {
+            console.warn('Profile update failed (whatsapp col may not exist):', e.message);
+          });
+
+          if (registerType === "colaborador") {
+            // Check if access request already exists
+            const { data: existingReq } = await (supabase as any)
+              .from("access_requests")
+              .select("*")
+              .eq("user_id", existingUser.user.id)
+              .maybeSingle();
+
+            if (!existingReq) {
+              const { error: reqError } = await (supabase as any).from("access_requests").insert({
+                user_id: existingUser.user.id,
+                nome,
+                email,
+                telefone: telefone || null,
+                ...(isWhatsApp && telefone ? { whatsapp: telefone } : {}),
+                perfil_solicitado: colaboradorPerfil,
+                status: "pendente",
+              });
+              if (reqError) console.error("Failed to create access request:", reqError);
+            } else {
+              // Update existing request
+              await (supabase as any).from("access_requests").update({
+                nome,
+                email,
+                telefone: telefone || null,
+                ...(isWhatsApp && telefone ? { whatsapp: telefone } : {}),
+                perfil_solicitado: colaboradorPerfil,
+                status: "pendente",
+              }).eq("id", existingReq.id);
+            }
+
+            toast({
+              title: "Usuário já cadastrado — acesso solicitado!",
+              description: "Este e-mail já estava registrado. Seu perfil foi atualizado e a solicitação de colaborador enviada para aprovação.",
+            });
+          } else {
+            toast({
+              title: "Usuário já cadastrado!",
+              description: "Este e-mail já estava registrado. Seu perfil foi atualizado. Complete seu cadastro na página de Perfil.",
+            });
+          }
+          navigate("/perfil");
+          setIsLoading(false);
+          return;
+        }
+      }
       toast({ title: "Erro ao cadastrar", description: error.message, variant: "destructive" });
       setIsLoading(false);
       return;
@@ -71,7 +138,11 @@ export default function Auth() {
 
     // Update profile with basic info — institution is set in Perfil page
     if (data.user) {
-      await (supabase as any).from("profiles").update({ nome, telefone }).eq("id", data.user.id);
+      const profileUpdate: any = { nome, telefone };
+      if (isWhatsApp && telefone) profileUpdate.whatsapp = telefone;
+      await (supabase as any).from("profiles").update(profileUpdate).eq("id", data.user.id).catch((e: any) => {
+        console.warn('Profile update warning:', e.message);
+      });
 
       if (registerType === "colaborador") {
         // Staff registration: create access request for admin approval
@@ -80,6 +151,7 @@ export default function Auth() {
           nome,
           email,
           telefone: telefone || null,
+          ...(isWhatsApp && telefone ? { whatsapp: telefone } : {}),
           perfil_solicitado: colaboradorPerfil,
           status: "pendente",
         });
@@ -370,7 +442,39 @@ export default function Auth() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="telefone">Telefone</Label>
-                    <Input id="telefone" name="telefone" type="tel" placeholder="(85) 99999-9999" />
+                    <div className="relative">
+                      <Input
+                        id="telefone"
+                        name="telefone"
+                        type="tel"
+                        placeholder="(85) 9 9999-9999"
+                        onChange={(e) => {
+                          let v = e.target.value.replace(/\D/g, '');
+                          if (v.length > 11) v = v.slice(0, 11);
+                          if (v.length > 0) {
+                            if (v.length <= 2) v = `(${v}`;
+                            else if (v.length <= 7) v = `(${v.slice(0, 2)}) ${v.slice(2)}`;
+                            else if (v.length <= 11) v = `(${v.slice(0, 2)}) ${v.slice(2, 3)} ${v.slice(3, 7)}-${v.slice(7)}`;
+                          }
+                          e.target.value = v;
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setIsWhatsApp(!isWhatsApp)}
+                        className={`absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-medium px-2 py-0.5 rounded-full border transition-colors ${
+                          isWhatsApp
+                            ? 'bg-green-50 text-green-700 border-green-300 hover:bg-green-100'
+                            : 'bg-gray-50 text-gray-600 border-gray-300 hover:bg-gray-100'
+                        }`}
+                        title={isWhatsApp ? 'É WhatsApp? Clique para mudar para telefone fixo' : 'Mudar para WhatsApp'}
+                      >
+                        {isWhatsApp ? '📱 WhatsApp' : '📞 Telefone'}
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">
+                      {isWhatsApp ? 'Número será usado para envio de mensagens via WhatsApp.' : 'Número de telefone fixo/celular sem WhatsApp.'}
+                    </p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="register-password">Senha</Label>

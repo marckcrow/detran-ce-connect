@@ -23,6 +23,7 @@ type UserRow = {
   id: string;
   nome: string;
   telefone: string | null;
+  whatsapp: string | null;
   instituicoes?: { nome: string } | null;
   lotacao_unidade_id: string | null;
   unidades_adicionais: string[];
@@ -40,18 +41,31 @@ export function UsuariosTab({ meuId }: { meuId?: string }) {
   const [lotacaoForm, setLotacaoForm] = useState({ lotacao_unidade_id: "", unidades_adicionais: [] as string[] });
 
   const load = useCallback(async () => {
-    const [{ data: p }, { data: r }, { data: u }, { data: c }] = await Promise.all([
+    // Load all data in parallel — with fallback for missing RPCs
+    const [profilesResult, rolesResult, unidadesResult, cfgResult] = await Promise.allSettled([
       db.from("profiles")
-        .select("id, nome, telefone, instituicoes(nome), lotacao_unidade_id, unidades_adicionais")
+        .select("id, nome, telefone, whatsapp, instituicoes(nome), lotacao_unidade_id, unidades_adicionais")
         .order("nome"),
       db.from("user_roles").select("*"),
-      db.rpc("rpc_unidades_list"),
+      db.rpc("rpc_unidades_list").catch(() => null), // fallback: returns null if RPC doesn't exist
       db.from("config_sistema").select("*").eq("id", 1).maybeSingle(),
     ]);
-    setUsers((p ?? []) as UserRow[]);
-    setRoles(r ?? []);
-    setUnidades((u ?? []) as Unidade[]);
-    if (c) setCfg(c);
+
+    if (profilesResult.status === 'fulfilled' && profilesResult.value?.data) {
+      setUsers(profilesResult.value.data as UserRow[]);
+    }
+    if (rolesResult.status === 'fulfilled' && rolesResult.value?.data) {
+      setRoles(rolesResult.value.data);
+    }
+    if (unidadesResult.status === 'fulfilled' && unidadesResult.value?.data) {
+      setUnidades(unidadesResult.value.data as Unidade[]);
+    } else {
+      // Fallback: unidades table may not exist yet — show empty list
+      setUnidades([]);
+    }
+    if (cfgResult.status === 'fulfilled' && cfgResult.value?.data) {
+      setCfg(cfgResult.value.data);
+    }
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -184,7 +198,13 @@ export function UsuariosTab({ meuId }: { meuId?: string }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredUsers.map((u) => {
+              {filteredUsers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4 + Object.keys(PERFIS).length} className="text-center text-muted-foreground py-8">
+                    {busca ? 'Nenhum usuário encontrado.' : (users.length === 0 ? 'Carregando usuários...' : 'Nenhum usuário cadastrado.')}
+                  </TableCell>
+                </TableRow>
+              ) : filteredUsers.map((u) => {
                 const lotacaoNome = getUnidadeNome(u.lotacao_unidade_id);
                 return (
                   <TableRow key={u.id}>
@@ -192,7 +212,11 @@ export function UsuariosTab({ meuId }: { meuId?: string }) {
                       {u.nome}
                       {u.id === meuId && <Badge variant="secondary" className="ml-1">você</Badge>}
                     </TableCell>
-                    <TableCell className="text-xs max-w-[150px] truncate">{u.instituicoes?.nome ?? "—"}</TableCell>
+                    <TableCell className="text-xs max-w-[150px] truncate">
+                      {u.instituicoes?.nome ?? (
+                        <span className="text-muted-foreground italic text-[10px]">Sem instituição</span>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <button
                         onClick={() => openLotacao(u)}
