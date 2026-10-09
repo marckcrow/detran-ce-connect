@@ -56,6 +56,43 @@ export const TUTORIALS: Tutorial[] = [
     ],
   },
   {
+    id: "primeiro-login",
+    title: "Primeiro Acesso ao Sistema",
+    description: "Aprenda a fazer login e entender a tela inicial.",
+    route: "/",
+    requiredRole: "any",
+    steps: [
+      {
+        target: "nav, header",
+        title: "Identifique o menu principal",
+        content: "Na barra de menu no topo, você vê: Início, Agendar Visita, Minha Escola, Meu Perfil e Ajuda. Se você tem acesso de equipe, também aparece Admin.",
+        action: "Observe as opções disponíveis no menu.",
+        position: "bottom",
+      },
+      {
+        target: "a[href='/agendar'], a[href='#agendar']",
+        title: "Acesse Agendar Visita",
+        content: "Clique em 'Agendar Visita' no menu. A partir daí, você pode: selecionar sua instituição, escolher a unidade do DETRAN-CE, e solicitar uma visita educativa.",
+        action: "Clique em Agendar Visita.",
+        position: "bottom",
+      },
+      {
+        target: "a[href='/perfil']",
+        title: "Complete seu perfil",
+        content: "Antes de agendar, vá em 'Meu Perfil' e preencha seus dados (nome, telefone/WhatsApp) e os dados da instituição. Isso garante que o Detran possa entrar em contato com você.",
+        action: "Vá ao Meu Perfil e preencha os dados.",
+        position: "top",
+      },
+      {
+        target: "button[aria-label*='Lily'], [aria-label*='Lily'], [title*='Lily']",
+        title: "Use a Lily para ajuda",
+        content: "Ao longo de qualquer tela, o botão roxo da Lily no canto inferior direito abre a assistente virtual. Clique nele para pedir ajuda contextual sobre a tela que você está.",
+        action: "Abra a Lily e peça ajuda sobre agendar uma visita.",
+        position: "left",
+      },
+    ],
+  },
+  {
     id: "acompanhar-agendamentos",
     title: "Acompanhar Agendamentos",
     description: "Veja, filtre e acompanhe o status dos agendamentos.",

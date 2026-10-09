@@ -411,6 +411,87 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
   },
 
+  // ── ADMIN: UNIDADES + LOTACAO ───────────────────────────────────────────────
+  {
+    id: "unid-05",
+    category: "geral",
+    title: "Como atribuir ou alterar a lotacao de um colaborador?",
+    keywords: ["lotacao", "atribuir", "colaborador", "unidade", "admin", "designar", "operador"],
+    requiredRole: "admin",
+    relatedScreen: "/admin/usuarios",
+    steps: [
+      "1. Acesse a aba 'Usuarios e config.' no painel Admin.",
+      "2. Localize o colaborador na lista e clique no campo 'Lotacao' na coluna correspondente.",
+      "3. Uma caixa de selecao aparecera com as unidades disponiveis: DETRAN-CE Fortaleza, Sobral ou Cariri.",
+      "4. Selecione a unidade de lotacao principal do colaborador.",
+      "5. Se necessario, marque unidades adicionais para dar acesso a mais de uma unidade.",
+      "6. Opcionalmente, informe o motivo da alteracao (ex: 'Trocou de unidade').",
+      "7. Clique fora da caixa ou pressione Enter para salvar.",
+      "8. Toda alteracao de lotacao e registrada em log de auditoria.",
+    ],
+    whatHappensNext: "A partir da proxima sessao do colaborador, ele so ve dados da unidade em que foi lotado. Historico ja registrado permanece inalterado.",
+    restrictions: [
+      "Apenas administradores podem alterar lotacao.",
+      "Um administrador nao pode remover sua propria lotacao principal.",
+      "A lotacao nao afeta agendamentos ja realizados.",
+    ],
+    errorResolution: [
+      "Se o campo de lotacao nao aparecer: o usuario pode ja ter acesso de Instituicao, que nao tem lotacao.",
+      "Se a alteracao nao salvar: tente atualizar a pagina e tente novamente.",
+    ],
+  },
+  {
+    id: "disp-P2",
+    category: "disponibilidade",
+    title: "Como a disponibilidade funciona em cada unidade?",
+    keywords: ["disponibilidade", "unidade", "vagas", "slot", "capacidade", "aberto", "Fortaleza", "Sobral", "Cariri"],
+    requiredRole: "operador",
+    relatedScreen: "/admin/disponibilidade",
+    steps: [
+      "1. Cada unidade do DETRAN-CE (Fortaleza, Sobral, Cariri) tem sua propria disponibilidade independente.",
+      "2. Ao acessar a aba Disponibilidade, use o filtro 'Unidade' no topo para trocar entre elas.",
+      "3. Para cada data, voce ve: total de vagas, vagas ocupadas, vagas livres e status (aberto/cheio).",
+      "4. Para bloquear uma data: selecione a unidade, escolha a data e defina o motivo do bloqueio.",
+      "5. Para desbloquear: remova o bloqueio na mesma interface.",
+      "6. Regras de capacidade e antecedencia sao configuradas por unidade em 'Regras do Centro'.",
+    ],
+    restrictions: [
+      "Cada unidade tem sua propria capacidade maxima.",
+      "Bloquear uma data em uma unidade NAO afeta as outras unidades.",
+      "Apenas operadores e admins da unidade podem editar a disponibilidade.",
+    ],
+    errorResolution: [
+      "Se a disponibilidade nao carregar: troque a unidade no filtro e tente novamente.",
+      "Se uma data aparecer 'cheio': verifique se ha agendamentos ja confirmados ocupando as vagas.",
+    ],
+  },
+  {
+    id: "est-P2",
+    category: "estoque",
+    title: "Como consultar o saldo de estoque por unidade?",
+    keywords: ["estoque", "saldo", "unidade", "material", "quantidade", "Fortaleza", "Sobral", "Cariri", "inventario"],
+    requiredRole: "operador",
+    relatedScreen: "/admin/estoque",
+    steps: [
+      "1. Acesse a aba 'Estoque' no painel Admin.",
+      "2. Use o filtro de unidade no topo para selecionar a unidade desejada.",
+      "3. O saldo exibido corresponde exclusivamente aos movimentos da unidade selecionada.",
+      "4. Cada movimento (entrada ou saida) e registrado com a unidade de origem.",
+      "5. Movimentos sem unidade de origem (legados) aparecem no saldo consolidado visivel a todos da equipe.",
+      "6. Para registrar entrada ou saida: clique em 'Registrar' ao lado do item, selecione a unidade e informe a quantidade.",
+    ],
+    whatHappensNext: "O saldo e atualizado em tempo real apos cada movimentacao. Exports respeitam a unidade selecionada.",
+    restrictions: [
+      "Cada unidade ve apenas seus proprios saldos e movimentos.",
+      "Movimentos de uma unidade NAO afetam o saldo de outras unidades.",
+      "Apenas operadores e admins da unidade podem registrar movimentacoes.",
+    ],
+    errorResolution: [
+      "Se o saldo aparecer zerado: verifique se ha movimentos registrados para a unidade selecionada.",
+      "Se um item nao aparecer na lista: significa que nao ha saldo positivo em nenhuma unidade.",
+    ],
+  },
+
   // ── GERAL ──────────────────────────────────────────────────────────────────
   {
     id: "geral-01",

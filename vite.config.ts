@@ -1,5 +1,9 @@
 import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react-swc";
+// NOTE: @vitejs/plugin-react (Babel) used instead of @vitejs/plugin-react-swc.
+// SWC's faster transpilation can produce module initialization order issues
+// (TDZ: "Cannot access X before initialization") especially with Supabase's
+// CJS/ESM interop. Babel's plugin-react is more predictable for production builds.
+import react from "@vitejs/plugin-react";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 
@@ -19,10 +23,6 @@ export default defineConfig(({ mode }) => ({
   // the component bodies (used via dynamic event handlers / ref callbacks)
   build: {
     chunkSizeWarningLimit: 600,
-    // Ensure React modules are always evaluated first to prevent TDZ crashes.
-    // 'top' forces esbuild to hoist React+ReactDOM before other modules.
-    // This is the key fix for: "Cannot access 'X' before initialization".
-    esbuild: { order: 'top' },
     // Note: transformMixedEsModules removed — it reorders CJS/ESM init and causes TDZ.
     rollupOptions: {
       output: {

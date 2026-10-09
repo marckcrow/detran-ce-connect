@@ -62,10 +62,13 @@ function getGreeting(role: LilyUserRole): string {
 }
 
 // ── Role-filtered quick actions ───────────────────────────────────────────
+// NOTE: icon is a function, not ReactNode, to avoid TDZ at bundle init time.
+// SWC+esbuild module ordering can cause icon references (BookOpen→UV alias)
+// to be evaluated before the alias is assigned. Lazy ()=>icon avoids this.
 type QuickAction = {
   id: string;
   label: string;
-  icon: React.ReactNode;
+  icon: () => React.ReactNode;
   action: () => QuickActionResult;
   minRole: LilyUserRole;
 };
@@ -80,42 +83,42 @@ const ALL_QUICK_ACTIONS: QuickAction[] = [
   {
     id: "agendar",
     label: "Agendar uma visita",
-    icon: <GraduationCap className="h-4 w-4" />,
+    icon: () => <GraduationCap className="h-4 w-4" />,
     action: () => ({ type: "navigate", route: "/agendar" }),
     minRole: "any",
   },
   {
     id: "meus-agendamentos",
     label: "Meus agendamentos",
-    icon: <BookOpen className="h-4 w-4" />,
+    icon: () => <BookOpen className="h-4 w-4" />,
     action: () => ({ type: "navigate", route: "/perfil" }),
     minRole: "instituicao",
   },
   {
     id: "tela",
     label: "Me explique esta tela",
-    icon: <BookOpen className="h-4 w-4" />,
+    icon: () => <BookOpen className="h-4 w-4" />,
     action: () => ({ type: "tela" }),
     minRole: "any",
   },
   {
     id: "erro",
     label: "Estou com um erro",
-    icon: <AlertCircle className="h-4 w-4" />,
+    icon: () => <AlertCircle className="h-4 w-4" />,
     action: () => ({ type: "erro" }),
     minRole: "any",
   },
   {
     id: "perfil",
     label: "Meu perfil",
-    icon: <User className="h-4 w-4" />,
+    icon: () => <User className="h-4 w-4" />,
     action: () => ({ type: "navigate", route: "/perfil" }),
     minRole: "any",
   },
   {
     id: "tutoriais",
     label: "Ver tutoriais",
-    icon: <Play className="h-4 w-4" />,
+    icon: () => <Play className="h-4 w-4" />,
     action: () => ({ type: "tutoriais" }),
     minRole: "any",
   },
@@ -123,21 +126,21 @@ const ALL_QUICK_ACTIONS: QuickAction[] = [
   {
     id: "admin-agendamentos",
     label: "Agendamentos",
-    icon: <GraduationCap className="h-4 w-4" />,
+    icon: () => <GraduationCap className="h-4 w-4" />,
     action: () => ({ type: "navigate", route: "/admin" }),
     minRole: "operador",
   },
   {
     id: "admin-estoque",
     label: "Estoque",
-    icon: <Package className="h-4 w-4" />,
+    icon: () => <Package className="h-4 w-4" />,
     action: () => ({ type: "navigate", route: "/admin" }),
     minRole: "logistica",
   },
   {
     id: "admin-os",
     label: "Ordens de Serviço",
-    icon: <FileText className="h-4 w-4" />,
+    icon: () => <FileText className="h-4 w-4" />,
     action: () => ({ type: "navigate", route: "/admin" }),
     minRole: "operador",
   },
@@ -540,7 +543,7 @@ export function LilyChat() {
                     bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground
                     text-xs font-medium whitespace-nowrap transition-colors shrink-0"
                 >
-                  {qa.icon}
+                  {qa.icon()}
                   {qa.label}
                 </button>
               ))}
