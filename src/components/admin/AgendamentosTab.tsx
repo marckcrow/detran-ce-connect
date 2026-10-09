@@ -231,12 +231,18 @@ export function AgendamentosTab({ podeEditar, onChange }: { podeEditar: boolean;
         .select("*, instituicoes(*), ordens_servico(id, numero, ano, status)")
         .order("data", { ascending: orderDir === "ASC" });
 
-      // Apply basic client-side filters for fallback
+      // Apply basic filters for fallback (RLS still enforced by Supabase)
       if (filters.status) { query = query.eq('status', filters.status); }
+      if (filters.unidade_id) { query = query.eq('unidade_id', filters.unidade_id); }
+      if (filters.cidade) { query = query.ilike('instituicao_cidade', `%${filters.cidade}%`); }
 
+      // Client-side pagination for fallback (RPC handles server-side)
       const { data } = await query;
-      setTotal((data?.length ?? 0));
-      setRows((data ?? []) as AgendamentoRow[]);
+      const allRows = (data ?? []) as AgendamentoRow[];
+      const total = allRows.length;
+      const paged = allRows.slice(offset, offset + PAGE_SIZE);
+      setTotal(total);
+      setRows(paged);
     }
 
     setLoading(false);
