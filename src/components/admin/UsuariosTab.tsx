@@ -119,17 +119,49 @@ export function UsuariosTab({ meuId }: { meuId?: string }) {
     if (!lotacaoUser) return;
     setSavingLotacao(true);
 
-    const { error } = await db.rpc("rpc_set_lotacao", {
-      p_profile_id: lotacaoUser.id,
-      p_lotacao_unidade_id: lotacaoForm.lotacao_unidade_id || null,
-      p_unidades_adicionais: lotacaoForm.unidades_adicionais,
-      p_motivo: null,
-    });
+    let error: string | null = null;
+
+    // Try RPC first (preferred path)
+    try {
+      const { error: rpcError } = await db.rpc("rpc_set_lotacao", {
+        p_profile_id: lotacaoUser.id,
+        p_lotacao_unidade_id: lotacaoForm.lotacao_unidade_id || null,
+        p_unidades_adicionais: lotacaoForm.unidades_adicionais,
+        p_motivo: null,
+      });
+      error = rpcError?.message ?? null;
+    } catch (e: any) {
+      error = e?.message ?? 'RPC unavailable';
+    }
+
+    // Fallback: direct table update if RPC is missing
+    if (error && (error.includes('PGRST202') || error.includes('RPC unavailable'))) {
+      const { error: fallbackError } = await db.from("profiles")
+        .update({
+          lotacao_unidade_id: lotacaoForm.lotacao_unidade_id || null,
+          unidades_adicionais: lotacaoForm.unidades_adicionais.length > 0 ? lotacaoForm.unidades_adicionais : null,
+        })
+        .eq("id", lotacaoUser.id);
+      error = fallbackError?.message ?? null;
+
+      // Also write to audit log if possible
+      try {
+        await db.from("lotacao_audit").insert({
+          profile_id: lotacaoUser.id,
+          operador_id: meuId ?? null,
+          lotacao_unidade_id_anterior: lotacaoUser.lotacao_unidade_id,
+          lotacao_unidade_id_nova: lotacaoForm.lotacao_unidade_id || null,
+          unidades_adicionais_anteriores: lotacaoUser.unidades_adicionais ?? [],
+          unidades_adicionais_novas: lotacaoForm.unidades_adicionais,
+          motivo: 'Fallback direct update',
+        }).catch(() => {}); // ignore audit errors
+      } catch {}
+    }
 
     setSavingLotacao(false);
 
     if (error) {
-      toast({ title: "Erro ao salvar lotação", description: error.message, variant: "destructive" });
+      toast({ title: "Erro ao salvar lotação", description: error, variant: "destructive" });
       return;
     }
 

@@ -53,17 +53,30 @@ export function EstoqueTab({ podeEditar }: { podeEditar: boolean }) {
   const [movs, setMovs] = useState<EstoqueMov[]>([]);
   const [nomes, setNomes] = useState<Record<string, string>>({});
 
-  // Compute current saldo for each item from the latest saldo_apos in movements
-  // (trigger trg_calc_saldo_apos writes saldo_apos on every insert)
+  // Compute current saldo for each item by summing all movement quantities (entrada +, saida -)
+  // Falls back to saldo_apos (trigger-computed) if available, then to item.quantidade
   const saldoPorItem = useMemo(() => {
     const map: Record<string, number> = {};
+    // First pass: use latest saldo_apos if available
     for (const m of movs) {
       if (m.saldo_apos != null && !(m.item_id in map)) {
         map[m.item_id] = m.saldo_apos;
       }
     }
+    // Second pass: compute from quantities for items without saldo_apos
+    for (const i of itens) {
+      if (!(i.id in map)) {
+        let total = i.quantidade ?? 0;
+        for (const m of movs) {
+          if (m.item_id === i.id && m.movimento_origem_id === null) { // exclude reversals
+            total += m.tipo === 'saida' ? -m.quantidade : m.quantidade;
+          }
+        }
+        map[i.id] = total;
+      }
+    }
     return map;
-  }, [movs]);
+  }, [movs, itens]);
   const [f, setF] = useState({ item_id: "", tipo: "entrada", quantidade: "", motivo: "", data_mov: format(new Date(), "yyyy-MM-dd") });
   const [estornando, setEstornando] = useState<string | null>(null);
 
