@@ -23,6 +23,8 @@ export default defineConfig(({ mode }) => ({
   // the component bodies (used via dynamic event handlers / ref callbacks)
   build: {
     chunkSizeWarningLimit: 600,
+    // Cache-bust v2 — 
+    sourcemap: false,
     // Note: transformMixedEsModules removed — it reorders CJS/ESM init and causes TDZ.
     rollupOptions: {
       output: {
