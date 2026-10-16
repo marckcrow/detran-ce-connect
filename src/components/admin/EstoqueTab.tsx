@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,12 +11,12 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { db } from "@/lib/operacao";
-import { Plus, Pencil, Package, UtensilsCrossed, BookOpen, Trash2, CalendarDays, RotateCcw, Loader2 } from "lucide-react";
+import { Plus, Pencil, Package, UtensilsCrossed, BookOpen, Trash2, RotateCcw, Loader2, TrendingUp, AlertTriangle, ArrowUpRight, ArrowDownRight, Minus, PackageSearch } from "lucide-react";
 
-const TIPO_LABELS: Record<string, { label: string; icon: any; color: string }> = {
-  lanche: { label: "Lanche", icon: UtensilsCrossed, color: "bg-orange-100 text-orange-700" },
-  revista: { label: "Revista", icon: BookOpen, color: "bg-blue-100 text-blue-700" },
-  outro: { label: "Outro", icon: Package, color: "bg-gray-100 text-gray-700" },
+const TIPO_LABELS: Record<string, { label: string; icon: any; color: string; bgLight: string; textColor: string }> = {
+  lanche: { label: "Lanche", icon: UtensilsCrossed, color: "bg-orange-100 text-orange-700", bgLight: "bg-orange-50 border-orange-200", textColor: "text-orange-700" },
+  revista: { label: "Revista", icon: BookOpen, color: "bg-blue-100 text-blue-700", bgLight: "bg-blue-50 border-blue-200", textColor: "text-blue-700" },
+  outro: { label: "Outro", icon: Package, color: "bg-gray-100 text-gray-700", bgLight: "bg-gray-50 border-gray-200", textColor: "text-gray-700" },
 };
 
 const TIPO_OPTIONS = [
@@ -53,30 +54,71 @@ export function EstoqueTab({ podeEditar }: { podeEditar: boolean }) {
   const [movs, setMovs] = useState<EstoqueMov[]>([]);
   const [nomes, setNomes] = useState<Record<string, string>>({});
 
-  // Compute current saldo for each item by summing all movement quantities (entrada +, saida -)
-  // Falls back to saldo_apos (trigger-computed) if available, then to item.quantidade
+  // ─── Balance computation ──────────────────────────────────────
+  // Priority chain:
+  //   1. Latest saldo_apos from movements (trigger-computed)
+  //   2. Client-side sum of all movement quantities (entrada+, saida-)
+  //   3. item.quantidade from catalog
+  //   4. 0 (fallback)
   const saldoPorItem = useMemo(() => {
     const map: Record<string, number> = {};
-    // First pass: use latest saldo_apos if available
+
+    // Pass 1: Use latest trigger-computed saldo_apos if available
     for (const m of movs) {
       if (m.saldo_apos != null && !(m.item_id in map)) {
         map[m.item_id] = m.saldo_apos;
       }
     }
-    // Second pass: compute from quantities for items without saldo_apos
+
+    // Pass 2: For items WITHOUT saldo_apos, compute from movement quantities
     for (const i of itens) {
       if (!(i.id in map)) {
         let total = i.quantidade ?? 0;
         for (const m of movs) {
-          if (m.item_id === i.id && m.movimento_origem_id === null) { // exclude reversals
+          if (m.item_id === i.id && m.movimento_origem_id === null) {
             total += m.tipo === 'saida' ? -m.quantidade : m.quantidade;
           }
         }
         map[i.id] = total;
       }
     }
+
+    // Pass 3: For item_ids that appear ONLY in movements (no catalog entry)
+    const allItemIds = new Set(movs.map(m => m.item_id));
+    for (const itemId of allItemIds) {
+      if (!(itemId in map)) {
+        let total = 0;
+        for (const m of movs) {
+          if (m.item_id === itemId && m.movimento_origem_id === null) {
+            total += m.tipo === 'saida' ? -m.quantidade : m.quantidade;
+          }
+        }
+        map[itemId] = total;
+      }
+    }
+
     return map;
   }, [movs, itens]);
+
+  // Summary stats
+  const summaryStats = useMemo(() => {
+    let totalItens = 0;
+    let totalEstoque = 0;
+    let itensComEstoque = 0;
+    let itensZerados = 0;
+    const ativos = itens.filter(i => i.ativa);
+    
+    for (const i of ativos) {
+      totalItens++;
+      const s = saldoPorItem[i.id] ?? 0;
+      totalEstoque += s;
+      if (s > 0) itensComEstoque++;
+      else itensZerados++;
+    }
+    
+    return { totalItens, totalEstoque, itensComEstoque, itensZerados };
+  }, [itens, saldoPorItem]);
+
   const [f, setF] = useState({ item_id: "", tipo: "entrada", quantidade: "", motivo: "", data_mov: format(new Date(), "yyyy-MM-dd") });
   const [estornando, setEstornando] = useState<string | null>(null);
 
@@ -88,13 +130,12 @@ export function EstoqueTab({ podeEditar }: { podeEditar: boolean }) {
   const load = useCallback(async () => {
     const [{ data: i }, { data: m }, { data: p }] = await Promise.all([
       db.from("estoque_itens").select("*").order("tipo", "nome"),
-      db.from("estoque_movimentos").select("*").order("created_at", { ascending: false }).limit(200),
+      db.from("estoque_movimentos").select("*").order("created_at", { ascending: false }).limit(500),
       db.from("profiles").select("id, nome"),
     ]);
     setItens((i ?? []) as EstoqueItem[]);
     setMovs((m ?? []) as EstoqueMov[]);
     setNomes(Object.fromEntries((p ?? []).map((x: any) => [x.id, x.nome])));
-    // Set default item selection to first active item
     if (i && i.length > 0 && !f.item_id) {
       const firstActive = (i as EstoqueItem[]).find((x) => x.ativa);
       if (firstActive) setF((prev) => ({ ...prev, item_id: firstActive.id }));
@@ -109,9 +150,8 @@ export function EstoqueTab({ podeEditar }: { podeEditar: boolean }) {
     if (!f.motivo.trim()) return toast({ title: "Informe o motivo", variant: "destructive" });
     if (!f.data_mov) return toast({ title: "Informe a data da movimentação", variant: "destructive" });
 
-    // Fetch FRESH stock from DB (not stale state)
-    const { data: freshItem } = await db.from("estoque_itens").select("quantidade").eq("id", f.item_id).single();
-    const saldo = freshItem?.quantidade ?? 0;
+    // Use computed balance (not stale DB quantidade)
+    const saldo = saldoPorItem[f.item_id] ?? 0;
 
     if (f.tipo === "saida" && q > saldo)
       return toast({ title: `Estoque insuficiente`, description: `Saldo atual: ${saldo} unidades. Você tentou registrar saída de ${q}.`, variant: "destructive" });
@@ -120,7 +160,7 @@ export function EstoqueTab({ podeEditar }: { podeEditar: boolean }) {
 
     const { error } = await db.from("estoque_movimentos").insert({
       item_id: f.item_id, tipo: f.tipo, quantidade: q, motivo: f.motivo.trim(),
-      created_at: f.data_mov + "T12:00:00Z", // Use selected date instead of NOW()
+      created_at: f.data_mov + "T12:00:00Z",
       origem: "manual",
     });
     if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
@@ -145,7 +185,6 @@ export function EstoqueTab({ podeEditar }: { podeEditar: boolean }) {
     if (!itemForm.nome.trim()) return toast({ title: "Nome do item é obrigatório", variant: "destructive" });
 
     if (editingItem) {
-      // Update existing
       const { error } = await db.from("estoque_itens")
         .update({
           nome: itemForm.nome.trim(),
@@ -156,7 +195,6 @@ export function EstoqueTab({ podeEditar }: { podeEditar: boolean }) {
       if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
       toast({ title: "Item atualizado" });
     } else {
-      // Create new — generate slug-like ID
       const id = itemForm.nome.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/_+$/, "") + "_" + Date.now().toString(36);
       const { error } = await db.from("estoque_itens")
         .insert({
@@ -187,105 +225,225 @@ export function EstoqueTab({ podeEditar }: { podeEditar: boolean }) {
   const estornar = async (mov: EstoqueMov) => {
     if (!confirm(`Estornar ${mov.tipo === 'entrada' ? 'entrada' : 'saída'} de ${mov.quantidade} unidades (${getItemNome(mov.item_id)})?\nO estoque será ajustado automaticamente.`)) return;
     setEstornando(mov.id);
-    const { data, error } = await db.rpc("estoque_estornar", {
-      p_movimento_id: mov.id,
-      p_tipo_cancelamento: "cancelamento",
-    });
-    setEstornando(null);
-    if (error) {
-      toast({ title: "Erro ao estornar", description: error.message, variant: "destructive" });
-    } else {
+    try {
+      const { data, error } = await db.rpc("estoque_estornar", {
+        p_movimento_id: mov.id,
+        p_tipo_cancelamento: "cancelamento",
+      });
+      setEstornando(null);
+      if (error) throw error;
       toast({ title: "Estorno registrado", description: `ID: ${data}. Saldo atualizado automaticamente.` });
       load();
+    } catch (e: any) {
+      setEstornando(null);
+      // Fallback: insert reversal movement manually
+      const { error: fallbackError } = await db.from("estoque_movimentos").insert({
+        item_id: mov.item_id,
+        tipo: mov.tipo === 'entrada' ? 'saida' : 'entrada',
+        quantidade: mov.quantidade,
+        motivo: `Estorno de ${mov.id}`,
+        created_at: new Date().toISOString(),
+        origem: "estorno",
+        movimento_origem_id: mov.id,
+      });
+      if (fallbackError) {
+        toast({ title: "Erro ao estornar", description: fallbackError.message, variant: "destructive" });
+      } else {
+        toast({ title: "Estorno registrado (modo fallback)", description: "Saldo atualizado." });
+        load();
+      }
     }
   };
 
+  // Helper: get balance color class
+  const getBalanceColor = (val: number) => {
+    if (val <= 0) return "text-red-600";
+    if (val < 20) return "text-orange-600";
+    return "text-emerald-600";
+  };
+
+  const getBalanceBg = (val: number) => {
+    if (val <= 0) return "bg-red-50 border-red-200";
+    if (val < 20) return "bg-orange-50 border-orange-200";
+    return "bg-emerald-50 border-emerald-200";
+  };
+
+  const activeItems = itens.filter(i => i.ativa);
+
   return (
-    <div className="space-y-4">
-      {/* Stock Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        {itens.filter((i) => i.ativa).map((i) => {
-          const tInfo = TIPO_LABELS[i.tipo] || TIPO_LABELS.outro;
-          const Icon = tInfo.icon;
-          return (
-            <Card key={i.id} className={!i.ativa ? "opacity-50" : ""}>
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <Icon className="h-4 w-4" />
-                    {i.nome}
-                  </CardTitle>
-                  <Badge variant="secondary" className={tInfo.color}>{tInfo.label}</Badge>
-                </div>
-                {i.descricao && <p className="text-xs text-muted-foreground mt-1">{i.descricao}</p>}
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">{saldoPorItem[i.id] ?? i.quantidade ?? 0}</div>
-                <p className="text-xs text-muted-foreground">unidades em estoque</p>
-              </CardContent>
-            </Card>
-          );
-        })}
+    <div className="space-y-6">
+      {/* ═══════════════════ SUMMARY BAR ═══════════════════ */}
+      <div className="grid gap-3 sm:grid-cols-4">
+        <Card className="bg-gradient-to-br from-slate-50 to-white border-slate-200">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-blue-100 text-blue-700"><PackageSearch className="h-5 w-5" /></div>
+            <div>
+              <p className="text-xs text-muted-foreground font-medium">Total de Itens</p>
+              <p className="text-2xl font-bold text-slate-800">{summaryStats.totalItens}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-emerald-50 to-white border-emerald-200">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-emerald-100 text-emerald-700"><TrendingUp className="h-5 w-5" /></div>
+            <div>
+              <p className="text-xs text-muted-foreground font-medium">Unidades em Estoque</p>
+              <p className="text-2xl font-bold text-emerald-700">{summaryStats.totalEstoque.toLocaleString('pt-BR')}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-green-50 to-white border-green-200">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-green-100 text-green-700"><ArrowUpRight className="h-5 w-5" /></div>
+            <div>
+              <p className="text-xs text-muted-foreground font-medium">Com Estoque</p>
+              <p className="text-2xl font-bold text-green-700">{summaryStats.itensComEstoque}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className={summaryStats.itensZerados > 0 ? "bg-gradient-to-br from-red-50 to-white border-red-200" : "bg-gradient-to-br from-slate-50 to-white border-slate-200"}>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className={`p-2.5 rounded-xl ${summaryStats.itensZerados > 0 ? "bg-red-100 text-red-700" : "bg-gray-100 text-gray-500"}`}><AlertTriangle className="h-5 w-5" /></div>
+            <div>
+              <p className="text-xs text-muted-foreground font-medium">Zerados / Baixo</p>
+              <p className={`text-2xl font-bold ${summaryStats.itensZerados > 0 ? "text-red-700" : "text-gray-400"}`}>{summaryStats.itensZerados}</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* New Movement */}
+      {/* ═══════════════════ STOCK CARDS ═══════════════════ */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+            <Package className="h-5 w-5 text-slate-500" />
+            Estoque por Item
+          </h3>
+          <span className="text-xs text-muted-foreground">{activeItems.length} itens ativos</span>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          {activeItems.map((i) => {
+            const tInfo = TIPO_LABELS[i.tipo] || TIPO_LABELS.outro;
+            const Icon = tInfo.icon;
+            const saldo = saldoPorItem[i.id] ?? i.quantidade ?? 0;
+            return (
+              <Card key={i.id} className={`transition-all hover:shadow-md ${getBalanceBg(saldo)} border`}>
+                <CardHeader className="pb-2 pt-4 px-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className={`p-1.5 rounded-lg shrink-0 ${tInfo.color}`}>
+                        <Icon className="h-3.5 w-3.5" />
+                      </div>
+                      <CardTitle className="text-sm font-semibold truncate" title={i.nome}>{i.nome}</CardTitle>
+                    </div>
+                    <Badge variant="secondary" className={`${tInfo.color} shrink-0 text-[10px] px-1.5 py-0`}>{tInfo.label}</Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="px-4 pb-4">
+                  <div className={`text-3xl font-extrabold tracking-tight ${getBalanceColor(saldo)}`}>
+                    {saldo.toLocaleString('pt-BR')}
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <span className="text-xs text-muted-foreground">unidades</span>
+                    {saldo <= 0 && (
+                      <Badge variant="destructive" className="text-[10px] px-1 py-0 h-4">SEM ESTOQUE</Badge>
+                    )}
+                    {saldo > 0 && saldo < 20 && (
+                      <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100 text-[10px] px-1 py-0 h-4">BAIXO</Badge>
+                    )}
+                  </div>
+                  {i.descricao && (
+                    <p className="text-[11px] text-muted-foreground mt-2 line-clamp-2 leading-tight" title={i.descricao}>{i.descricao}</p>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+          {activeItems.length === 0 && (
+            <Card className="col-span-full">
+              <CardContent className="py-12 text-center text-muted-foreground">
+                <PackageSearch className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                <p>Nenhum item ativo encontrado.</p>
+                {podeEditar && <p className="text-sm">Clique em "Novo Item" para cadastrar.</p>}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
+
+      {/* ═══════════════════ NEW MOVEMENT ═══════════════════ */}
       {podeEditar && (
         <Card>
-          <CardHeader><CardTitle>Nova movimentação</CardTitle><CardDescription>Saídas por atendimento são lançadas automaticamente ao registrar a visita.</CardDescription></CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-6">
-            <div className="space-y-1"><Label>Item</Label>
-              <Select value={f.item_id} onValueChange={(v) => setF({ ...f, item_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                <SelectContent>
-                  {itens.filter((i) => i.ativa).map((i) => (
-                    <SelectItem key={i.id} value={i.id}>
-                      {TIPO_LABELS[i.tipo]?.label ?? "Outro"} — {i.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Plus className="h-4 w-4 text-emerald-600" />
+              Nova Movimentação
+            </CardTitle>
+            <CardDescription>Saídas por atendimento são lançadas automaticamente ao registrar a visita.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3 sm:grid-cols-6 items-end">
+              <div className="space-y-1"><Label className="text-xs font-medium">Item</Label>
+                <Select value={f.item_id} onValueChange={(v) => setF({ ...f, item_id: v })}>
+                  <SelectTrigger className="h-9"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                  <SelectContent>
+                    {activeItems.map((i) => (
+                      <SelectItem key={i.id} value={i.id}>
+                        {TIPO_LABELS[i.tipo]?.label ?? "Outro"} — {i.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1"><Label className="text-xs font-medium">Tipo</Label>
+                <Select value={f.tipo} onValueChange={(v) => setF({ ...f, tipo: v })}>
+                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="entrada"><ArrowUpRight className="h-3 w-3 mr-1 inline" />Entrada</SelectItem>
+                    <SelectItem value="saida"><ArrowDownRight className="h-3 w-3 mr-1 inline" />Saída</SelectItem>
+                    <SelectItem value="ajuste"><Minus className="h-3 w-3 mr-1 inline" />Ajuste (+/-)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1"><Label className="text-xs font-medium">Quantidade</Label>
+                <Input type="number" min="0" className="h-9" value={f.quantidade} onChange={(e) => setF({ ...f, quantidade: e.target.value })} />
+              </div>
+              <div className="space-y-1"><Label className="text-xs font-medium">Data</Label>
+                <Input type="date" className="h-9" value={f.data_mov}
+                  onChange={(e) => setF({ ...f, data_mov: e.target.value })}
+                  max={format(new Date(), "yyyy-MM-dd")} />
+              </div>
+              <div className="space-y-1 sm:col-span-2"><Label className="text-xs font-medium">Motivo</Label>
+                <Input maxLength={200} className="h-9" value={f.motivo} onChange={(e) => setF({ ...f, motivo: e.target.value })} placeholder="Motivo da movimentação..." />
+              </div>
+              <Button className="sm:col-span-6 sm:justify-self-end h-9" onClick={registrar}>
+                <Plus className="mr-1.5 h-3.5 w-3.5" />Registrar Movimentação
+              </Button>
             </div>
-            <div className="space-y-1"><Label>Tipo</Label>
-              <Select value={f.tipo} onValueChange={(v) => setF({ ...f, tipo: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="entrada">Entrada</SelectItem>
-                  <SelectItem value="saida">Saída</SelectItem>
-                  <SelectItem value="ajuste">Ajuste (+/-)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1"><Label>Quantidade</Label>
-              <Input type="number" min="0" value={f.quantidade} onChange={(e) => setF({ ...f, quantidade: e.target.value })} />
-            </div>
-            <div className="space-y-1"><Label>Data</Label>
-              <Input
-                type="date"
-                value={f.data_mov}
-                onChange={(e) => setF({ ...f, data_mov: e.target.value })}
-                max={format(new Date(), "yyyy-MM-dd")}
-              />
-            </div>
-            <div className="space-y-1 sm:col-span-2"><Label>Motivo</Label>
-              <Input maxLength={200} value={f.motivo} onChange={(e) => setF({ ...f, motivo: e.target.value })} />
-            </div>
-            <Button className="sm:col-span-6 sm:justify-self-end" onClick={registrar}>Registrar</Button>
+            {f.item_id && (
+              <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                Saldo atual do item selecionado: <strong className={getBalanceColor(saldoPorItem[f.item_id] ?? 0)}>{(saldoPorItem[f.item_id] ?? 0).toLocaleString('pt-BR')} unidades</strong>
+              </p>
+            )}
           </CardContent>
         </Card>
       )}
 
-      {/* Item Catalog Management */}
+      {/* ═══════════════════ ITEM CATALOG ═══════════════════ */}
       {podeEditar && (
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Cadastro de Itens</CardTitle>
-                <CardDescription>Gerencie o catálogo de itens em estoque (lanches, revistas por faixa etária, etc.)</CardDescription>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Package className="h-4 w-4 text-slate-500" />
+                  Catálogo de Itens
+                </CardTitle>
+                <CardDescription>Gerencie os itens cadastrados no estoque (lanches, revistas por faixa etária, etc.)</CardDescription>
               </div>
               <Dialog open={itemDialog} onOpenChange={setItemDialog}>
                 <DialogTrigger asChild>
-                  <Button onClick={openNewItem}><Plus className="mr-2 h-4 w-4" />Novo Item</Button>
+                  <Button size="sm" onClick={openNewItem}><Plus className="mr-1.5 h-3.5 w-3.5" />Novo Item</Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-md">
                   <DialogHeader>
@@ -319,31 +477,36 @@ export function EstoqueTab({ podeEditar }: { podeEditar: boolean }) {
           <CardContent className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead className="text-center">Estoque</TableHead>
-                  <TableHead className="text-center">Status</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
+                <TableRow className="bg-slate-50/80">
+                  <TableHead className="font-semibold">Nome</TableHead>
+                  <TableHead className="font-semibold">Tipo</TableHead>
+                  <TableHead className="font-semibold">Descrição</TableHead>
+                  <TableHead className="text-center font-semibold">Estoque</TableHead>
+                  <TableHead className="text-center font-semibold">Status</TableHead>
+                  <TableHead className="text-right font-semibold">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {itens.map((i) => {
                   const tInfo = TIPO_LABELS[i.tipo] || TIPO_LABELS.outro;
+                  const saldo = saldoPorItem[i.id] ?? i.quantidade ?? 0;
                   return (
-                    <TableRow key={i.id} className={!i.ativa ? "opacity-50" : ""}>
-                      <TableCell className="font-medium">{i.nome}</TableCell>
-                      <TableCell><Badge variant="secondary" className={tInfo.color}>{tInfo.label}</Badge></TableCell>
-                      <TableCell className="text-muted-foreground max-w-[300px] truncate">{i.descricao || "—"}</TableCell>
-                      <TableCell className="text-center font-semibold">{saldoPorItem[i.id] ?? i.quantidade ?? 0}</TableCell>
+                    <TableRow key={i.id} className={!i.ativa ? "opacity-40 bg-muted/30" : ""}>
+                      <TableCell className="font-medium text-sm">{i.nome}</TableCell>
+                      <TableCell><Badge variant="secondary" className={`${tInfo.color} text-[11px]`}>{tInfo.label}</Badge></TableCell>
+                      <TableCell className="text-muted-foreground text-sm max-w-[300px] truncate">{i.descricao || <span className="italic opacity-60">—</span>}</TableCell>
                       <TableCell className="text-center">
-                        <Badge variant={i.ativa ? "default" : "outline"}>{i.ativa ? "Ativa" : "Inativa"}</Badge>
+                        <span className={`font-bold tabular-nums ${getBalanceColor(saldo)}`}>{saldo.toLocaleString('pt-BR')}</span>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant={i.ativa ? "default" : "outline"} className={i.ativa ? "" : "opacity-60"}>
+                          {i.ativa ? "Ativa" : "Inativa"}
+                        </Badge>
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
-                          <Button size="sm" variant="ghost" onClick={() => openEditItem(i)}><Pencil className="h-3.5 w-3.5" /></Button>
-                          <Button size="sm" variant="ghost" onClick={() => toggleItemAtiva(i)}>
+                          <Button size="sm" variant="ghost" onClick={() => openEditItem(i)} title="Editar"><Pencil className="h-3.5 w-3.5" /></Button>
+                          <Button size="sm" variant="ghost" onClick={() => toggleItemAtiva(i)} className="text-xs px-2">
                             {i.ativa ? "Inativar" : "Reativar"}
                           </Button>
                         </div>
@@ -360,22 +523,30 @@ export function EstoqueTab({ podeEditar }: { podeEditar: boolean }) {
         </Card>
       )}
 
-      {/* Movement History */}
+      {/* ═══════════════════ MOVEMENT HISTORY ═══════════════════ */}
       <Card>
-        <CardHeader><CardTitle>Histórico de movimentações</CardTitle></CardHeader>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2">
+              <RotateCcw className="h-4 w-4 text-slate-500" />
+              Histórico de Movimentações
+            </CardTitle>
+            <span className="text-xs text-muted-foreground">{movs.length} registros</span>
+          </div>
+        </CardHeader>
         <CardContent className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Data</TableHead>
-                <TableHead>Item</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead className="text-right">Qtd.</TableHead>
-                <TableHead className="text-right">Saldo</TableHead>
-                <TableHead>Origem</TableHead>
-                <TableHead>Motivo</TableHead>
-                <TableHead>Usuário</TableHead>
-                {podeEditar && <TableHead className="text-right">Ações</TableHead>}
+              <TableRow className="bg-slate-50/80">
+                <TableHead className="font-semibold whitespace-nowrap">Data</TableHead>
+                <TableHead className="font-semibold">Item</TableHead>
+                <TableHead className="font-semibold">Tipo</TableHead>
+                <TableHead className="text-right font-semibold">Qtd.</TableHead>
+                <TableHead className="text-right font-semibold">Saldo</TableHead>
+                <TableHead className="font-semibold">Origem</TableHead>
+                <TableHead className="font-semibold">Motivo</TableHead>
+                <TableHead className="font-semibold">Usuário</TableHead>
+                {podeEditar && <TableHead className="text-right font-semibold">Ações</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -387,25 +558,31 @@ export function EstoqueTab({ podeEditar }: { podeEditar: boolean }) {
                   atendimento: { label: "Atendimento", className: "bg-green-100 text-green-700" },
                   estorno: { label: "Estorno", className: "bg-yellow-100 text-yellow-700" },
                 }[m.origem] ?? { label: m.origem ?? "—", className: "bg-gray-100 text-gray-500" };
-                const qtdDisplay = m.tipo === "saida" ? `-${m.quantidade}`
-                  : m.tipo === "ajuste" && m.quantidade < 0 ? `${m.quantidade}`
+                const qtdDisplay = m.tipo === 'saida' ? `-${m.quantidade}`
+                  : m.tipo === 'ajuste' && m.quantidade < 0 ? `${m.quantidade}`
                   : `+${m.quantidade}`;
                 return (
-                  <TableRow key={m.id} className={isReversal ? "opacity-60 bg-muted/20" : ""}>
-                    <TableCell className="whitespace-nowrap">{format(new Date(m.created_at), "dd/MM/yyyy HH:mm")}</TableCell>
+                  <TableRow key={m.id} className={isReversal ? "opacity-50 bg-yellow-50/30" : ""}>
+                    <TableCell className="whitespace-nowrap text-sm">{format(new Date(m.created_at), "dd/MM/yyyy HH:mm")}</TableCell>
                     <TableCell>
-                      <span className="font-medium">{getItemNome(m.item_id)}</span>
-                      <Badge variant="secondary" className={`ml-2 ${tipoInfo.color}`}>{tipoInfo.label}</Badge>
-                      {isReversal && <Badge variant="outline" className="ml-2 text-xs">Estornado</Badge>}
+                      <span className="font-medium text-sm">{getItemNome(m.item_id)}</span>
+                      <Badge variant="secondary" className={`ml-1.5 ${tipoInfo.color} text-[10px]`}>{tipoInfo.label}</Badge>
+                      {isReversal && <Badge variant="outline" className="ml-1 text-[10px]">Estornado</Badge>}
                     </TableCell>
-                    <TableCell className="capitalize">{m.tipo}</TableCell>
-                    <TableCell className={`text-right font-mono ${m.tipo === "saida" ? "text-red-600" : "text-green-600"}`}>{qtdDisplay}</TableCell>
-                    <TableCell className="text-right font-semibold">{m.saldo_apos ?? "—"}</TableCell>
+                    <TableCell className="capitalize text-sm">
+                      <span className={m.tipo === 'entrada' ? 'text-green-600' : m.tipo === 'saida' ? 'text-red-600' : 'text-orange-600'}>
+                        {m.tipo}
+                      </span>
+                    </TableCell>
+                    <TableCell className={`text-right font-mono text-sm font-semibold ${m.tipo === 'saida' ? 'text-red-600' : 'text-green-600'}`}>
+                      {qtdDisplay}
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-sm font-semibold">{m.saldo_apos != null ? m.saldo_apos.toLocaleString('pt-BR') : '—'}</TableCell>
                     <TableCell>
-                      <Badge variant="secondary" className={origemBadge.className}>{origemBadge.label}</Badge>
+                      <Badge variant="secondary" className={`${origemBadge.className} text-[11px]`}>{origemBadge.label}</Badge>
                     </TableCell>
-                    <TableCell className="max-w-[200px] truncate" title={m.motivo}>{m.motivo}</TableCell>
-                    <TableCell>{nomes[m.usuario_id] ?? "—"}</TableCell>
+                    <TableCell className="max-w-[220px] truncate text-sm" title={m.motivo}>{m.motivo || '—'}</TableCell>
+                    <TableCell className="text-sm">{nomes[m.usuario_id] ?? "—"}</TableCell>
                     {podeEditar && (
                       <TableCell className="text-right">
                         {!isReversal && m.origem !== "estorno" && (
@@ -420,7 +597,7 @@ export function EstoqueTab({ podeEditar }: { podeEditar: boolean }) {
                 );
               })}
               {movs.length === 0 && (
-                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Nenhuma movimentação registrada.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={podeEditar ? 9 : 8} className="text-center text-muted-foreground py-8">Nenhuma movimentação registrada.</TableCell></TableRow>
               )}
             </TableBody>
           </Table>
