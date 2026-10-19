@@ -144,8 +144,9 @@ export function EstoqueTab({ podeEditar }: { podeEditar: boolean }) {
     if (!f.motivo.trim()) return toast({ title: "Informe o motivo", variant: "destructive" });
     if (!f.data_mov) return toast({ title: "Informe a data da movimentação", variant: "destructive" });
 
-    // CRITICAL: Use computed client-side balance, NOT DB quantidade
-    const saldo = saldoPorItem[f.item_id] ?? 0;
+    // CRITICAL FIX v2: Use computed client-side balance, NOT DB quantidade
+    // Bug: DB quantidade was 0 (stale), but UI showed correct 52.450 via saldoPorItem
+    const saldo = Number(saldoPorItem[f.item_id] ?? 0);
 
     if (f.tipo === "saida" && q > saldo)
       return toast({ title: `Estoque insuficiente`, description: `Saldo atual: ${saldo.toLocaleString('pt-BR')} unidades. Você tentou registrar saída de ${q}.`, variant: "destructive" });
