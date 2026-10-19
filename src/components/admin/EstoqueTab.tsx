@@ -184,20 +184,31 @@ export function EstoqueTab({ podeEditar }: { podeEditar: boolean }) {
 
     setSavingMov(true);
     try {
-      const { error } = await db.from("estoque_movimentos")
+      const { data, error, count } = await db.from("estoque_movimentos")
         .update({
           tipo: editMovForm.tipo,
           quantidade: q,
           motivo: editMovForm.motivo.trim(),
           created_at: editMovForm.data_mov + "T12:00:00Z",
         })
-        .eq("id", editingMov.id);
+        .eq("id", editingMov.id)
+        .select();
+      
+      console.log("[Estoque Edit] response:", { data, error, count });
+      
       if (error) throw error;
+      
+      if (!data || data.length === 0) {
+        toast({ title: "⚠️ Nenhuma linha atualizada", description: "RLS pode ter bloqueado a edição.", variant: "destructive" });
+        return;
+      }
+      
       toast({ title: "✅ Movimentação atualizada!" });
       setEditMovDialog(false);
       load();
     } catch (e: any) {
-      toast({ title: "Erro ao atualizar", description: e.message, variant: "destructive" });
+      console.error("[Estoque Edit] error:", e);
+      toast({ title: "Erro ao atualizar", description: e.message || String(e), variant: "destructive" });
     } finally {
       setSavingMov(false);
     }
@@ -210,12 +221,31 @@ export function EstoqueTab({ podeEditar }: { podeEditar: boolean }) {
 
     setDeletingMov(mov.id);
     try {
-      const { error } = await db.from("estoque_movimentos").delete().eq("id", mov.id);
+      const { data, error, count } = await db.from("estoque_movimentos")
+        .delete({ count: "exact" })
+        .eq("id", mov.id);
+      
+      // DEBUG: Log the actual response for troubleshooting
+      console.log("[Estoque Delete] response:", { data, error, count });
+      
       if (error) throw error;
-      toast({ title: "🗑️ Movimentação excluída!" });
+      
+      // Check if row was actually deleted
+      if (count === 0) {
+        toast({ 
+          title: "⚠️ Nenhuma linha excluída", 
+          description: "A movimentação não foi encontrada ou RLS bloqueou a exclusão. Verifique as políticas de segurança.", 
+          variant: "destructive" 
+        });
+        load(); // Refresh to show current state
+        return;
+      }
+      
+      toast({ title: "🗑️ Movimentação excluída!", description: `1 movimento removido.` });
       load();
     } catch (e: any) {
-      toast({ title: "Erro ao excluir", description: e.message, variant: "destructive" });
+      console.error("[Estoque Delete] error:", e);
+      toast({ title: "Erro ao excluir", description: e.message || String(e), variant: "destructive" });
     } finally {
       setDeletingMov(null);
     }
