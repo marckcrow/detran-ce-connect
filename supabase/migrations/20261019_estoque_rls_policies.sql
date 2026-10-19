@@ -15,20 +15,15 @@ DROP POLICY IF EXISTS "Estoques staff full access" ON public.estoque_itens;
 CREATE POLICY "Estoques staff full access" ON public.estoque_itens
   FOR ALL
   TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles p
-      WHERE p.id = auth.uid()
-      AND p.is_staff = true
-    )
-  );
+  USING (public.is_staff(auth.uid()))
+  WITH CHECK (public.is_staff(auth.uid()));
 
 -- Authenticated users can read items (for display in forms)
 DROP POLICY IF EXISTS "Estoques authenticated read" ON public.estoque_itens;
 CREATE POLICY "Estoques authenticated read" ON public.estoque_itens
   FOR SELECT
   TO authenticated
-  USING (true);
+  USING (auth.uid() IS NOT NULL);
 
 -- ─── ESTOQUE_MOVIMENTOS Policies ─────────────────────────────
 
@@ -37,13 +32,15 @@ DROP POLICY IF EXISTS "Estoque movimentos staff full access" ON public.estoque_m
 CREATE POLICY "Estoque movimentos staff full access" ON public.estoque_movimentos
   FOR ALL
   TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles p
-      WHERE p.id = auth.uid()
-      AND p.is_staff = true
-    )
-  );
+  USING (public.is_staff(auth.uid()))
+  WITH CHECK (public.is_staff(auth.uid()));
+
+-- Authenticated users can read movements (for display)
+DROP POLICY IF EXISTS "Estoque movimentos authenticated read" ON public.estoque_movimentos;
+CREATE POLICY "Estoque movimentos authenticated read" ON public.estoque_movimentos
+  FOR SELECT
+  TO authenticated
+  USING (auth.uid() IS NOT NULL);
 
 -- Service role bypasses RLS (for edge functions / RPCs)
 -- No policy needed — service role key ignores RLS

@@ -147,6 +147,18 @@ export function EstoqueTab({ podeEditar }: { podeEditar: boolean }) {
     // CRITICAL FIX v2: Use computed client-side balance, NOT DB quantidade
     // Bug: DB quantidade was 0 (stale), but UI showed correct 52.450 via saldoPorItem
     const saldo = Number(saldoPorItem[f.item_id] ?? 0);
+    
+    // DEBUG: Log the actual values being used for validation
+    console.log("[Estoque Registrar] DEBUG:", {
+      item_id: f.item_id,
+      tipo: f.tipo,
+      quantidade: q,
+      saldo: saldo,
+      saldoPorItem: { ...saldoPorItem },
+      saldoPorItem_keys: Object.keys(saldoPorItem),
+      hasKey: f.item_id in saldoPorItem,
+      rawValue: saldoPorItem[f.item_id],
+    });
 
     if (f.tipo === "saida" && q > saldo)
       return toast({ title: `Estoque insuficiente`, description: `Saldo atual: ${saldo.toLocaleString('pt-BR')} unidades. Você tentou registrar saída de ${q}.`, variant: "destructive" });
