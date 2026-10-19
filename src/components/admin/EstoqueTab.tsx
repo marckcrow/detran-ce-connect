@@ -122,11 +122,30 @@ export function EstoqueTab({ podeEditar }: { podeEditar: boolean }) {
   const [clearItemId, setClearItemId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const [{ data: i }, { data: m }, { data: p }] = await Promise.all([
+    const [{ data: i, error: errI }, { data: m, error: errM }, { data: p }] = await Promise.all([
       db.from("estoque_itens").select("*").order("tipo", "nome"),
       db.from("estoque_movimentos").select("*").order("created_at", { ascending: false }).limit(500),
       db.from("profiles").select("id, nome"),
     ]);
+    
+    // DEBUG: Log any load errors
+    if (errM) {
+      console.error("[Estoque Load] ERROR loading movimentos:", {
+        message: errM.message,
+        code: errM.code,
+        details: errM.details,
+        hint: errM.hint,
+        fullError: JSON.stringify(errM),
+      });
+      toast({ 
+        title: "⚠️ Erro ao carregar movimentações", 
+        description: `${errM.message || 'HTTP ' + (errM as any).status}. O saldo pode estar incorreto.`, 
+        variant: "destructive" 
+      });
+    }
+    if (errI) {
+      console.error("[Estoque Load] ERROR loading itens:", errI);
+    }
     setItens((i ?? []) as EstoqueItem[]);
     setMovs((m ?? []) as EstoqueMov[]);
     setNomes(Object.fromEntries((p ?? []).map((x: any) => [x.id, x.nome])));
