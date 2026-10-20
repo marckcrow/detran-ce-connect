@@ -159,7 +159,7 @@ export function EstoqueTab({ podeEditar }: { podeEditar: boolean }) {
   const registrar = async () => {
     const q = Number(f.quantidade);
     if (!f.item_id) return toast({ title: "Selecione um item", variant: "destructive" });
-    if (!q || (f.tipo !== "ajuste" && q < 0)) return toast({ title: "Quantidade inválida", variant: "destructive" });
+    if (!q || q < 0) return toast({ title: "Quantidade inválida", variant: "destructive" });
     if (!f.motivo.trim()) return toast({ title: "Informe o motivo", variant: "destructive" });
     if (!f.data_mov) return toast({ title: "Informe a data da movimentação", variant: "destructive" });
 
@@ -167,22 +167,10 @@ export function EstoqueTab({ podeEditar }: { podeEditar: boolean }) {
     // Bug: DB quantidade was 0 (stale), but UI showed correct 52.450 via saldoPorItem
     const saldo = Number(saldoPorItem[f.item_id] ?? 0);
     
-    // DEBUG: Log the actual values being used for validation
-    console.log("[Estoque Registrar] DEBUG:", {
-      item_id: f.item_id,
-      tipo: f.tipo,
-      quantidade: q,
-      saldo: saldo,
-      saldoPorItem: { ...saldoPorItem },
-      saldoPorItem_keys: Object.keys(saldoPorItem),
-      hasKey: f.item_id in saldoPorItem,
-      rawValue: saldoPorItem[f.item_id],
-    });
+
 
     if (f.tipo === "saida" && q > saldo)
       return toast({ title: `Estoque insuficiente`, description: `Saldo atual: ${saldo.toLocaleString('pt-BR')} unidades. Você tentou registrar saída de ${q}.`, variant: "destructive" });
-    if (f.tipo === "ajuste" && saldo + q < 0)
-      return toast({ title: `Ajuste inválido`, description: `Saldo atual: ${saldo}. Ajuste de ${q} resultaria em saldo negativo.`, variant: "destructive" });
 
     const { error } = await db.from("estoque_movimentos").insert({
       item_id: f.item_id, tipo: f.tipo, quantidade: q, motivo: f.motivo.trim(),
@@ -497,7 +485,6 @@ export function EstoqueTab({ podeEditar }: { podeEditar: boolean }) {
                   <SelectContent>
                     <SelectItem value="entrada"><ArrowUpRight className="h-3 w-3 mr-1 inline" />Entrada</SelectItem>
                     <SelectItem value="saida"><ArrowDownRight className="h-3 w-3 mr-1 inline" />Saída</SelectItem>
-                    <SelectItem value="ajuste"><Minus className="h-3 w-3 mr-1 inline" />Ajuste (+/-)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -614,7 +601,7 @@ export function EstoqueTab({ podeEditar }: { podeEditar: boolean }) {
                 const tipoInfo = TIPO_LABELS[getItemTipo(m.item_id)] || TIPO_LABELS.outro;
                 const isReversal = m.movimento_origem_id !== null;
                 const origemBadge = { manual: { label: "Manual", className: "bg-gray-100 text-gray-700" }, atendimento: { label: "Atendimento", className: "bg-green-100 text-green-700" }, estorno: { label: "Estorno", className: "bg-yellow-100 text-yellow-700" } }[m.origem] ?? { label: m.origem ?? "—", className: "bg-gray-100 text-gray-500" };
-                const qtdDisplay = m.tipo === 'saida' ? `-${m.quantidade}` : m.tipo === 'ajuste' && m.quantidade < 0 ? `${m.quantidade}` : `+${m.quantidade}`;
+                const qtdDisplay = m.tipo === 'saida' ? `-${m.quantidade}` : `+${m.quantidade}`;
                 return (
                   <TableRow key={m.id} className={isReversal ? "opacity-50 bg-yellow-50/30" : ""}>
                     <TableCell className="whitespace-nowrap text-sm">{format(new Date(m.created_at), "dd/MM/yyyy HH:mm")}</TableCell>
@@ -682,7 +669,6 @@ export function EstoqueTab({ podeEditar }: { podeEditar: boolean }) {
                   <SelectContent>
                     <SelectItem value="entrada">Entrada</SelectItem>
                     <SelectItem value="saida">Saída</SelectItem>
-                    <SelectItem value="ajuste">Ajuste (+/-)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
