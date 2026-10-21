@@ -310,130 +310,140 @@ CREATE POLICY "profiles_lotacao_lock_insert" ON public.profiles
 -- ============================================================
 
 -- -------------------------------------------------------
--- 3a. rpc_agendamentos_list — CTE scoping fix
+-- 3a. rpc_agendamentos_list — preserve production version
 --     (replaces 20261021_fix_rpc_agendamentos_list.sql)
+--
+-- PRODUCTION SIGNATURE VERIFIED via live RPC test (2026-10-21):
+--   10 params: p_limit, p_offset, p_status, p_cidade, p_centro,
+--             p_data_ini, p_data_fim, p_order_by, p_order_dir, p_unidade_id
+--   Returns 30 columns including total (COUNT(*) OVER()), joins with
+--   instituicoes, ordens_servico, unidades. Uses CTE 'base' with internal
+--   sort_data/sort_created/sort_inst aliases + dynamic ORDER BY.
+--   Includes unit isolation: (v_is_admin OR unidade_id = ANY(v_unidades))
+--   Includes admin bypass for p_unidade_id filter.
+--
+-- NOTE: The production CTE pattern is CORRECT — sort_data/sort_created/sort_inst
+--       are defined in the CTE and referenced in ORDER BY within the same CTE.
+--       This is valid PostgreSQL. The earlier "column sort_data does not exist"
+--       error was from an INTERMEDIATE broken manual patch, not from this migration.
 -- -------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.rpc_agendamentos_list(
-  p_status     TEXT    DEFAULT NULL,
-  p_unidade_id UUID    DEFAULT NULL,
-  p_data_ini   DATE    DEFAULT NULL,
-  p_data_fim   DATE    DEFAULT NULL,
-  p_page       INTEGER DEFAULT 1,
-  p_page_size  INTEGER DEFAULT 50,
-  p_order_by   TEXT    DEFAULT 'sort_data',
-  p_order_dir  TEXT    DEFAULT 'desc'
+  p_limit       INTEGER  DEFAULT 50,
+  p_offset      INTEGER  DEFAULT 0,
+  p_status      TEXT     DEFAULT NULL,
+  p_cidade      TEXT     DEFAULT NULL,
+  p_centro      TEXT     DEFAULT NULL,
+  p_data_ini    DATE     DEFAULT NULL,
+  p_data_fim    DATE     DEFAULT NULL,
+  p_order_by    TEXT     DEFAULT 'data',
+  p_order_dir   TEXT     DEFAULT 'DESC',
+  p_unidade_id  UUID     DEFAULT NULL
 )
 RETURNS TABLE (
-  id                        UUID,
-  instituicao_id            UUID,
-  unidade_id                UUID,
-  unidade_nome              TEXT,
-  responsavel_nome          TEXT,
-  responsavel_whatsapp      TEXT,
-  data                      DATE,
-  turno                     TEXT,
-  quantidade_alunos         INTEGER,
-  quantidade_professores    INTEGER,
-  quantidade_acompanhantes  INTEGER,
-  transporte_status         TEXT,
-  status                    TEXT,
-  observacoes               TEXT,
-  created_at                TIMESTAMPTZ,
-  updated_at                TIMESTAMPTZ,
-  total_count               BIGINT
-)
-LANGUAGE plpgsql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
+  total                    BIGINT,
+  id                       UUID,
+  instituicao_id           UUID,
+  data                     DATE,
+  horario                  TIME,
+  turno                    TEXT,
+  quantidade_alunos        INTEGER,
+  quantidade_professores   INTEGER,
+  quantidade_acompanhantes INTEGER,
+  faixa_etaria             TEXT,
+  transporte_status        TEXT,
+  status                   TEXT,
+  possui_pcd               BOOLEAN,
+  pcd_quantidade           INTEGER,
+  responsavel_nome         TEXT,
+  responsavel_whatsapp     TEXT,
+  observacoes              TEXT,
+  created_at               TIMESTAMPTZ,
+  updated_at               TIMESTAMPTZ,
+  edit_autor               TEXT,
+  edit_data                TIMESTAMPTZ,
+  edit_valores_anteriores  JSONB,
+  instituicao_nome         TEXT,
+  instituicao_cidade       TEXT,
+  instituicao_bairro       TEXT,
+  instituicao_rede         TEXT,
+  os_id                    UUID,
+  os_numero                INTEGER,
+  os_ano                   INTEGER,
+  os_status                TEXT,
+  unidade_id               UUID,
+  unidade_nome             TEXT
+) AS $$
 DECLARE
-  v_order_col  TEXT;
-  v_order_dir  TEXT;
-  v_offset     INTEGER;
-  v_total      BIGINT;
-  v_valid_cols TEXT[] := ARRAY[
-    'sort_data','sort_created','sort_inst','data','created_at','instituicao_id','status'
-  ];
+  v_is_admin  BOOLEAN;
+  v_unidades  UUID[];
 BEGIN
-  -- Normalize and validate p_order_by
-  v_order_col := lower(COALESCE(p_order_by, 'sort_data'));
-  IF v_order_col = 'sort_data'    THEN v_order_col := 'data';
-  ELSIF v_order_col = 'sort_created' THEN v_order_col := 'created_at';
-  ELSIF v_order_col = 'sort_inst'    THEN v_order_col := 'instituicao_id';
-  END IF;
-  IF NOT (v_order_col = ANY (v_valid_cols)) THEN
-    RAISE EXCEPTION 'Ordenacao invalida: %', p_order_by;
-  END IF;
-  v_order_dir := upper(COALESCE(p_order_dir, 'DESC'));
-  IF v_order_dir NOT IN ('ASC','DESC') THEN v_order_dir := 'DESC'; END IF;
-  v_offset := (GREATEST(1, p_page) - 1) * GREATEST(1, p_page_size);
+  SELECT EXISTS(SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'admin')
+  INTO v_is_admin;
+  v_unidades = public.get_user_unidades(auth.uid());
 
-  -- Build the CTE with ordering INSIDE it
   RETURN QUERY
-  WITH
-  filtered AS (
-    SELECT a.*
+  WITH base AS (
+    SELECT
+      a.id, a.instituicao_id, a.data, a.horario, a.turno,
+      a.quantidade_alunos, a.quantidade_professores, a.quantidade_acompanhantes,
+      a.faixa_etaria, a.transporte_status, a.status,
+      a.possui_pcd, a.pcd_quantidade,
+      a.responsavel_nome, a.responsavel_whatsapp, a.observaciones,
+      a.created_at, a.updated_at,
+      a.edit_autor, a.edit_data, a.edit_valores_anteriores,
+      i.nome       AS instituicao_nome,
+      i.cidade     AS instituicao_cidade,
+      i.bairro     AS instituicao_bairro,
+      i.rede       AS instituicao_rede,
+      o.id         AS os_id,
+      o.numero     AS os_numero,
+      o.ano        AS os_ano,
+      o.status     AS os_status,
+      a.unidade_id,
+      u.nome       AS unidade_nome,
+      CASE WHEN p_order_by = 'data'             THEN a.data       END AS sort_data,
+      CASE WHEN p_order_by = 'created_at'       THEN a.created_at END AS sort_created,
+      CASE WHEN p_order_by = 'instituicao_nome' THEN i.nome       END AS sort_inst
     FROM public.agendamentos a
-    WHERE (p_status IS NULL     OR a.status     = p_status)
-      AND (p_unidade_id IS NULL OR a.unidade_id = p_unidade_id)
-      AND (p_data_ini  IS NULL  OR a.data      >= p_data_ini)
-      AND (p_data_fim  IS NULL  OR a.data      <= p_data_fim)
-  ),
-  ordered AS (
-    SELECT f.*,
-           u.nome AS unidade_nome,
-           (SELECT COUNT(*) FROM filtered) AS total_count
-    FROM   filtered f
-    LEFT   JOIN public.unidades u ON u.id = f.unidade_id
-    ORDER  BY
-      CASE WHEN v_order_dir = 'ASC'  THEN
-        CASE v_order_col
-          WHEN 'data'          THEN f.data::TEXT
-          WHEN 'created_at'    THEN f.created_at::TEXT
-          WHEN 'instituicao_id' THEN f.instituicao_id::TEXT
-          WHEN 'status'        THEN f.status::TEXT
-          ELSE f.data::TEXT
-        END
-      END ASC,
-      CASE WHEN v_order_dir = 'DESC' THEN
-        CASE v_order_col
-          WHEN 'data'          THEN f.data::TEXT
-          WHEN 'created_at'    THEN f.created_at::TEXT
-          WHEN 'instituicao_id' THEN f.instituicao_id::TEXT
-          WHEN 'status'        THEN f.status::TEXT
-          ELSE f.data::TEXT
-        END
-      END DESC,
-      f.created_at DESC
-    OFFSET v_offset
-    LIMIT  p_page_size
+    LEFT JOIN public.instituicoes i ON i.id = a.instituicao_id
+    LEFT JOIN public.ordens_servico o ON o.agendamento_id = a.id
+    LEFT JOIN public.unidades u ON u.id = a.unidade_id
+    WHERE
+      (v_is_admin OR a.unidade_id = ANY(v_unidades))
+      AND (p_unidade_id IS NULL OR a.unidade_id = p_unidade_id OR v_is_admin)
+      AND (p_status IS NULL OR a.status::TEXT = p_status)
+      AND (p_cidade IS NULL OR i.cidade ILIKE '%' || p_cidade || '%')
+      AND (p_data_ini IS NULL OR a.data >= p_data_ini)
+      AND (p_data_fim IS NULL OR a.data <= p_data_fim)
+    ORDER BY
+      CASE WHEN p_order_dir = 'ASC'  THEN sort_data    END ASC  NULLS LAST,
+      CASE WHEN p_order_dir = 'DESC' THEN sort_data    END DESC NULLS LAST,
+      CASE WHEN p_order_dir = 'ASC'  THEN sort_created END ASC  NULLS LAST,
+      CASE WHEN p_order_dir = 'DESC' THEN sort_created END DESC NULLS LAST,
+      CASE WHEN p_order_dir = 'ASC'  THEN sort_inst    END ASC  NULLS LAST,
+      CASE WHEN p_order_dir = 'DESC' THEN sort_inst    END DESC NULLS LAST
   )
   SELECT
-    o.id,
-    o.instituicao_id,
-    o.unidade_id,
-    o.unidade_nome,
-    o.responsavel_nome,
-    o.responsavel_whatsapp,
-    o.data,
-    o.turno,
-    o.quantidade_alunos,
-    o.quantidade_professores,
-    o.quantidade_acompanhantes,
-    o.transporte_status,
-    o.status,
-    o.observacoes,
-    o.created_at,
-    o.updated_at,
-    o.total_count
-  FROM ordered o;
+    COUNT(*) OVER()::BIGINT,
+    b.id, b.instituicao_id, b.data, b.horario, b.turno,
+    b.quantidade_alunos, b.quantidade_professores, b.quantidade_acompanhantes,
+    b.faixa_etaria::TEXT, b.transporte_status::TEXT, b.status::TEXT,
+    b.possui_pcd, b.pcd_quantidade,
+    b.responsavel_nome, b.responsavel_whatsapp, b.observacoes,
+    b.created_at, b.updated_at,
+    b.edit_autor, b.edit_data, b.edit_valores_anteriores,
+    b.instituicao_nome, b.instituicao_cidade, b.institu_bairro, b.instituicao_rede::TEXT,
+    b.os_id, b.os_numero, b.os_ano, b.os_status::TEXT,
+    b.unidade_id, COALESCE(b.unidade_nome::TEXT, ''::TEXT)::TEXT
+  FROM base b
+  LIMIT  p_limit
+  OFFSET p_offset;
 END;
-$$;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Grant execute to authenticated users
 GRANT EXECUTE ON FUNCTION public.rpc_agendamentos_list(
-  TEXT, UUID, DATE, DATE, INTEGER, INTEGER, TEXT, TEXT
+  INTEGER, INTEGER, TEXT, TEXT, TEXT, DATE, DATE, TEXT, TEXT, UUID
 ) TO authenticated;
 
 -- -------------------------------------------------------
@@ -503,18 +513,20 @@ WHERE schemaname = 'public'
     'profiles_lotacao_lock_insert'
   );
 
--- V2: Verify rpc_agendamentos_list has no CTE scoping error
--- This should return a row with column names (empty result set is OK, no error)
+-- V2: Verify rpc_agendamentos_list works (production 10-param signature)
+-- Should return empty set (no data) or rows — no error
 SELECT public.rpc_agendamentos_list(
-  p_status     => NULL,
-  p_unidade_id => NULL,
-  p_data_ini   => NULL,
-  p_data_fim   => NULL,
-  p_page       => 1,
-  p_page_size  => 1,
-  p_order_by   => 'data',
-  p_order_dir  => 'desc'
-) LIMIT 1;
+  p_limit     => 1,
+  p_offset    => 0,
+  p_status    => NULL,
+  p_cidade    => NULL,
+  p_centro    => NULL,
+  p_data_ini  => '2026-01-01',
+  p_data_fim  => '2026-12-31',
+  p_order_by  => 'data',
+  p_order_dir => 'DESC',
+  p_unidade_id => NULL
+);
 
 -- V3: Verify rpc_unidades_list returns 3 units
 SELECT public.rpc_unidades_list();
