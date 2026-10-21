@@ -441,47 +441,40 @@ GRANT EXECUTE ON FUNCTION public.rpc_agendamentos_list(
 --     (replaces 20261021_seed_unidades.sql)
 --     The seed migration should have populated public.unidades.
 --     This function now reads from the table instead of hardcoded VALUES.
+--
+--     REAL TABLE SCHEMA (from 20261007_p1_p2_unificado.sql):
+--       id UUID PK, nome TEXT UNIQUE, sigla TEXT UNIQUE, cidade TEXT,
+--       macrorregiao TEXT, ativo BOOLEAN DEFAULT true,
+--       aceita_solicitacoes BOOLEAN DEFAULT true,
+--       created_at TIMESTAMPTZ DEFAULT now()
+--
+--     NOTE: e_lotacao is NOT a real column — it's a computed alias:
+--       (u.id = get_user_lotacao_unidade_id(auth.uid())) AS e_lotacao
 -- -------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.rpc_unidades_list()
 RETURNS TABLE (
-  id    UUID,
-  nome  TEXT,
-  cidade TEXT
-)
-LANGUAGE plpgsql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
+  id                   UUID,
+  nome                 TEXT,
+  sigla                TEXT,
+  cidade               TEXT,
+  macrorregiao         TEXT,
+  ativo                BOOLEAN,
+  e_lotacao            BOOLEAN
+) AS $$
+DECLARE
+  v_lotacao UUID;
 BEGIN
-  -- If the unidades table is populated, return real data
-  -- If empty (first run), fall back to the expected defaults
-  RETURN QUERY
-  SELECT u.id, u.nome, u.cidade
-  FROM public.unidades u
-  ORDER BY u.nome;
+  SELECT public.get_user_lotacao_unidade_id(auth.uid()) INTO v_lotacao;
 
-  -- If no rows returned, seed the 3 expected DETRAN units
-  -- (handles first-run before seed migration is applied)
-  IF NOT FOUND THEN
-    RETURN QUERY
-    WITH ins AS (
-      INSERT INTO public.unidades (id, nome, cidade, ativo, created_at)
-      VALUES
-        ('11111111-1111-1111-1111-111111111101'::UUID,
-         'DETRAN-CE Fortaleza', 'Fortaleza', true, now())
-      ON CONFLICT (id) DO UPDATE SET nome = EXCLUDED.nome
-      RETURNING id, nome, cidade
-    )
-    INSERT INTO public.unidades (id, nome, cidade, ativo, created_at)
-    VALUES
-      ('11111111-1111-1111-1111-111111111102'::UUID, 'DETRAN-CE Sobral',  'Sobral',  true, now()),
-      ('11111111-1111-1111-1111-111111111103'::UUID, 'DETRAN-CE Cariri', 'Juazeiro do Norte', true, now())
-    ON CONFLICT (id) DO NOTHING
-    RETURNING id, nome, cidade;
-  END IF;
+  RETURN QUERY
+  SELECT
+    u.id, u.nome, u.sigla, u.cidade, u.macrorregiao, u.ativo,
+    (u.id = v_lotacao) AS e_lotacao
+  FROM public.unidades u
+  WHERE u.ativo = true
+  ORDER BY u.nome;
 END;
-$$;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 GRANT EXECUTE ON FUNCTION public.rpc_unidades_list() TO authenticated;
 
