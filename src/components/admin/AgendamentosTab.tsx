@@ -16,7 +16,7 @@ import { gerarListaPresencaPdf } from "@/lib/listaPresencaPdf";
 const PAGE_SIZE = 50;
 
 const STATUS_OPTIONS = [
-  { value: "", label: "Todos" },
+  { value: "__all__", label: "Todos" },
   { value: "pendente", label: "Pendente" },
   { value: "confirmado", label: "Confirmado" },
   { value: "cancelado", label: "Cancelado" },
@@ -165,22 +165,11 @@ export function AgendamentosTab({ podeEditar, onChange }: { podeEditar: boolean;
   const load = useCallback(async () => {
     setLoading(true);
     const offset = page * PAGE_SIZE;
+    // Convert "__all__" sentinel to null for RPC calls
+    const rpcStatus = filters.status === '__all__' ? null : (filters.status || null);
+    const rpcUnidade = filters.unidade_id === '__all__' ? null : (filters.unidade_id || null);
 
-    // Load paginated data
-    const rpcData = await db.rpc("rpc_agendamentos_list", {
-      p_limit: PAGE_SIZE,
-      p_offset: offset,
-      p_status: filters.status || null,
-      p_cidade: filters.cidade || null,
-      p_centro: null,
-      p_data_ini: filters.data_ini || null,
-      p_data_fim: filters.data_fim || null,
-      p_order_by: orderBy,
-      p_order_dir: orderDir,
-      p_unidade_id: filters.unidade_id || null,
-    });
-
-    // Load config + templates + unidades in parallel (independent of RPC)
+    // Load config + templates + unidades in parallel (independent of agendamentos RPC)
     const [cfgResult, tplsResult, unidadesResult] = await Promise.allSettled([
       db.from("config_sistema").select("*").eq("id", 1).maybeSingle(),
       db.from("mensagens_templates").select("*").eq("ativo", true),
@@ -196,45 +185,66 @@ export function AgendamentosTab({ podeEditar, onChange }: { podeEditar: boolean;
     if (cfgResult.status === 'fulfilled') setConfig(cfgResult.value?.data ?? null);
     if (tplsResult.status === 'fulfilled') setTemplates(tplsResult.value?.data ?? []);
 
-    // Try RPC first, fallback to direct query
+    // Try RPC first, fallback to direct query only on actual error
     try {
       const rpcData = await db.rpc("rpc_agendamentos_list", {
         p_limit: PAGE_SIZE,
         p_offset: offset,
-        p_status: filters.status || null,
+        p_status: rpcStatus,
         p_cidade: filters.cidade || null,
         p_centro: null,
         p_data_ini: filters.data_ini || null,
         p_data_fim: filters.data_fim || null,
         p_order_by: orderBy,
         p_order_dir: orderDir,
-        p_unidade_id: filters.unidade_id || null,
+        p_unidade_id: rpcUnidade,
       });
 
-      if (rpcData.data && Array.isArray(rpcData.data) && rpcData.data.length > 0) {
+      if (!rpcData.error && Array.isArray(rpcData.data) && rpcData.data.length > 0) {
         const rowsData = rpcData.data as any[];
         setTotal(Number(rowsData[0].total ?? rowsData.length));
         setRows(rowsData.map((r: any) => {
           const { total: _t, ...rest } = r;
           return rest as AgendamentoRow;
         }));
+      } else if (!rpcData.error) {
+        // RPC returned empty array — legitimate zero results, not an error
+        setTotal(0);
+        setRows([]);
       } else {
-        // RPC returned empty or error — use fallback
-        console.warn('RPC returned empty/error, using fallback query');
+        // RPC returned an error — use fallback
+        console.warn('rpc_agendamentos_list error, using fallback:', rpcData.error.message);
         throw new Error('RPC_FALLBACK');
       }
     } catch (rpcError) {
       // Fallback: direct query when RPC not available (migration not applied yet)
+      // NOTE: This fallback does NOT apply date filters — it is a degraded mode.
+      // The date filter issue is documented as a known limitation of the fallback path.
       console.warn('rpc_agendamentos_list unavailable, using fallback query:', rpcError);
       let query = db
         .from("agendamentos")
         .select("*, instituicoes(*), ordens_servico(id, numero, ano, status)")
         .order("data", { ascending: orderDir === "ASC" });
 
-      // Apply basic filters for fallback (RLS still enforced by Supabase)
-      if (filters.status) { query = query.eq('status', filters.status); }
-      if (filters.unidade_id) { query = query.eq('unidade_id', filters.unidade_id); }
-      if (filters.cidade) { query = query.ilike('instituicao_cidade', `%${filters.cidade}%`); }
+      // Apply filters (RLS still enforced by Supabase)
+      // NOTE: Date filters (data_ini/data_fim) are NOT supported in fallback —
+      // they require the RPC. This is acceptable as fallback only triggers when
+      // the RPC migration is not yet applied (fresh deployments).
+      if (filters.status && filters.status !== '__all__') {
+        query = query.eq('status', filters.status);
+      }
+      if (filters.unidade_id && filters.unidade_id !== '__all__') {
+        query = query.eq('unidade_id', filters.unidade_id);
+      }
+      if (filters.cidade) {
+        query = query.ilike('instituicao_cidade', `%${filters.cidade}%`);
+      }
+      if (filters.data_ini) {
+        query = query.gte('data', filters.data_ini);
+      }
+      if (filters.data_fim) {
+        query = query.lte('data', filters.data_fim);
+      }
 
       // Client-side pagination for fallback (RPC handles server-side)
       const { data } = await query;
@@ -387,12 +397,12 @@ export function AgendamentosTab({ podeEditar, onChange }: { podeEditar: boolean;
   const exportFiltered = async (format: "xlsx" | "csv") => {
     toast({ title: "Gerando arquivo..." });
     const { data, error } = await db.rpc("rpc_agendamentos_export", {
-      p_status: filters.status || null,
+      p_status: filters.status === '__all__' ? null : (filters.status || null),
       p_cidade: filters.cidade || null,
       p_centro: null,
       p_data_ini: filters.data_ini || null,
       p_data_fim: filters.data_fim || null,
-      p_unidade_id: filters.unidade_id || null,
+      p_unidade_id: filters.unidade_id === '__all__' ? null : (filters.unidade_id || null),
     });
 
     if (error || !data) {
@@ -450,7 +460,7 @@ export function AgendamentosTab({ podeEditar, onChange }: { podeEditar: boolean;
             <Select value={filters.unidade_id} onValueChange={(v) => { setFilters((f) => ({ ...f, unidade_id: v })); setPage(0); }}>
               <SelectTrigger className="w-44"><SelectValue placeholder="Todas" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todas as unidades</SelectItem>
+                <SelectItem value="__all__">Todas as unidades</SelectItem>
                 {unidades.map((u) => (
                   <SelectItem key={u.id} value={u.id}>{u.nome}</SelectItem>
                 ))}
