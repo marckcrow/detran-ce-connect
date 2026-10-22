@@ -835,9 +835,47 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- RECOVERY STEP 2: If you need to remove all new policies (emergency)
--- Run individually or as a block:
+/*
+-- ============================================================
+-- RECOVERY (EMERGENCY ONLY)
+-- Uncomment and execute ONLY if critical issues arise after migration.
+-- This restores pre-migration state WITHOUT data loss.
+-- ============================================================
 
+-- RECOVERY STEP 1: Restore rpc_agendamentos_list to pre-migration state
+-- (This is the broken-but-known state; uncomment if CTE fix causes issues)
+/*
+CREATE OR REPLACE FUNCTION public.rpc_agendamentos_list(
+  p_limit BIGINT DEFAULT 50,
+  p_offset BIGINT DEFAULT 0,
+  p_status TEXT DEFAULT NULL,
+  p_cidade TEXT DEFAULT NULL,
+  p_centro TEXT DEFAULT NULL,
+  p_data_ini DATE DEFAULT NULL,
+  p_data_fim DATE DEFAULT NULL,
+  p_order_by TEXT DEFAULT 'data',
+  p_order_dir TEXT DEFAULT 'DESC',
+  p_unidade_id UUID DEFAULT NULL
+)
+RETURNS TABLE (
+  id UUID, instituicao_id UUID, data DATE, horario TIME, turno TEXT,
+  quantidade_alunos INT, quantidade_professores INT, quantidade_acompanhantes INT,
+  faixa_etaria TEXT, transporte_status TEXT, status TEXT,
+  possui_pcd BOOLEAN, pcd_quantidade INT, observacoes TEXT,
+  created_at TIMESTAMPTZ, total BIGINT,
+  instituicao_nome TEXT, instituicao_cidade TEXT, instituicao_bairro TEXT, instituicao_rede TEXT,
+  os_id UUID, os_numero INT, os_ano INT, os_status TEXT,
+  unidade_id UUID, unidade_nome TEXT
+)
+LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  RETURN QUERY
+  SELECT ... (pre-migration version) ...
+END;
+$$;
+*/
+
+-- RECOVERY STEP 2: Drop all new policies
 DROP POLICY IF EXISTS "profiles_lotacao_lock_own" ON public.profiles;
 DROP POLICY IF EXISTS "profiles_lotacao_lock_update" ON public.profiles;
 DROP POLICY IF EXISTS "profiles_lotacao_lock_insert" ON public.profiles;
