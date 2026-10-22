@@ -460,11 +460,9 @@ CREATE POLICY "profiles_lotacao_lock_update" ON public.profiles
       WHERE user_id = auth.uid() AND role = 'admin'
     )
   )
-  WITH CHECK (
-    -- Owners cannot change lotacao columns
-    lotacao_unidade_id = OLD.lotacao_unidade_id
-    AND unidades_adicionais = OLD.unidades_adicionais
-  );
+  -- NOTE: WITH CHECK cannot reference OLD in Supabase/PostgreSQL
+  -- Lotacao lock on UPDATE is enforced via trigger (see SECTION 4)
+  -- The USING clause above already restricts WHO can update (non-admin owners only)
 
 -- 5c. Policy C: Block lotacao values on INSERT
 DROP POLICY IF EXISTS "profiles_lotacao_lock_insert" ON public.profiles;
