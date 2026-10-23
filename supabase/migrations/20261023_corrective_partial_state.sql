@@ -243,77 +243,151 @@ BEGIN
     v_unidades := ARRAY[]::UUID[];
   END IF;
 
-  RETURN QUERY
-  SELECT * FROM (
-    WITH base AS (
+  IF LOWER(p_order_dir) = 'desc' THEN
+    RETURN QUERY
+    SELECT * FROM (
+      WITH base AS (
+        SELECT
+          a.id,
+          a.instituicao_id,
+          a.data,
+          a.horario,
+          a.status,
+          COALESCE(a.nome, '') AS nome,
+          COALESCE(a.telefone, '') AS telefone,
+          COALESCE(a.email, '') AS email,
+          COALESCE(a.cidade, '') AS cidade,
+          COALESCE(a.centro, '') AS centro,
+          a.unidade_id,
+          u.nome AS unidade,
+          a.created_at,
+          os.id AS os_id,
+          os.status AS os_status,
+          os.tipo AS os_tipo,
+          i.nome AS instituicao_nome,
+          a.data::date AS sort_data,
+          a.created_at AS sort_created,
+          COALESCE(i.nome, '') AS sort_instituicao,
+          v_is_admin,
+          (v_is_admin OR (a.unidade_id = ANY(v_unidades))) AS pode_ver
+        FROM public.agendamentos a
+        LEFT JOIN public.unidades u ON u.id = a.unidade_id
+        LEFT JOIN public.ordens_servico os ON os.agendamento_id = a.id
+        LEFT JOIN public.instituicoes i ON i.id = a.instituicao_id
+        WHERE TRUE
+          AND (p_status IS NULL OR a.status = p_status)
+          AND (p_cidade IS NULL OR a.cidade ILIKE p_cidade)
+          AND (p_centro IS NULL OR a.centro ILIKE p_centro)
+          AND (p_data_ini IS NULL OR a.data >= p_data_ini)
+          AND (p_data_fim IS NULL OR a.data <= p_data_fim)
+          AND (p_unidade_id IS NULL OR a.unidade_id = p_unidade_id)
+          AND (v_is_admin OR a.unidade_id = ANY(v_unidades))
+      )
       SELECT
-        a.id,
-        a.instituicao_id,
-        a.data,
-        a.horario,
-        a.status,
-        COALESCE(a.nome, '') AS nome,
-        COALESCE(a.telefone, '') AS telefone,
-        COALESCE(a.email, '') AS email,
-        COALESCE(a.cidade, '') AS cidade,
-        COALESCE(a.centro, '') AS centro,
-        a.unidade_id,
-        u.nome AS unidade,
-        a.created_at,
-        os.id AS os_id,
-        os.status AS os_status,
-        os.tipo AS os_tipo,
-        i.nome AS instituicao_nome,
-        a.data::date AS sort_data,
-        a.created_at AS sort_created,
-        COALESCE(i.nome, '') AS sort_instituicao,
+        COUNT(*) OVER(),
+        id,
+        instituicao_id,
+        data,
+        horario,
+        status,
+        nome,
+        telefone,
+        email,
+        cidade,
+        centro,
+        unidade_id,
+        unidade,
+        created_at,
+        os_id,
+        os_status,
+        os_tipo,
+        instituicao_nome,
+        sort_data,
+        sort_created,
+        sort_instituicao,
         v_is_admin,
-        (v_is_admin OR (a.unidade_id = ANY(v_unidades))) AS pode_ver
-      FROM public.agendamentos a
-      LEFT JOIN public.unidades u ON u.id = a.unidade_id
-      LEFT JOIN public.ordens_servico os ON os.agendamento_id = a.id
-      LEFT JOIN public.instituicoes i ON i.id = a.instituicao_id
-      WHERE TRUE
-        AND (p_status IS NULL OR a.status = p_status)
-        AND (p_cidade IS NULL OR a.cidade ILIKE p_cidade)
-        AND (p_centro IS NULL OR a.centro ILIKE p_centro)
-        AND (p_data_ini IS NULL OR a.data >= p_data_ini)
-        AND (p_data_fim IS NULL OR a.data <= p_data_fim)
-        AND (p_unidade_id IS NULL OR a.unidade_id = p_unidade_id)
-        AND (v_is_admin OR a.unidade_id = ANY(v_unidades))
-    )
-    SELECT
-      COUNT(*) OVER(),
-      id,
-      instituicao_id,
-      data,
-      horario,
-      status,
-      nome,
-      telefone,
-      email,
-      cidade,
-      centro,
-      unidade_id,
-      unidade,
-      created_at,
-      os_id,
-      os_status,
-      os_tipo,
-      instituicao_nome,
-      sort_data,
-      sort_created,
-      sort_instituicao,
-      v_is_admin,
-      v_pode_ver
-    FROM base
-    ORDER BY
-      CASE WHEN p_order_by = 'data' THEN sort_data END {p_order_dir},
-      CASE WHEN p_order_by = 'created' THEN sort_created END {p_order_dir},
-      CASE WHEN p_order_by = 'instituicao' THEN sort_instituicao END {p_order_dir},
-      sort_data DESC
-    LIMIT p_limit OFFSET p_offset
-  ) AS filtered_results;
+        v_pode_ver
+      FROM base
+      ORDER BY
+        CASE WHEN p_order_by = 'data' THEN sort_data END DESC,
+        CASE WHEN p_order_by = 'created' THEN sort_created END DESC,
+        CASE WHEN p_order_by = 'instituicao' THEN sort_instituicao END DESC,
+        sort_data DESC
+      LIMIT p_limit OFFSET p_offset
+    ) AS filtered_results;
+  ELSE
+    RETURN QUERY
+    SELECT * FROM (
+      WITH base AS (
+        SELECT
+          a.id,
+          a.instituicao_id,
+          a.data,
+          a.horario,
+          a.status,
+          COALESCE(a.nome, '') AS nome,
+          COALESCE(a.telefone, '') AS telefone,
+          COALESCE(a.email, '') AS email,
+          COALESCE(a.cidade, '') AS cidade,
+          COALESCE(a.centro, '') AS centro,
+          a.unidade_id,
+          u.nome AS unidade,
+          a.created_at,
+          os.id AS os_id,
+          os.status AS os_status,
+          os.tipo AS os_tipo,
+          i.nome AS instituicao_nome,
+          a.data::date AS sort_data,
+          a.created_at AS sort_created,
+          COALESCE(i.nome, '') AS sort_instituicao,
+          v_is_admin,
+          (v_is_admin OR (a.unidade_id = ANY(v_unidades))) AS pode_ver
+        FROM public.agendamentos a
+        LEFT JOIN public.unidades u ON u.id = a.unidade_id
+        LEFT JOIN public.ordens_servico os ON os.agendamento_id = a.id
+        LEFT JOIN public.instituicoes i ON i.id = a.instituicao_id
+        WHERE TRUE
+          AND (p_status IS NULL OR a.status = p_status)
+          AND (p_cidade IS NULL OR a.cidade ILIKE p_cidade)
+          AND (p_centro IS NULL OR a.centro ILIKE p_centro)
+          AND (p_data_ini IS NULL OR a.data >= p_data_ini)
+          AND (p_data_fim IS NULL OR a.data <= p_data_fim)
+          AND (p_unidade_id IS NULL OR a.unidade_id = p_unidade_id)
+          AND (v_is_admin OR a.unidade_id = ANY(v_unidades))
+      )
+      SELECT
+        COUNT(*) OVER(),
+        id,
+        instituicao_id,
+        data,
+        horario,
+        status,
+        nome,
+        telefone,
+        email,
+        cidade,
+        centro,
+        unidade_id,
+        unidade,
+        created_at,
+        os_id,
+        os_status,
+        os_tipo,
+        instituicao_nome,
+        sort_data,
+        sort_created,
+        sort_instituicao,
+        v_is_admin,
+        v_pode_ver
+      FROM base
+      ORDER BY
+        CASE WHEN p_order_by = 'data' THEN sort_data END ASC,
+        CASE WHEN p_order_by = 'created' THEN sort_created END ASC,
+        CASE WHEN p_order_by = 'instituicao' THEN sort_instituicao END ASC,
+        sort_data DESC
+      LIMIT p_limit OFFSET p_offset
+    ) AS filtered_results;
+  END IF;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
