@@ -163,7 +163,9 @@ CREATE TRIGGER trg_block_profile_lotacao_change
   FOR EACH ROW
   EXECUTE FUNCTION public.fn_block_profile_lotacao_change();
 
-RAISE NOTICE 'PHASE 1 COMPLETE: Lotacao protection active (policy replaced + trigger created)';
+DO $$ BEGIN
+  RAISE NOTICE 'PHASE 1 COMPLETE: Lotacao protection active (policy replaced + trigger created)';
+END $$;
 
 
 -- ============================================================
@@ -319,7 +321,9 @@ GRANT EXECUTE ON FUNCTION public.rpc_agendamentos_list(
   bigint,bigint,text,text,text,timestamptz,timestamptz,text,text,uuid
 ) TO authenticated;
 
-RAISE NOTICE 'PHASE 2 COMPLETE: rpc_agendamentos_list fixed';
+DO $$ BEGIN
+  RAISE NOTICE 'PHASE 2 COMPLETE: rpc_agendamentos_list fixed';
+END $$;
 
 
 -- ============================================================
@@ -428,7 +432,9 @@ CREATE POLICY "agendamentos_insert_own" ON public.agendamentos
     )
   );
 
-RAISE NOTICE 'PHASE 3 COMPLETE: 6 unit isolation policies added';
+DO $$ BEGIN
+  RAISE NOTICE 'PHASE 3 COMPLETE: 6 unit isolation policies added';
+END $$;
 
 
 -- ============================================================
