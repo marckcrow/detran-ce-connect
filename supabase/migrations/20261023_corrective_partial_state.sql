@@ -426,58 +426,24 @@ DO $$ BEGIN
   RAISE NOTICE 'PHASE 3: Adding missing unit isolation policies...';
 END $$;
 
--- 3a. disponibilidade INSERT — staff only for their unidade
-DROP POLICY IF EXISTS "disponibilidade_insert_staff" ON public.disponibilidade;
-CREATE POLICY "disponibilidade_insert_staff" ON public.disponibilidade
-  FOR INSERT
-  WITH CHECK (
-    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid())
-    AND (
-      user_can_access_unidade(unidade_id)
-      OR unidade_id = ANY(get_user_unidades(auth.uid()))
-      OR unidade_id IS NULL
-    )
-  );
+-- 3a/3b/3c. disponibilidade — table has NO unidade_id column.
+-- Disponibilidade is global (date + turno), not per-unidade.
+-- Staff with any role can manage all slots.
+-- NOTE: The existing "Staff full access" policy already covers this.
+-- These policies are intentionally SKIPPED to avoid referencing non-existent column.
 
--- 3b. disponibilidade UPDATE — staff only for their unidade
-DROP POLICY IF EXISTS "disponibilidade_update_staff" ON public.disponibilidade;
-CREATE POLICY "disponibilidade_update_staff" ON public.disponibilidade
-  FOR UPDATE
-  USING (
-    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid())
-    AND (
-      user_can_access_unidade(unidade_id)
-      OR unidade_id = ANY(get_user_unidades(auth.uid()))
-    )
-  )
-  WITH CHECK (
-    user_can_access_unidade(unidade_id)
-    OR unidade_id = ANY(get_user_unidades(auth.uid()))
-    OR unidade_id IS NULL
-  );
-
--- 3c. disponibilidade DELETE — staff only for their unidade
-DROP POLICY IF EXISTS "disponibilidade_delete_staff" ON public.disponibilidade;
-CREATE POLICY "disponibilidade_delete_staff" ON public.disponibilidade
-  FOR DELETE
-  USING (
-    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid())
-    AND (
-      user_can_access_unidade(unidade_id)
-      OR unidade_id = ANY(get_user_unidades(auth.uid()))
-    )
-  );
-
--- 3d. visitas INSERT — staff only for their unidade
+-- 3d. visitas INSERT — visitas has NO unidade_id column.
+-- Isolation via agendamento chain: visitas.agendamento_id → agendamentos.unidade_id
 DROP POLICY IF EXISTS "visitas_insert_staff" ON public.visitas;
 CREATE POLICY "visitas_insert_staff" ON public.visitas
   FOR INSERT
   WITH CHECK (
     EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid())
-    AND (
-      user_can_access_unidade(unidade_id)
-      OR unidade_id = ANY(get_user_unidades(auth.uid()))
-      OR unidade_id IS NULL
+    AND EXISTS (
+      SELECT 1 FROM public.agendamentos a
+      WHERE a.id = agendamento_id
+        AND (user_can_access_unidade(a.unidade_id)
+             OR a.unidade_id = ANY(get_user_unidades(auth.uid())))
     )
   );
 
@@ -549,18 +515,20 @@ BEGIN
   END IF;
   RAISE NOTICE 'V3 PASSED: profiles_update_own has WITH CHECK.';
 
-  -- V4: All 9 unit isolation policies exist
+  -- V4: Unit isolation policies exist
+  -- NOTE: disponibilidade has NO unidade_id column (global table), so
+  --       its 3 policies are intentionally skipped.
+ --       Expected: 6 policies (not 9)
   SELECT COUNT(*) INTO _v4 FROM pg_policies
     WHERE schemaname='public'
     AND policyname IN (
       'os_insert_staff','atendimentos_insert_staff','estoque_movimentos_insert_staff',
-      'disponibilidade_insert_staff','disponibilidade_update_staff','disponibilidade_delete_staff',
       'visitas_insert_staff','agendamentos_delete_staff','agendamentos_insert_own'
     );
-  IF _v4 < 9 THEN
-    RAISE EXCEPTION 'V4 FAILED: Expected 9 unit isolation policies, got %', _v4;
+  IF _v4 < 6 THEN
+    RAISE EXCEPTION 'V4 FAILED: Expected 6 unit isolation policies, got %', _v4;
   END IF;
-  RAISE NOTICE 'V4 PASSED: All 9 unit isolation policies present.', _v4;
+  RAISE NOTICE 'V4 PASSED: Unit isolation policies present (%/6).', _v4;
 
   -- V5: rpc_agendamentos_list returns without error (basic smoke test)
   BEGIN
@@ -584,7 +552,8 @@ BEGIN
   RAISE NOTICE '   [2] Enhanced profiles_update_own with WITH CHECK';
   RAISE NOTICE '   [3] Created fn_block_profile_lotacao_change() + trigger';
   RAISE NOTICE '   [4] Fixed rpc_agendamentos_list (CTE scoping)';
-  RAISE NOTICE '   [5] Added 6 missing unit isolation policies (3→9)';
+  RAISE NOTICE '   [5] Added 3 missing unit isolation policies (3→6)';
+  RAISE NOTICE '       NOTE: disponibilidade skipped (no unidade_id column — global table)';
   RAISE NOTICE '========================================================';
 END $$;
 
