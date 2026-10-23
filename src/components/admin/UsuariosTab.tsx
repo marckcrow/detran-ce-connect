@@ -10,7 +10,6 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { db } from "@/lib/operacao";
-import { supabase } from "@/integrations/supabase/client";
 
 const PERFIS: Record<string, string> = {
   admin: "Administrador",
@@ -247,32 +246,35 @@ export function UsuariosTab({ meuId }: { meuId?: string }) {
     if (!createForm.nome.trim()) return toast({ title: "Nome é obrigatório", variant: "destructive" });
     if (!createForm.email.trim() || !createForm.email.includes("@")) return toast({ title: "E-mail inválido", variant: "destructive" });
     if (createForm.senha.length < 6) return toast({ title: "Senha mínima de 6 caracteres", variant: "destructive" });
-    if (!supabase) return toast({ title: "Erro de conexão com o Supabase", variant: "destructive" });
 
     setCreating(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error("Sem sessão ativa");
+      const { data, error } = await db.rpc("rpc_admin_create_user", {
+        p_email: createForm.email.trim(),
+        p_nome: createForm.nome.trim(),
+        p_senha: createForm.senha,
+        p_telefone: createForm.telefone.trim() || null,
+        p_whatsapp: createForm.whatsapp,
+        p_perfis: createForm.perfis,
+        p_lotacao_unidade_id: createForm.lotacao_unidade_id || null,
+        p_unidades_adicionais: createForm.unidades_adicionais,
+      });
 
-      // Determine function URL — works in both dev and production
-      const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-create-user`;
+      if (error) {
+        const errMsg = error.message || "Erro ao criar usuário";
+        toast({ title: "Erro", description: errMsg, variant: "destructive" });
+        return;
+      }
 
-      const res = await fetch(functionUrl, {
-
-      const result = await res.json();
-
-      if (!res.ok) {
-        if (result.code === "USER_EXISTS") {
-          toast({ title: result.error, variant: "destructive" });
-        } else {
-          toast({ title: "Erro ao criar usuário", description: result.error || res.statusText, variant: "destructive" });
-        }
+      const result = data as any;
+      if (result?.error) {
+        toast({ title: "Erro", description: result.error, variant: "destructive" });
         return;
       }
 
       toast({
         title: "Usuário criado com sucesso!",
-        description: `${result.user.nome} pode fazer login agora. Um e-mail de boas-vindas foi enviado.`,
+        description: result?.message || `${createForm.nome} pode fazer login agora.`,
       });
       setCreateOpen(false);
       load();
@@ -489,7 +491,7 @@ export function UsuariosTab({ meuId }: { meuId?: string }) {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-sm"
                 >
-                  {showPassword ? "🙈" : "👁️"}
+                  {showPassword ? "\uD83D\uDC48" : "\uD83D\uDC41️\uFE0F"}
                 </button>
               </div>
               <p className="text-xs text-muted-foreground">O usuário poderá alterar a senha após o primeiro login.</p>
