@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { db } from "@/lib/operacao";
+import { supabase } from "@/integrations/supabase/client";
 
 const PERFIS: Record<string, string> = {
   admin: "Administrador",
@@ -39,6 +40,21 @@ export function UsuariosTab({ meuId }: { meuId?: string }) {
   const [lotacaoOpen, setLotacaoOpen] = useState(false);
   const [lotacaoUser, setLotacaoUser] = useState<UserRow | null>(null);
   const [lotacaoForm, setLotacaoForm] = useState({ lotacao_unidade_id: "", unidades_adicionais: [] as string[] });
+
+  // Create user state
+  const [createOpen, setCreateOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    nome: "",
+    email: "",
+    senha: "",
+    telefone: "",
+    whatsapp: false,
+    perfis: [] as string[],
+    lotacao_unidade_id: "",
+    unidades_adicionais: [] as string[],
+  });
+  const [showPassword, setShowPassword] = useState(false);
 
   const load = useCallback(async () => {
     // Load all data in parallel — with fallback for missing RPCs
@@ -196,6 +212,77 @@ export function UsuariosTab({ meuId }: { meuId?: string }) {
     }));
   };
 
+  const openCreateDialog = () => {
+    setCreateForm({
+      nome: "",
+      email: "",
+      senha: "",
+      telefone: "",
+      whatsapp: false,
+      perfis: [],
+      lotacao_unidade_id: "",
+      unidades_adicionais: [],
+    });
+    setShowPassword(false);
+    setCreateOpen(true);
+  };
+
+  const togglePerfil = (role: string) => {
+    setCreateForm((f) => ({
+      ...f,
+      perfis: f.perfis.includes(role) ? f.perfis.filter((r) => r !== role) : [...f.perfis, role],
+    }));
+  };
+
+  const toggleCreateAdicional = (id: string) => {
+    setCreateForm((f) => ({
+      ...f,
+      unidades_adicionais: f.unidades_adicionais.includes(id)
+        ? f.unidades_adicionais.filter((x) => x !== id)
+        : [...f.unidades_adicionais, id],
+    }));
+  };
+
+  const createUser = async () => {
+    if (!createForm.nome.trim()) return toast({ title: "Nome é obrigatório", variant: "destructive" });
+    if (!createForm.email.trim() || !createForm.email.includes("@")) return toast({ title: "E-mail inválido", variant: "destructive" });
+    if (createForm.senha.length < 6) return toast({ title: "Senha mínima de 6 caracteres", variant: "destructive" });
+    if (!supabase) return toast({ title: "Erro de conexão com o Supabase", variant: "destructive" });
+
+    setCreating(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("Sem sessão ativa");
+
+      // Determine function URL — works in both dev and production
+      const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-create-user`;
+
+      const res = await fetch(functionUrl, {
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        if (result.code === "USER_EXISTS") {
+          toast({ title: result.error, variant: "destructive" });
+        } else {
+          toast({ title: "Erro ao criar usuário", description: result.error || res.statusText, variant: "destructive" });
+        }
+        return;
+      }
+
+      toast({
+        title: "Usuário criado com sucesso!",
+        description: `${result.user.nome} pode fazer login agora. Um e-mail de boas-vindas foi enviado.`,
+      });
+      setCreateOpen(false);
+      load();
+    } catch (e: any) {
+      toast({ title: "Erro", description: e.message || "Falha ao conectar com o servidor", variant: "destructive" });
+    } finally {
+      setCreating(false);
+    }
+  };
+
   const filteredUsers = users.filter((u) =>
     u.nome?.toLowerCase().includes(busca.toLowerCase())
   );
@@ -217,7 +304,12 @@ export function UsuariosTab({ meuId }: { meuId?: string }) {
             <CardTitle>Usuários — perfis e lotação</CardTitle>
             <CardDescription>Gerencie perfis de acesso e a unidade de lotação de cada colaborador.</CardDescription>
           </div>
-          <Input placeholder="Buscar..." className="w-48" value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <div className="flex gap-2">
+            <Button onClick={openCreateDialog} size="sm">
+              + Novo Usuário
+            </Button>
+            <Input placeholder="Buscar..." className="w-48" value={busca} onChange={(e) => setBusca(e.target.value)} />
+          </div>
         </CardHeader>
         <CardContent className="overflow-x-auto">
           <Table>
@@ -341,6 +433,152 @@ export function UsuariosTab({ meuId }: { meuId?: string }) {
             <Button variant="outline" onClick={() => setLotacaoOpen(false)}>Cancelar</Button>
             <Button onClick={saveLotacao} disabled={savingLotacao}>
               {savingLotacao ? "Salvando..." : "Salvar lotação"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create User Dialog */}
+      <Dialog open={createOpen} onOpenChange={(v) => { if (!v) setCreateOpen(false); }}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Criar Novo Usuário</DialogTitle>
+            <DialogDescription>
+              Preencha os dados do novo colaborador. Ele receberá um e-mail com instruções de acesso.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Nome */}
+            <div className="space-y-1">
+              <Label htmlFor="cu-nome">Nome completo *</Label>
+              <Input
+                id="cu-nome"
+                placeholder="Nome do colaborador"
+                value={createForm.nome}
+                onChange={(e) => setCreateForm((f) => ({ ...f, nome: e.target.value }))}
+              />
+            </div>
+
+            {/* Email */}
+            <div className="space-y-1">
+              <Label htmlFor="cu-email">E-mail *</Label>
+              <Input
+                id="cu-email"
+                type="email"
+                placeholder="colaborador@email.com"
+                value={createForm.email}
+                onChange={(e) => setCreateForm((f) => ({ ...f, email: e.target.value }))}
+              />
+            </div>
+
+            {/* Senha */}
+            <div className="space-y-1">
+              <Label htmlFor="cu-senha">Senha temporária * (mínimo 6 caracteres)</Label>
+              <div className="relative">
+                <Input
+                  id="cu-senha"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Mínimo 6 caracteres"
+                  value={createForm.senha}
+                  onChange={(e) => setCreateForm((f) => ({ ...f, senha: e.target.value }))}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-sm"
+                >
+                  {showPassword ? "🙈" : "👁️"}
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground">O usuário poderá alterar a senha após o primeiro login.</p>
+            </div>
+
+            {/* Telefone / WhatsApp */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="cu-tel">Telefone</Label>
+                <Input
+                  id="cu-tel"
+                  placeholder="(85) 99999-9999"
+                  value={createForm.telefone}
+                  onChange={(e) => setCreateForm((f) => ({ ...f, telefone: e.target.value }))}
+                />
+              </div>
+              <div className="flex items-end space-y-1 pb-1">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox
+                    checked={createForm.whatsapp}
+                    onCheckedChange={(v) => setCreateForm((f) => ({ ...f, whatsapp: !!v }))}
+                  />
+                  <span className="text-sm">Este número é WhatsApp</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Perfis */}
+            <div className="space-y-2">
+              <Label>Perfis de acesso</Label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {Object.entries(PERFIS).map(([key, label]) => (
+                  <label key={key} className="flex items-center gap-2 cursor-pointer rounded border p-2 hover:bg-muted/50 transition-colors">
+                    <Checkbox
+                      checked={createForm.perfis.includes(key)}
+                      onCheckedChange={() => togglePerfil(key)}
+                    />
+                    <span className="text-sm font-medium">{label}</span>
+                  </label>
+                ))}
+              </div>
+              {createForm.perfis.length === 0 && (
+                <p className="text-xs text-muted-foreground">Nenhum perfil selecionado. O usuário não terá acesso ao painel.</p>
+              )}
+            </div>
+
+            {/* Lotação */}
+            <div className="space-y-2">
+              <Label>Unidade de lotação</Label>
+              <Select
+                value={createForm.lotacao_unidade_id}
+                onValueChange={(v) => setCreateForm((f) => ({ ...f, lotacao_unidade_id: v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a unidade (opcional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {unidades.map((u) => (
+                    <SelectItem key={u.id} value={u.id}>{u.nome} — {u.cidade}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Unidades adicionais */}
+            {unidades.length > 1 && createForm.lotacao_unidade_id && (
+              <div className="space-y-2">
+                <Label>Acesso adicional a outras unidades</Label>
+                <div className="space-y-1 border rounded-md p-3 max-h-32 overflow-y-auto">
+                  {unidades
+                    .filter((u) => u.id !== createForm.lotacao_unidade_id)
+                    .map((u) => (
+                      <label key={u.id} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 rounded px-2 py-1">
+                        <Checkbox
+                          checked={createForm.unidades_adicionais.includes(u.id)}
+                          onCheckedChange={() => toggleCreateAdicional(u.id)}
+                        />
+                        <span className="text-sm">{u.nome} — {u.cidade}</span>
+                      </label>
+                    ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setCreateOpen(false)} disabled={creating}>Cancelar</Button>
+            <Button onClick={createUser} disabled={creating}>
+              {creating ? "Criando..." : "Criar Usuário"}
             </Button>
           </DialogFooter>
         </DialogContent>
