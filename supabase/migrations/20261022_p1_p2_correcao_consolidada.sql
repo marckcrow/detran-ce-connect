@@ -459,10 +459,11 @@ CREATE POLICY "profiles_lotacao_lock_update" ON public.profiles
       SELECT 1 FROM public.user_roles
       WHERE user_id = auth.uid() AND role = 'admin'
     )
-  )
-  -- NOTE: WITH CHECK cannot reference OLD in Supabase/PostgreSQL
-  -- Lotacao lock on UPDATE is enforced via trigger (see SECTION 4)
-  -- The USING clause above already restricts WHO can update (non-admin owners only)
+  );
+
+-- NOTE: No WITH CHECK on this UPDATE policy — OLD is not available in DDL context.
+-- Lotacao column changes on UPDATE are blocked by trigger: trg_profiles_lotacao_lock (SECTION 4).
+-- This USING clause restricts WHO can update (non-admin profile owners only).
 
 -- 5c. Policy C: Block lotacao values on INSERT
 DROP POLICY IF EXISTS "profiles_lotacao_lock_insert" ON public.profiles;
