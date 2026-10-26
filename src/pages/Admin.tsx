@@ -20,6 +20,7 @@ import { NoticiasTab } from "@/components/admin/NoticiasTab";
 import { LogsTab } from "@/components/admin/LogsTab";
 import { AccessRequestsTab } from "@/components/admin/AccessRequestsTab";
 import { MensagensTab } from "@/components/admin/MensagensTab";
+import { EscalasTab } from "@/components/admin/EscalasTab";
 import { ScreenHelpButton } from "@/components/lily/ScreenHelpButton";
 
 export default function Admin() {
@@ -79,6 +80,7 @@ export default function Admin() {
               <TabsTrigger value="relatorios">Relatórios</TabsTrigger>
               {isAdmin && <TabsTrigger value="solicitacoes">Solicitações de Acesso</TabsTrigger>}
               {isAdmin && <TabsTrigger value="usuarios">Usuários e config.</TabsTrigger>}
+              {isAdmin && <TabsTrigger value="escalas">Escalas</TabsTrigger>}
               <TabsTrigger value="mensagens">Mensagens</TabsTrigger>
             </TabsList>
             <TabsContent value="dashboard" className="mt-4">
@@ -132,6 +134,10 @@ export default function Admin() {
             {isAdmin && <TabsContent value="usuarios" className="mt-4">
               <div className="flex justify-end mb-2"><ScreenHelpButton screenName="Usuários" /></div>
               <UsuariosTab meuId={user?.id} />
+            </TabsContent>}
+            {isAdmin && <TabsContent value="escalas" className="mt-4">
+              <div className="flex justify-end mb-2"><ScreenHelpButton screenName="Escalas" /></div>
+              <EscalasTab />
             </TabsContent>}
             <TabsContent value="mensagens" className="mt-4">
               <div className="flex justify-end mb-2"><ScreenHelpButton screenName="Mensagens" /></div>

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { format, parseISO } from "date-fns";
-import { AlertTriangle, ChevronLeft, ChevronRight, Download, Edit2, Loader2, Mail, MessageCircle, FileText, X } from "lucide-react";
+import { AlertTriangle, ChevronLeft, ChevronRight, Download, Edit2, Loader2, Mail, MessageCircle, FileText, Upload, X } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { toast } from "@/hooks/use-toast";
 import { db, FAIXA, TURNO_HORA, waLink, exportarXLSX, exportarCSV } from "@/lib/operacao";
 import { gerarListaPresencaPdf } from "@/lib/listaPresencaPdf";
+import { ImportarAgendamentosTab } from "./ImportarAgendamentosTab";
 
 const PAGE_SIZE = 50;
 
@@ -152,6 +153,7 @@ export function AgendamentosTab({ podeEditar, onChange }: { podeEditar: boolean;
   const [orderBy, setOrderBy] = useState("data");
   const [orderDir, setOrderDir] = useState("DESC");
   const [unidades, setUnidades] = useState<{id: string; nome: string; sigla: string; cidade: string}[]>([]);
+  const [importOpen, setImportOpen] = useState(false);
 
   // Edit dialog state
   const [editOpen, setEditOpen] = useState(false);
@@ -514,6 +516,9 @@ export function AgendamentosTab({ podeEditar, onChange }: { podeEditar: boolean;
           </div>
           {podeEditar && (
             <div className="ml-auto flex gap-1">
+              <Button size="sm" variant="outline" onClick={() => setImportOpen(true)} title="Importar CSV/XLSX">
+                <Upload className="h-4 w-4 mr-1" />Importar
+              </Button>
               <Button size="sm" variant="outline" onClick={() => exportFiltered("xlsx")} title="Exportar XLSX">
                 <Download className="h-4 w-4 mr-1" />XLSX
               </Button>
@@ -739,6 +744,12 @@ export function AgendamentosTab({ podeEditar, onChange }: { podeEditar: boolean;
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* Import dialog */}
+      <ImportarAgendamentosTab
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImported={load}
+      />
     </Card>
   );
 }
