@@ -797,7 +797,8 @@ export function EscalasTab() {
         {colaboradores.length === 0 && <div className="text-sm text-muted-foreground">Nenhum colaborador nesta unidade.</div>}
         {colaboradores.map(col => {
           const carga = getCargaDoColaborador(col.id);
-          const effort = carga ? getEffortLabel(Number(carga.effort_score) || 0);
+          const effortScore = carga ? Number(carga.effort_score ?? 0) : 0;
+          const effort = carga ? getEffortLabel(effortScore);
           const minhaOcorrencia = ocorrencias.filter(o => o.responsavel_id === col.id);
           const minhaAfast = afastamentos.filter(a => a.profile_id === col.id);
           return (
@@ -823,7 +824,7 @@ export function EscalasTab() {
                   <div><span className="font-medium text-foreground">{carga.horas_disponiveis}h</span> disponíveis</div>
                   <div><span className="font-medium text-foreground">{Number(carga.horas_atribuidas).toFixed(1)}h</span> planejadas</div>
                   <div><span className="font-medium text-foreground">{carga.num_ocorrencias}</span> ocorrências</div>
-                  <div><span className="font-medium text-foreground">{((Number(carga.effort_score) || 0) * 100).toFixed(0)}%</span> ocupação</div>
+                  <div><span className="font-medium text-foreground">{(carga ? (Number(carga.effort_score ?? 0) * 100) : 0).toFixed(0)}%</span> ocupação</div>
                 </div>
               )}
               {minhaAfast.length > 0 && (
@@ -1460,8 +1461,8 @@ export function EscalasTab() {
           <div className="space-y-3 pt-2 max-h-[60vh] overflow-y-auto">
             {balancoCarga.length === 0 && <div className="text-sm text-muted-foreground">Sem dados de carga.</div>}
             {balancoCarga.map(b => {
-              const effort = getEffortLabel(Number(b.effort_score) || 0);
-              const pct = Math.min(100, Math.round((Number(b.effort_score) || 0) * 100));
+              const effort = getEffortLabel(Number(b.effort_score ?? 0));
+              const pct = Math.min(100, Math.round((Number(b.effort_score ?? 0)) * 100));
               return (
                 <div key={b.profile_id} className="border rounded-lg p-3 space-y-2">
                   <div className="flex items-center justify-between">
