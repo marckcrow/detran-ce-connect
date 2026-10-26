@@ -22,6 +22,7 @@ type Unidade = { id: string; nome: string; sigla: string; cidade: string; macror
 type UserRow = {
   id: string;
   nome: string;
+  email?: string | null;
   telefone: string | null;
   whatsapp: string | null;
   instituicoes?: { nome: string } | null;
@@ -56,11 +57,13 @@ export function UsuariosTab({ meuId }: { meuId?: string }) {
   });
   const [showPassword, setShowPassword] = useState(false);
 
+  const [resettingPassword, setResettingPassword] = useState<string | null>(null);
+
   const load = useCallback(async () => {
     // Load all data in parallel — with fallback for missing RPCs
     const [profilesResult, rolesResult, unidadesResult, unidadesResult2, cfgResult] = await Promise.allSettled([
       db.from("profiles")
-        .select("id, nome, telefone, whatsapp, instituicoes(nome), lotacao_unidade_id, unidades_adicionais")
+        .select("id, nome, email, telefone, whatsapp, instituicoes(nome), lotacao_unidade_id, unidades_adicionais")
         .order("nome"),
       db.from("user_roles").select("*"),
       db.rpc("rpc_unidades_list").catch(() => null), // fallback: returns null if RPC doesn't exist
@@ -68,8 +71,29 @@ export function UsuariosTab({ meuId }: { meuId?: string }) {
       db.from("config_sistema").select("*").eq("id", 1).maybeSingle(),
     ]);
 
-    if (profilesResult.status === 'fulfilled' && profilesResult.value?.data) {
+    // Profiles — try main query, fallback without instituicoes join if it fails
+    if (profilesResult.status === 'fulfilled' && profilesResult.value?.data && Array.isArray(profilesResult.value.data) && profilesResult.value.data.length > 0) {
       setUsers(profilesResult.value.data as UserRow[]);
+    } else {
+      // Fallback: load profiles WITHOUT the instituicoes join (may fail due to RLS on instituicoes table)
+      console.warn('[UsuariosTab] Main profiles query failed/empty, trying fallback without instituicoes join...');
+      try {
+        const { data: fallbackProfiles, error: fallbackError } = await db.from("profiles")
+          .select("id, nome, email, telefone, whatsapp, lotacao_unidade_id, unidades_adicionais")
+          .order("nome");
+        if (fallbackError) {
+          console.error('[UsuariosTab] Fallback profiles query also failed:', fallbackError.message);
+        }
+        if (fallbackProfiles && Array.isArray(fallbackProfiles)) {
+          console.log(`[UsuariosTab] Fallback loaded ${fallbackProfiles.length} users`);
+          setUsers(fallbackProfiles as UserRow[]);
+        } else {
+          setUsers([]);
+        }
+      } catch (e) {
+        console.error('[UsuariosTab] Error in fallback profiles load:', e);
+        setUsers([]);
+      }
     }
     if (rolesResult.status === 'fulfilled' && rolesResult.value?.data) {
       setRoles(rolesResult.value.data);
@@ -327,6 +351,56 @@ export function UsuariosTab({ meuId }: { meuId?: string }) {
     }
   };
 
+  const resetPassword = async (user: UserRow) => {
+    if (!user.email) {
+      toast({ title: "Usuário sem e-mail", description: "Não é possível enviar link de acesso.", variant: "destructive" });
+      return;
+    }
+    if (!confirm(`Enviar link de acesso para ${user.nome} (${user.email})?`)) return;
+    setResettingPassword(user.id);
+    try {
+      // Method 1: Magic link (OTP) — best UX, instant access via email
+      const { error: otpError } = await db.auth.signInWithOtp({
+        email: user.email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/perfil`,
+        },
+      });
+
+      if (!otpError) {
+        toast({
+          title: "🔗 Link de acesso enviado!",
+          description: `Um link mágico foi enviado para ${user.email}. O usuário pode acessar instantaneamente sem digitar senha.`,
+        });
+        return;
+      }
+
+      // Method 2: Password reset email (Supabase built-in)
+      const { error: resetError } = await db.auth.resetPasswordForEmail(user.email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (!resetError) {
+        toast({
+          title: "📧 E-mail de redefinição enviado!",
+          description: `${user.nome} receberá um e-mail para criar uma nova senha.`,
+        });
+        return;
+      }
+
+      // Both methods failed
+      toast({
+        title: "Erro ao enviar link",
+        description: `OTP: ${otpError.message}. Reset: ${resetError.message}. Verifique se o e-mail é válido.`,
+        variant: "destructive",
+      });
+    } catch (e: any) {
+      toast({ title: "Erro", description: e.message || "Falha ao conectar com o servidor", variant: "destructive" });
+    } finally {
+      setResettingPassword(null);
+    }
+  };
+
   const filteredUsers = users.filter((u) =>
     u.nome?.toLowerCase().includes(busca.toLowerCase())
   );
@@ -377,8 +451,22 @@ export function UsuariosTab({ meuId }: { meuId?: string }) {
                 return (
                   <TableRow key={u.id}>
                     <TableCell className="font-medium">
-                      {u.nome}
-                      {u.id === meuId && <Badge variant="secondary" className="ml-1">você</Badge>}
+                      <div className="flex items-center gap-2">
+                        {u.nome}
+                        {u.id === meuId && <Badge variant="secondary" className="ml-1">você</Badge>}
+                        {(u.email) && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                            onClick={() => resetPassword(u)}
+                            disabled={resettingPassword === u.id}
+                            title="Enviar link de acesso / redefinir senha"
+                          >
+                            {resettingPassword === u.id ? '...' : '🔗 Acesso'}
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-xs max-w-[150px] truncate">
                       {u.instituicoes?.nome ?? (
