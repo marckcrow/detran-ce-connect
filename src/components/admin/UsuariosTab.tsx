@@ -402,21 +402,16 @@ export function UsuariosTab({ meuId }: { meuId?: string }) {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Unidade principal (lotação) *</Label>
-              <Select
-                value={lotacaoForm.lotacao_unidade_id}
-                onValueChange={(v) => setLotacaoForm((f) => ({ ...f, lotacao_unidade_id: v }))}
+              <select
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                value={lotacaoForm.lotacao_unidade_id || ''}
+                onChange={(e) => setLotacaoForm((f) => ({ ...f, lotacao_unidade_id: e.target.value || null }))}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione a unidade de lotação" />
-                </SelectTrigger>
-                <SelectContent position="popper" sideOffset={4}>
-                  {unidades.map((u) => (
-                    <SelectItem key={u.id} value={u.id}>
-                      {u.nome} — {u.cidade}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <option value="">Selecione a unidade de lotação</option>
+                {unidades.map((u) => (
+                  <option key={u.id} value={u.id}>{u.nome} — {u.cidade}</option>
+                ))}
+              </select>
               <p className="text-xs text-muted-foreground">
                 Unidade onde o colaborador atua predominantemente. Determina quais registros ele pode acessar por padrão.
               </p>
@@ -558,19 +553,16 @@ export function UsuariosTab({ meuId }: { meuId?: string }) {
             {/* Lotação */}
             <div className="space-y-2">
               <Label>Unidade de lotação</Label>
-              <Select
-                value={createForm.lotacao_unidade_id}
-                onValueChange={(v) => setCreateForm((f) => ({ ...f, lotacao_unidade_id: v }))}
+              <select
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                value={createForm.lotacao_unidade_id || ''}
+                onChange={(e) => setCreateForm((f) => ({ ...f, lotacao_unidade_id: e.target.value || null }))}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione a unidade (opcional)" />
-                </SelectTrigger>
-                <SelectContent position="popper" sideOffset={4}>
-                  {unidades.map((u) => (
-                    <SelectItem key={u.id} value={u.id}>{u.nome} — {u.cidade}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <option value="">Selecione a unidade (opcional)</option>
+                {unidades.map((u) => (
+                  <option key={u.id} value={u.id}>{u.nome} — {u.cidade}</option>
+                ))}
+              </select>
             </div>
 
             {/* Unidades adicionais */}
