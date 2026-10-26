@@ -559,9 +559,9 @@ export function UsuariosTab({ meuId }: { meuId?: string }) {
             {/* Perfis */}
             <div className="space-y-2">
               <Label>Perfis de acesso</Label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 {Object.entries(PERFIS).map(([key, label]) => (
-                  <label key={key} className="flex items-center gap-2 cursor-pointer rounded border p-2 hover:bg-muted/50 transition-colors">
+                  <label key={key} className="flex items-center gap-2 cursor-pointer rounded border p-2.5 hover:bg-muted/50 transition-colors">
                     <Checkbox
                       checked={createForm.perfis.includes(key)}
                       onCheckedChange={() => togglePerfil(key)}
