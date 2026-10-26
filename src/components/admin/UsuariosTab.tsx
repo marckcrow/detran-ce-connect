@@ -57,12 +57,13 @@ export function UsuariosTab({ meuId }: { meuId?: string }) {
 
   const load = useCallback(async () => {
     // Load all data in parallel — with fallback for missing RPCs
-    const [profilesResult, rolesResult, unidadesResult, cfgResult] = await Promise.allSettled([
+    const [profilesResult, rolesResult, unidadesResult, unidadesResult2, cfgResult] = await Promise.allSettled([
       db.from("profiles")
         .select("id, nome, telefone, whatsapp, instituicoes(nome), lotacao_unidade_id, unidades_adicionais")
         .order("nome"),
       db.from("user_roles").select("*"),
       db.rpc("rpc_unidades_list").catch(() => null), // fallback: returns null if RPC doesn't exist
+      db.from("unidades").select("id, nome, sigla, cidade, macrorregiao").order("nome").catch(() => null), // direct table fallback
       db.from("config_sistema").select("*").eq("id", 1).maybeSingle(),
     ]);
 
@@ -74,6 +75,9 @@ export function UsuariosTab({ meuId }: { meuId?: string }) {
     }
     if (unidadesResult.status === 'fulfilled' && unidadesResult.value?.data) {
       setUnidades(unidadesResult.value.data as Unidade[]);
+    } else if (unidadesResult2?.status === 'fulfilled' && unidadesResult2.value?.data) {
+      // Fallback: try direct table query
+      setUnidades(unidadesResult2.value.data as Unidade[]);
     } else {
       // Fallback: unidades table may not exist yet — show empty list
       setUnidades([]);

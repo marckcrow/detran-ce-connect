@@ -1,10 +1,15 @@
 -- ============================================================
--- RPC: admin_create_user
--- Creates a new user via auth.admin (requires service_role)
--- Called from frontend; verifies caller is admin
+-- RPC: admin_create_user (v2 — FIX: no direct auth.users insert)
+-- Creates a new user via the proper auth.users INSERT
+-- that matches actual Supabase schema (no failed_attempts, etc.)
 --
 -- DEPLOY: Run this in Supabase SQL Editor
+--   First DROP the old version if it exists:
+--     DROP FUNCTION IF EXISTS public.rpc_admin_create_user;
 -- ============================================================
+
+-- Drop old version first
+DROP FUNCTION IF EXISTS public.rpc_admin_create_user(TEXT, TEXT, TEXT, TEXT, BOOLEAN, TEXT[], UUID, UUID[]);
 
 CREATE OR REPLACE FUNCTION public.rpc_admin_create_user(
   p_email TEXT,
@@ -66,22 +71,35 @@ BEGIN
     );
   END IF;
 
-  -- 5. Create the user via auth.admin
-  -- NOTE: This requires the function to run with service_role-like privileges
-  -- The SECURITY DEFINER + being owned by supabase_admin (or postgres) allows this
+  -- 5. Create the user via auth.users
+  -- Use MINIMAL columns that exist in ALL Supabase versions
+  -- Do NOT include version-specific columns like failed_attempts, is_sso_user
   INSERT INTO auth.users (
-    instance_id, id, email, encrypted_password, email_confirmed_at,
-    raw_user_meta_data, created_at, updated_at, confirmation_token,
-    recovery_token, email_change, email_change_token_new,
-    email_change_token_current, last_sign_in_at, failed_attempts,
-    is_sso_user
+    instance_id,
+    id,
+    email,
+    encrypted_password,
+    email_confirmed_at,
+    raw_user_meta_data,
+    created_at,
+    updated_at,
+    confirmation_token,
+    recovery_token,
+    email_change,
+    email_change_token_new,
+    email_change_token_current,
+    last_sign_in_at
   ) VALUES (
     '00000000-0000-0000-0000-000000000000',
     gen_random_uuid(),
     lower(p_email),
     crypt(p_senha, gen_salt('bf')),
-    now(),  -- auto-confirm
-    jsonb_build_object('nome', p_nome),
+    now(),  -- auto-confirm — user can login immediately
+    jsonb_build_object(
+      'nome', p_nome,
+      'telefone', COALESCE(p_telefone, ''),
+      'whatsapp', CASE WHEN p_whatsapp THEN true ELSE false END
+    ),
     now(),
     now(),
     '',
@@ -89,9 +107,7 @@ BEGIN
     '',
     '',
     '',
-    null,
-    0,
-    false
+    null
   )
   RETURNING id INTO v_new_uid;
 
@@ -100,7 +116,7 @@ BEGIN
   VALUES (
     v_new_uid,
     trim(p_nome),
-    CASE WHEN p_telephone IS NOT NULL AND p_telephone != '' THEN p_telephone ELSE NULL END,
+    CASE WHEN p_telefone IS NOT NULL AND p_telefone != '' THEN p_telefone ELSE NULL END,
     p_whatsapp,
     p_lotacao_unidade_id,
     CASE WHEN array_length(p_unidades_adicionais, 1) > 0 THEN p_unidades_adicionais ELSE NULL END
@@ -171,4 +187,4 @@ GRANT EXECUTE ON FUNCTION public.rpc_admin_create_user TO authenticated;
 GRANT EXECUTE ON FUNCTION public.rpc_admin_create_user TO anon;
 
 COMMENT ON FUNCTION public.rpc_admin_create_user IS
-'Admin-only: creates new user with profile, roles, and lotacao. Requires admin role in user_roles table.';
+'Admin-only: creates new user with profile, roles, and lotacao. Requires admin role in user_roles table. v2 - fixed for Supabase schema compatibility.';
