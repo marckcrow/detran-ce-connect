@@ -32,6 +32,8 @@ type UserRow = {
 
 export function UsuariosTab({ meuId }: { meuId?: string }) {
   const [users, setUsers] = useState<UserRow[]>([]);
+  const [usersLoaded, setUsersLoaded] = useState(false);
+  const [usersError, setUsersError] = useState<string | null>(null);
   const [roles, setRoles] = useState<any[]>([]);
   const [unidades, setUnidades] = useState<Unidade[]>([]);
   const [unidadesLoaded, setUnidadesLoaded] = useState(false);
@@ -72,29 +74,39 @@ export function UsuariosTab({ meuId }: { meuId?: string }) {
     ]);
 
     // Profiles — try main query, fallback without instituicoes join if it fails
+    let usersLoadedSuccessfully = false;
+    
     if (profilesResult.status === 'fulfilled' && profilesResult.value?.data && Array.isArray(profilesResult.value.data) && profilesResult.value.data.length > 0) {
       setUsers(profilesResult.value.data as UserRow[]);
+      usersLoadedSuccessfully = true;
+      console.log(`[UsuariosTab] Main query loaded ${profilesResult.value.data.length} users`);
     } else {
       // Fallback: load profiles WITHOUT the instituicoes join (may fail due to RLS on instituicoes table)
       console.warn('[UsuariosTab] Main profiles query failed/empty, trying fallback without instituicoes join...');
+      console.warn('[UsuariosTab] Main query status:', profilesResult.status, 'error:', (profilesResult as any).reason?.message ?? 'N/A');
       try {
         const { data: fallbackProfiles, error: fallbackError } = await db.from("profiles")
           .select("id, nome, email, telefone, whatsapp, lotacao_unidade_id, unidades_adicionais")
           .order("nome");
         if (fallbackError) {
-          console.error('[UsuariosTab] Fallback profiles query also failed:', fallbackError.message);
+          console.error('[UsuariosTab] Fallback profiles query also failed:', fallbackError.message, fallbackError.code, fallbackError.hint);
+          setUsersError(`Erro DB: ${fallbackError.message}`);
         }
-        if (fallbackProfiles && Array.isArray(fallbackProfiles)) {
+        if (fallbackProfiles && Array.isArray(fallbackProfiles) && fallbackProfiles.length > 0) {
           console.log(`[UsuariosTab] Fallback loaded ${fallbackProfiles.length} users`);
           setUsers(fallbackProfiles as UserRow[]);
+          usersLoadedSuccessfully = true;
         } else {
           setUsers([]);
         }
-      } catch (e) {
+      } catch (e: any) {
         console.error('[UsuariosTab] Error in fallback profiles load:', e);
+        setUsersError(`Exception: ${e.message}`);
         setUsers([]);
       }
     }
+    
+    setUsersLoaded(true);
     if (rolesResult.status === 'fulfilled' && rolesResult.value?.data) {
       setRoles(rolesResult.value.data);
     }
@@ -443,7 +455,21 @@ export function UsuariosTab({ meuId }: { meuId?: string }) {
               {filteredUsers.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4 + Object.keys(PERFIS).length} className="text-center text-muted-foreground py-8">
-                    {busca ? 'Nenhum usuário encontrado.' : (users.length === 0 ? 'Carregando usuários...' : 'Nenhum usuário cadastrado.')}
+                    {usersError ? (
+                      <div className="text-red-500">
+                        <p className="font-medium">Erro ao carregar usuários</p>
+                        <p className="text-xs mt-1">{usersError}</p>
+                        <Button variant="outline" size="sm" className="mt-2" onClick={() => { setUsersError(null); setUsersLoaded(false); load(); }}>
+                          Tentar novamente
+                        </Button>
+                      </div>
+                    ) : !usersLoaded ? (
+                      <span>Carregando usuários...</span>
+                    ) : busca ? (
+                      <span>Nenhum usuário encontrado.</span>
+                    ) : (
+                      <span>Nenhum usuário cadastrado.</span>
+                    )}
                   </TableCell>
                 </TableRow>
               ) : filteredUsers.map((u) => {
