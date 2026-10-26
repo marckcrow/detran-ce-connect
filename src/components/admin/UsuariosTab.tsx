@@ -68,8 +68,8 @@ export function UsuariosTab({ meuId }: { meuId?: string }) {
         .select("id, nome, email, telefone, whatsapp, instituicoes(nome), lotacao_unidade_id, unidades_adicionais")
         .order("nome"),
       db.from("user_roles").select("*"),
-      db.rpc("rpc_unidades_list").catch(() => null), // fallback: returns null if RPC doesn't exist
-      db.from("unidades").select("id, nome, sigla, cidade, macrorregiao").order("nome").catch(() => null), // direct table fallback
+      db.rpc("rpc_unidades_list").then(r => r).catch(() => null), // fallback: returns null if RPC doesn't exist
+      db.from("unidades").select("id, nome, sigla, cidade, macrorregiao").order("nome").then(r => r).catch(() => null), // direct table fallback
       db.from("config_sistema").select("*").eq("id", 1).maybeSingle(),
     ]);
 

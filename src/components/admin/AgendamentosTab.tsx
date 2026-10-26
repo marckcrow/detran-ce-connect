@@ -175,7 +175,7 @@ export function AgendamentosTab({ podeEditar, onChange }: { podeEditar: boolean;
     const [cfgResult, tplsResult, unidadesResult] = await Promise.allSettled([
       db.from("config_sistema").select("*").eq("id", 1).maybeSingle(),
       db.from("mensagens_templates").select("*").eq("ativo", true),
-      db.rpc("rpc_unidades_list").catch(() => null), // fallback if RPC doesn't exist
+      db.rpc("rpc_unidades_list").then(r => r).catch(() => null), // fallback if RPC doesn't exist
     ]);
 
     if (unidadesResult.status === 'fulfilled' && unidadesResult.value?.data) {

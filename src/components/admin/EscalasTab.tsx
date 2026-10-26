@@ -212,7 +212,7 @@ export function EscalasTab() {
   // ============================================================
 
   const loadUnidades = useCallback(async () => {
-    const { data } = await db.rpc("rpc_unidades_list").catch(() => ({ data: null }));
+    const { data } = await db.rpc("rpc_unidades_list").then(r => r).catch(() => ({ data: null }));
     if (data && Array.isArray(data)) setUnidades(data as Unidade[]);
   }, []);
 
