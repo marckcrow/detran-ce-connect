@@ -391,7 +391,7 @@ export function UsuariosTab({ meuId }: { meuId?: string }) {
 
       {/* Lotacao Dialog */}
       <Dialog open={lotacaoOpen} onOpenChange={(v) => { if (!v) setLotacaoOpen(false); }}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>Lotação — {lotacaoUser?.nome}</DialogTitle>
             <DialogDescription>
@@ -409,7 +409,7 @@ export function UsuariosTab({ meuId }: { meuId?: string }) {
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione a unidade de lotação" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent position="popper" sideOffset={4}>
                   {unidades.map((u) => (
                     <SelectItem key={u.id} value={u.id}>
                       {u.nome} — {u.cidade}
@@ -459,7 +459,7 @@ export function UsuariosTab({ meuId }: { meuId?: string }) {
 
       {/* Create User Dialog */}
       <Dialog open={createOpen} onOpenChange={(v) => { if (!v) setCreateOpen(false); }}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto" onPointerDownOutside={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>Criar Novo Usuário</DialogTitle>
             <DialogDescription>
@@ -565,7 +565,7 @@ export function UsuariosTab({ meuId }: { meuId?: string }) {
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione a unidade (opcional)" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent position="popper" sideOffset={4}>
                   {unidades.map((u) => (
                     <SelectItem key={u.id} value={u.id}>{u.nome} — {u.cidade}</SelectItem>
                   ))}
