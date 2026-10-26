@@ -33,6 +33,7 @@ export function UsuariosTab({ meuId }: { meuId?: string }) {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [roles, setRoles] = useState<any[]>([]);
   const [unidades, setUnidades] = useState<Unidade[]>([]);
+  const [unidadesLoaded, setUnidadesLoaded] = useState(false);
   const [busca, setBusca] = useState("");
   const [cfg, setCfg] = useState<any>({ limite_km: 100, ponto_saida: "" });
   const [savingLotacao, setSavingLotacao] = useState(false);
@@ -91,9 +92,11 @@ export function UsuariosTab({ meuId }: { meuId?: string }) {
     
     if (mergedUnidades.length > 0) {
       setUnidades(mergedUnidades);
+      setUnidadesLoaded(true);
     } else {
       console.warn('[UsuariosTab] No unidades found — RPC:', JSON.stringify(unidadesResult.value?.data), 'Direct:', JSON.stringify(unidadesResult2?.value?.data));
       setUnidades([]);
+      setUnidadesLoaded(true);
     }
     if (cfgResult.status === 'fulfilled' && cfgResult.value?.data) {
       setCfg(cfgResult.value.data);
@@ -107,6 +110,28 @@ export function UsuariosTab({ meuId }: { meuId?: string }) {
       return toast({ title: "Você não pode remover seu próprio acesso de administrador", variant: "destructive" });
     }
 
+  // Re-fetch unidades when create dialog opens (in case initial load failed)
+  useEffect(() => {
+    if (createOpen && (!unidadesLoaded || unidades.length === 0)) {
+      (async () => {
+        try {
+          const { data: rpcData } = await db.rpc("rpc_unidades_list").catch(() => ({ data: null }));
+          if (rpcData && Array.isArray(rpcData) && rpcData.length > 0) {
+            setUnidades(rpcData as Unidade[]);
+            setUnidadesLoaded(true);
+            return;
+          }
+          const { data: tableData } = await db.from("unidades").select("id, nome, sigla, cidade, macrorregiao").order("nome");
+          if (tableData && Array.isArray(tableData) && tableData.length > 0) {
+            setUnidades(tableData as Unidade[]);
+            setUnidadesLoaded(true);
+          }
+        } catch (e) {
+          console.error('[UsuariosTab] Error re-fetching unidades:', e);
+        }
+      })();
+    }
+  }, [createOpen]);
     if (tem && role === "admin") {
       const { data: allAdminRoles } = await db.from("user_roles").select("user_id").eq("role", "admin");
       if ((allAdminRoles ?? []).length <= 1) {
@@ -553,6 +578,12 @@ export function UsuariosTab({ meuId }: { meuId?: string }) {
             {/* Lotação */}
             <div className="space-y-2">
               <Label>Unidade de lotação</Label>
+              {!unidadesLoaded && (
+                <p className="text-xs text-amber-600">Carregando unidades...</p>
+              )}
+              {unidadesLoaded && unidades.length === 0 && (
+                <p className="text-xs text-red-600">Nenhuma unidade encontrada. Verifique se a tabela unidades tem dados.</p>
+              )}
               <select
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 value={createForm.lotacao_unidade_id || ''}
