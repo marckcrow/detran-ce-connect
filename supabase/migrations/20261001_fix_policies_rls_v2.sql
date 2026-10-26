@@ -41,6 +41,17 @@ CREATE TRIGGER on_disponibilidade_updated
   BEFORE UPDATE ON public.disponibilidade
   FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
+-- handle_updated_at: use CREATE OR REPLACE (idempotent, same signature RETURNS TRIGGER)
+CREATE OR REPLACE FUNCTION public.handle_updated_at()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public;
+AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$;
+
 -- -------------------------------------------------------
 -- 2. noticias table
 -- -------------------------------------------------------
@@ -73,9 +84,15 @@ CREATE POLICY "Authenticated read published noticias" ON public.noticias
     AND (status = 'publicada' OR status = 'agendada')
   );
 
-DROP FUNCTION IF EXISTS public.handle_noticias_updated_at();
-CREATE FUNCTION public.handle_noticias_updated_at()
-RETURNS TRIGGER AS $$ BEGIN NEW.updated_at = now(); RETURN NEW; END; $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION public.handle_noticias_updated_at()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public;
+AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$;
 
 DROP TRIGGER IF EXISTS noticias_updated_at ON public.noticias;
 CREATE TRIGGER noticias_updated_at
@@ -173,4 +190,4 @@ CREATE POLICY "Staff full access" ON public.os_transporte_eventos
 -- -------------------------------------------------------
 -- 7. Reload PostgREST schema cache
 -- -------------------------------------------------------
-NOTIFY pgrst, 'reload schema';
+PERFORM pg_notify('pgrst', 'reload schema');

@@ -798,19 +798,20 @@ export function EscalasTab() {
         {colaboradores.map(col => {
           const carga = getCargaDoColaborador(col.id);
           const effortScore = carga ? Number(carga.effort_score ?? 0) : 0;
-          const effort = carga ? getEffortLabel(effortScore);
+          const effortLabel = carga ? getEffortLabel(effortScore) : { label: "", color: "" };
           const minhaOcorrencia = ocorrencias.filter(o => o.responsavel_id === col.id);
           const minhaAfast = afastamentos.filter(a => a.profile_id === col.id);
+          const ocupacaoPct = carga ? (Number(carga.effort_score ?? 0) * 100).toFixed(0) : "0";
           return (
             <div key={col.id} className="border rounded-lg p-4 space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="font-medium">{col.nome}</span>
-                  {carga && (
-                    <Badge className={`text-xs ${effort.color}`}>{effort.label}</Badge>
-                  )}
+                  {carga ? (
+                    <Badge className={`text-xs ${effortLabel.color}`}>{effortLabel.label}</Badge>
+                  ) : null}
                   {minhaAfast.length > 0 && (
-                    <Badge variant="outline" className="text-xs border-red-300 text-red-600">
+                    <Badge variant="outline" className="text-xs border-orange-300 text-orange-600">
                       {minhaAfast.length} afastamento(s)
                     </Badge>
                   )}
@@ -1461,13 +1462,14 @@ export function EscalasTab() {
           <div className="space-y-3 pt-2 max-h-[60vh] overflow-y-auto">
             {balancoCarga.length === 0 && <div className="text-sm text-muted-foreground">Sem dados de carga.</div>}
             {balancoCarga.map(b => {
-              const effort = getEffortLabel(Number(b.effort_score ?? 0));
-              const pct = Math.min(100, Math.round((Number(b.effort_score ?? 0)) * 100));
+              const bScore = Number(b.effort_score ?? 0);
+              const effortLabel = getEffortLabel(bScore);
+              const bPct = Math.min(100, Math.round(bScore * 100));
               return (
                 <div key={b.profile_id} className="border rounded-lg p-3 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="font-medium text-sm">{b.nome}</span>
-                    <Badge className={effort.color}>{effort.label}</Badge>
+                    <Badge className={effortLabel.color}>{effortLabel.label}</Badge>
                   </div>
                   <div className="grid grid-cols-4 gap-2 text-xs">
                     <div><span className="font-medium">{b.horas_disponiveis}h</span> disp.</div>
@@ -1477,11 +1479,11 @@ export function EscalasTab() {
                   </div>
                   <div className="space-y-1">
                     <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>Ocupação</span><span>{pct}%</span>
+                      <span>Ocupação</span><span>{bPct}%</span>
                     </div>
                     <div className="h-2 bg-muted rounded-full overflow-hidden">
-                      <div className={`h-full rounded-full transition-all ${pct > 90 ? "bg-red-500" : pct > 70 ? "bg-orange-400" : "bg-green-500"}`}
-                        style={{ width: `${pct}%` }} />
+                      <div className={`h-full rounded-full transition-all ${bPct > 90 ? "bg-red-500" : bPct > 70 ? "bg-orange-400" : "bg-green-500"}`}
+                        style={{ width: `${bPct}%` }} />
                     </div>
                   </div>
                 </div>

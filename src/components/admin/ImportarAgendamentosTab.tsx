@@ -485,7 +485,7 @@ export function ImportarAgendamentosTab({ open, onClose, onImported }: ImportarA
       const { data: insts } = await db
         .from("instituicoes")
         .select("id, nome")
-        .or(`nome.ilike.%${uniqueNomes.join("%"),nome.ilike.%${uniqueNomes.join("%")}%`);
+        .or(`nome.ilike.%${uniqueNomes.join(",nome.ilike.%")}%`);
 
       if (insts) {
         insts.forEach((i: { id: string; nome: string }) => {
