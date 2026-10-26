@@ -73,13 +73,26 @@ export function UsuariosTab({ meuId }: { meuId?: string }) {
     if (rolesResult.status === 'fulfilled' && rolesResult.value?.data) {
       setRoles(rolesResult.value.data);
     }
-    if (unidadesResult.status === 'fulfilled' && unidadesResult.value?.data) {
-      setUnidades(unidadesResult.value.data as Unidade[]);
-    } else if (unidadesResult2?.status === 'fulfilled' && unidadesResult2.value?.data) {
-      // Fallback: try direct table query
-      setUnidades(unidadesResult2.value.data as Unidade[]);
+    // Merge unidades from both RPC and direct table query (prefer RPC, supplement with direct)
+    const mergedUnidades: Unidade[] = [];
+    
+    if (unidadesResult.status === 'fulfilled' && unidadesResult.value?.data && Array.isArray(unidadesResult.value.data)) {
+      mergedUnidades.push(...(unidadesResult.value.data as Unidade[]));
+    }
+    if (unidadesResult2?.status === 'fulfilled' && unidadesResult2.value?.data && Array.isArray(unidadesResult2.value.data)) {
+      // Add from direct query only if not already present (by id)
+      const existingIds = new Set(mergedUnidades.map(u => u.id));
+      for (const u of (unidadesResult2.value.data as Unidade[])) {
+        if (!existingIds.has(u.id)) {
+          mergedUnidades.push(u);
+        }
+      }
+    }
+    
+    if (mergedUnidades.length > 0) {
+      setUnidades(mergedUnidades);
     } else {
-      // Fallback: unidades table may not exist yet — show empty list
+      console.warn('[UsuariosTab] No unidades found — RPC:', JSON.stringify(unidadesResult.value?.data), 'Direct:', JSON.stringify(unidadesResult2?.value?.data));
       setUnidades([]);
     }
     if (cfgResult.status === 'fulfilled' && cfgResult.value?.data) {
