@@ -427,7 +427,7 @@ export function LilyChat() {
       {/* ── Header ── */}
       <div className="flex items-center gap-3 px-4 py-3 border-b shrink-0 bg-gradient-hero rounded-t-xl sm:rounded-t-xl">
         <img
-          src="/lily-avatar.png"
+          src="/lily-avatar.jpg"
           alt="Lily"
           className="w-9 h-9 rounded-full object-cover border-2 border-white/40 shrink-0"
         />
@@ -476,7 +476,7 @@ export function LilyChat() {
                 >
                   {msg.role === "lily" && (
                     <img
-                      src="/lily-avatar.png"
+                      src="/lily-avatar.jpg"
                       alt="Lily"
                       className="w-7 h-7 rounded-full object-cover shrink-0 mt-1"
                     />
