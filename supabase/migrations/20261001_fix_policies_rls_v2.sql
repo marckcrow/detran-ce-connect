@@ -44,7 +44,7 @@ CREATE TRIGGER on_disponibilidade_updated
 -- handle_updated_at: use CREATE OR REPLACE (idempotent, same signature RETURNS TRIGGER)
 CREATE OR REPLACE FUNCTION public.handle_updated_at()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER
-SET search_path = public;
+SET search_path = public
 AS $$
 BEGIN
   NEW.updated_at = now();
@@ -86,7 +86,7 @@ CREATE POLICY "Authenticated read published noticias" ON public.noticias
 
 CREATE OR REPLACE FUNCTION public.handle_noticias_updated_at()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER
-SET search_path = public;
+SET search_path = public
 AS $$
 BEGIN
   NEW.updated_at = now();
