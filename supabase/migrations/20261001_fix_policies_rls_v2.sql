@@ -190,4 +190,4 @@ CREATE POLICY "Staff full access" ON public.os_transporte_eventos
 -- -------------------------------------------------------
 -- 7. Reload PostgREST schema cache
 -- -------------------------------------------------------
-PERFORM pg_notify('pgrst', 'reload schema');
+SELECT pg_notify('pgrst', 'reload schema');
