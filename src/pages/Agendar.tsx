@@ -204,15 +204,19 @@ export default function Agendar() {
 
     (async () => {
       const [{ data: unidadesData }, instData] = await Promise.all([
-        (supabase as any).rpc("rpc_unidades_list"),
+        (supabase as any).rpc("rpc_unidades_list").then(r => r).catch(() => ({ data: null })),
         isStaff
           ? (supabase as any).from("instituicoes").select("*").order("nome")
-          : (supabase as any)
-              .from("instituicoes")
-              .select("instituicoes.*")
-              .innerJoin("instituicao_access", "instituicao_access.instituicao_id", "instituicoes.id")
-              .eq("instituicao_access.user_id", user.id)
-              .order("instituicoes.nome"),
+          : (async () => {
+              // innerJoin not supported in Supabase JS v2 — use 2-step: fetch IDs first, then rows
+              const accessRows = await (supabase as any)
+                .from("instituicao_access").select("instituicao_id")
+                .eq("user_id", user.id);
+              if (!accessRows.data?.length) return { data: [], error: null };
+              const ids = accessRows.data.map((r: any) => r.instituicao_id);
+              return (supabase as any).from("instituicoes")
+                .select("instituicoes.*").in("id", ids).order("nome");
+            })(),
       ]);
 
       setUnidades((unidadesData as Unidade[]) ?? []);

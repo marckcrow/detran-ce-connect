@@ -563,7 +563,7 @@ export function EscalasTab() {
     // Load suggestions
     const { data } = await db.rpc("rpc_escala_sugerir_substituicao", {
       p_ocorrencia_id: oc.id, p_excluir_profile_id: oc.responsavel_id,
-    });
+    }).then(r => r).catch(() => ({ data: null }));
     if (data && (data as any).candidates) setSugestoes((data as any).candidates);
   }
 
