@@ -1,13 +1,52 @@
 -- ============================================================
 -- COMPLETE FIX: One-time migration to fix all pending schema issues
--- Handles: missing tables, missing policies, wrong is_staff() calls, duplicate types
--- Safe to run ONCE — uses IF NOT EXISTS / DROP ... IF EXISTS throughout
--- Run AFTER: 20261001_disponibilidade.sql, _noticias_logs_tables.sql, _os_transporte_tables.sql
+-- Handles: missing tables, missing policies, wrong is_staff() calls,
+--           duplicate types, function/trigger ordering
+--
+-- Idempotent: safe to re-run. Uses IF NOT EXISTS / IF EXISTS / OR REPLACE.
+-- No DROP CASCADE. No data deletion.
+--
+-- Run in: Supabase SQL Editor (single execution)
+-- Prerequisites: base tables (profiles, instituicoes, unidades) must exist
 -- ============================================================
 
+BEGIN;
+
 -- -------------------------------------------------------
--- 1. disponibilidade table
+-- PHASE 1: FUNCTIONS (must exist before triggers reference them)
 -- -------------------------------------------------------
+
+-- handle_updated_at: generic updated_at trigger for any table with that column
+CREATE OR REPLACE FUNCTION public.handle_updated_at()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$;
+
+-- handle_noticias_updated_at: dedicated trigger for noticias table
+CREATE OR REPLACE FUNCTION public.handle_noticias_updated_at()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$;
+
+-- -------------------------------------------------------
+-- PHASE 2: TABLES (IF NOT EXISTS — skip if already created)
+-- -------------------------------------------------------
+
+-- 2a. disponibilidade
 CREATE TABLE IF NOT EXISTS public.disponibilidade (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   data DATE NOT NULL,
@@ -29,21 +68,7 @@ CREATE INDEX IF NOT EXISTS idx_disponibilidade_data
 
 ALTER TABLE public.disponibilidade ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Staff full access" ON public.disponibilidade;
-DROP POLICY IF EXISTS "Authenticated read" ON public.disponibilidade;
-CREATE POLICY "Staff full access" ON public.disponibilidade
-  FOR ALL USING (public.is_staff(auth.uid())) WITH CHECK (public.is_staff(auth.uid()));
-CREATE POLICY "Authenticated read" ON public.disponibilidade
-  FOR SELECT USING (auth.uid() IS NOT NULL);
-
-DROP TRIGGER IF EXISTS on_disponibilidade_updated ON public.disponibilidade;
-CREATE TRIGGER on_disponibilidade_updated
-  BEFORE UPDATE ON public.disponibilidade
-  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
-
--- -------------------------------------------------------
--- 2. noticias table
--- -------------------------------------------------------
+-- 2b. noticias
 CREATE TABLE IF NOT EXISTS public.noticias (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   titulo TEXT NOT NULL,
@@ -63,28 +88,7 @@ CREATE TABLE IF NOT EXISTS public.noticias (
 
 ALTER TABLE public.noticias ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Staff full access noticias" ON public.noticias;
-DROP POLICY IF EXISTS "Authenticated read published noticias" ON public.noticias;
-CREATE POLICY "Staff full access noticias" ON public.noticias
-  FOR ALL USING (public.is_staff(auth.uid())) WITH CHECK (public.is_staff(auth.uid()));
-CREATE POLICY "Authenticated read published noticias" ON public.noticias
-  FOR SELECT USING (
-    auth.uid() IS NOT NULL
-    AND (status = 'publicada' OR status = 'agendada')
-  );
-
-DROP FUNCTION IF EXISTS public.handle_noticias_updated_at();
-CREATE FUNCTION public.handle_noticias_updated_at()
-RETURNS TRIGGER AS $$ BEGIN NEW.updated_at = now(); RETURN NEW; END; $$ LANGUAGE plpgsql;
-
-DROP TRIGGER IF EXISTS noticias_updated_at ON public.noticias;
-CREATE TRIGGER noticias_updated_at
-  BEFORE UPDATE ON public.noticias
-  FOR EACH ROW EXECUTE FUNCTION public.handle_noticias_updated_at();
-
--- -------------------------------------------------------
--- 3. logs_sistema table
--- -------------------------------------------------------
+-- 2c. logs_sistema
 CREATE TABLE IF NOT EXISTS public.logs_sistema (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   usuario_id UUID,
@@ -99,27 +103,17 @@ CREATE TABLE IF NOT EXISTS public.logs_sistema (
 
 ALTER TABLE public.logs_sistema ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Staff full access logs" ON public.logs_sistema;
-CREATE POLICY "Staff full access logs" ON public.logs_sistema
-  FOR ALL USING (public.is_staff(auth.uid())) WITH CHECK (public.is_staff(auth.uid()));
-
--- -------------------------------------------------------
--- 4. os_status type — PRESERVE existing enum (already has 8 values)
--- V2 tried to replace values → 22P02. Fixed: skip CREATE TYPE, preserve existing.
--- Existing values: rascunho, solicitado, confirmado, programado,
---   em_andamento, realizado, cancelado, nao_realizado
--- -------------------------------------------------------
+-- 2d. os_status enum type — preserve existing values, do not recreate
 DO $$
 BEGIN
-  -- Check if type exists; if so, do NOTHING (preserve existing values)
-  PERFORM 1 FROM pg_type WHERE typname = 'os_status' AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public');
-EXCEPTION
-  WHEN undefined_function THEN null;
+  PERFORM 1 FROM pg_type
+    WHERE typname = 'os_status'
+    AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public');
+EXCEPTION WHEN undefined_function THEN
+  NULL;
 END $$;
 
--- -------------------------------------------------------
--- 5. os_transporte table
--- -------------------------------------------------------
+-- 2e. os_transporte
 CREATE TABLE IF NOT EXISTS public.os_transporte (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   numero TEXT NOT NULL,
@@ -143,18 +137,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS os_transporte_numero_ano_unidade_idx
 
 ALTER TABLE public.os_transporte ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Staff full access" ON public.os_transporte;
-CREATE POLICY "Staff full access" ON public.os_transporte
-  FOR ALL USING (public.is_staff(auth.uid())) WITH CHECK (public.is_staff(auth.uid()));
-
-DROP TRIGGER IF EXISTS os_transporte_updated_at ON public.os_transporte;
-CREATE TRIGGER os_transporte_updated_at
-  BEFORE UPDATE ON public.os_transporte
-  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
-
--- -------------------------------------------------------
--- 6. os_transporte_eventos table
--- -------------------------------------------------------
+-- 2f. os_transporte_eventos
 CREATE TABLE IF NOT EXISTS public.os_transporte_eventos (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   os_transporte_id UUID REFERENCES public.os_transporte(id) ON DELETE CASCADE NOT NULL,
@@ -166,11 +149,66 @@ CREATE TABLE IF NOT EXISTS public.os_transporte_eventos (
 
 ALTER TABLE public.os_transporte_eventos ENABLE ROW LEVEL SECURITY;
 
+-- -------------------------------------------------------
+-- PHASE 3: POLICIES (DROP IF EXISTS + recreate — always fresh)
+-- -------------------------------------------------------
+
+-- disponibilidade policies
+DROP POLICY IF EXISTS "Staff full access" ON public.disponibilidade;
+DROP POLICY IF EXISTS "Authenticated read" ON public.disponibilidade;
+CREATE POLICY "Staff full access" ON public.disponibilidade
+  FOR ALL USING (public.is_staff(auth.uid())) WITH CHECK (public.is_staff(auth.uid()));
+CREATE POLICY "Authenticated read" ON public.disponibilidade
+  FOR SELECT USING (auth.uid() IS NOT NULL);
+
+-- noticias policies
+DROP POLICY IF EXISTS "Staff full access noticias" ON public.noticias;
+DROP POLICY IF EXISTS "Authenticated read published noticias" ON public.noticias;
+CREATE POLICY "Staff full access noticias" ON public.noticias
+  FOR ALL USING (public.is_staff(auth.uid())) WITH CHECK (public.is_staff(auth.uid()));
+CREATE POLICY "Authenticated read published noticias" ON public.noticias
+  FOR SELECT USING (
+    auth.uid() IS NOT NULL
+    AND (status = 'publicada' OR status = 'agendada')
+  );
+
+-- logs_sistema policies
+DROP POLICY IF EXISTS "Staff full access logs" ON public.logs_sistema;
+CREATE POLICY "Staff full access logs" ON public.logs_sistema
+  FOR ALL USING (public.is_staff(auth.uid())) WITH CHECK (public.is_staff(auth.uid()));
+
+-- os_transporte policies
+DROP POLICY IF EXISTS "Staff full access" ON public.os_transporte;
+CREATE POLICY "Staff full access" ON public.os_transporte
+  FOR ALL USING (public.is_staff(auth.uid())) WITH CHECK (public.is_staff(auth.uid()));
+
+-- os_transporte_eventos policies
 DROP POLICY IF EXISTS "Staff full access" ON public.os_transporte_eventos;
 CREATE POLICY "Staff full access" ON public.os_transporte_eventos
   FOR ALL USING (public.is_staff(auth.uid())) WITH CHECK (public.is_staff(auth.uid()));
 
 -- -------------------------------------------------------
--- 7. Reload PostgREST schema cache
+-- PHASE 4: TRIGGERS (functions already defined in PHASE 1)
 -- -------------------------------------------------------
-NOTIFY pgrst, 'reload schema';
+
+DROP TRIGGER IF EXISTS on_disponibilidade_updated ON public.disponibilidade;
+CREATE TRIGGER on_disponibilidade_updated
+  BEFORE UPDATE ON public.disponibilidade
+  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+DROP TRIGGER IF EXISTS noticias_updated_at ON public.noticias;
+CREATE TRIGGER noticias_updated_at
+  BEFORE UPDATE ON public.noticias
+  FOR EACH ROW EXECUTE FUNCTION public.handle_noticias_updated_at();
+
+DROP TRIGGER IF EXISTS os_transporte_updated_at ON public.os_transporte;
+CREATE TRIGGER os_transporte_updated_at
+  BEFORE UPDATE ON public.os_transporte
+  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+-- -------------------------------------------------------
+-- PHASE 5: Reload PostgREST schema cache
+-- -------------------------------------------------------
+SELECT pg_notify('pgrst', 'reload schema');
+
+COMMIT;

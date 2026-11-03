@@ -31,7 +31,7 @@ export function LilyFloat() {
       />
       {/* Avatar image */}
       <img
-        src="/lily-avatar.png"
+        src="/lily-avatar.jpg"
         alt="Lily — Assistente Virtual"
         className="relative z-10 w-[clamp(40px,7.5vw,48px)] h-[clamp(40px,7.5vw,48px)] rounded-full object-cover border-2 border-white/30"
         onError={(e) => {
