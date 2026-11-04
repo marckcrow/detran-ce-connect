@@ -26,7 +26,7 @@ const STATUS_OPTIONS = [
 const statusLabel: Record<string, string> = {
   pendente: "Pendente", confirmado: "Confirmado", cancelado: "Cancelado", realizado: "Realizado"
 };
-const statusVariant: Record<string, string> = {
+const statusVariant: Record<string, "default" | "destructive" | "outline" | "secondary" | "success" | "warning"> = {
   pendente: "warning", confirmado: "success", cancelado: "destructive", realizado: "default"
 };
 
@@ -309,7 +309,7 @@ export function AgendamentosTab({ podeEditar, onChange }: { podeEditar: boolean;
       osNumero: a.os_numero ? String(a.os_numero).padStart(3, "0") : "000",
       ano: a.os_ano ?? new Date().getFullYear(),
       data: dataFmt,
-      turno: a.turno ?? "manha",
+      turno: (a.turno ?? "manha") as "manha" | "tarde",
       escola: a.instituicao_nome ?? "—",
       endereco: [a.instituicao_bairro, a.instituicao_cidade].filter(Boolean).join(", ") || "—",
       cidade: a.instituicao_cidade ?? "",
@@ -384,7 +384,7 @@ export function AgendamentosTab({ podeEditar, onChange }: { podeEditar: boolean;
   };
 
   // --- Export ---
-  const exportFiltered = async (format: "xlsx" | "csv") => {
+  const exportFiltered = async (fmt: "xlsx" | "csv") => {
     toast({ title: "Gerando arquivo..." });
     const { data, error } = await db.rpc("rpc_agendamentos_export", {
       p_status: filters.status || null,
@@ -427,7 +427,7 @@ export function AgendamentosTab({ podeEditar, onChange }: { podeEditar: boolean;
       edit_data: r.edit_data ? format(parseISO(r.edit_data), "dd/MM/yyyy HH:mm") : "",
     }));
 
-    if (format === "xlsx") {
+    if (fmt === "xlsx") {
       exportarXLSX("agendamentos_export", rowsExport, cols);
     } else {
       exportarCSV("agendamentos_export", rowsExport, cols);
