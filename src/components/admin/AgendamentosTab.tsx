@@ -432,7 +432,7 @@ export function AgendamentosTab({ podeEditar, onChange }: { podeEditar: boolean;
     } else {
       exportarCSV("agendamentos_export", rowsExport, cols);
     }
-    toast({ title: `Exportado ${rowsExport.length} registros como ${format.toUpperCase()}` });
+    toast({ title: `Exportado ${rowsExport.length} registros como ${fmt.toUpperCase()}` });
   };
 
   return (
