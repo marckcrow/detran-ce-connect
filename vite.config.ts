@@ -55,7 +55,7 @@ export default defineConfig(({ mode }) => ({
               id.includes("lily/TutorialOverlay")) {
             return true;
           }
-          return undefined;
+          return false;
         },
       },
     },
