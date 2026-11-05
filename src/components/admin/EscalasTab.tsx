@@ -19,145 +19,50 @@ import {
   Briefcase, AlertCircle, TrendingUp, TrendingDown
 } from "lucide-react";
 
-// ============================================================
-// TYPES
-// ============================================================
-
-interface Unidade {
-  id: string; nome: string; sigla: string; cidade: string; macrorregiao: string;
-}
-interface Atividade {
-  id: string; unidade_id: string; nome: string; tipo: string;
-  duracao_min: number; profissionais_minimos: number; exige_2_pessoas: boolean; ativo: boolean;
-}
-interface Afastamento {
-  id: string; profile_id: string; tipo: string; data_inicio: string; data_fim: string;
-  motivo?: string; exclui_fds: boolean; ativo: boolean; nome?: string;
-}
-interface DuplaCobertura {
-  id: string; unidade_id: string; atividade_id?: string; atividade_nome?: string;
-  perfil_1_id: string; perfil_1_nome: string; perfil_2_id: string; perfil_2_nome: string;
-  ativo: boolean; ordem: number;
-}
-interface Profile {
-  id: string; nome: string; email?: string; telefone?: string;
-  lotacao_unidade_id?: string; unidades_adicionais?: string[];
-}
-interface EscalaMensal {
-  id: string; unidade_id: string; unidade_nome: string; ano: number; mes: number;
-  status: "rascunho" | "publicada" | "encerrada";
-  modelo_usado?: string; total_dias?: number; total_ocorrencias?: number;
-  publicados_por?: string; publicado_em?: string;
-}
-interface Ocorrencia {
-  id: string; escala_mensal_id: string; escala_mensal_unidade_id: string;
-  data: string; turno: "manha" | "tarde";
-  atividade_id: string; atividade_nome: string;
-  horario_inicio?: string; duracao_min?: number;
-  responsavel_id?: string; responsavel_nome?: string;
-  apoiantes_ids?: string[]; apoiantes_nomes?: string[];
-  fixa: boolean; situacao: "pendente" | "confirmado" | "cancelado" | "substituido";
-  observacao?: string;
-}
-interface AtribuicaoAdmin {
-  id: string; escala_mensal_id: string; perfil_id: string; perfil_nome: string;
-  tipo: string; data_inicio?: string; data_fim?: string;
-  dedicacao_semanal_horas?: number; fixa: boolean;
-}
-interface BalancoCarga {
-  profile_id: string; nome: string; lotacao_unidade_id: string;
-  horas_disponiveis: number; horas_atribuidas: number;
-  duracao_total_min: number; num_ocorrencias: number;
-  num_coberturas: number; effort_score: number;
-}
+import { ModelosSemanaisTab } from "./escalas/ModelosSemanaisTab";
+import { HabilitacoesTab } from "./escalas/HabilitacoesTab";
+import { ConfigEscalasTab } from "./escalas/ConfigEscalasTab";
+import { SeletorModeloDialog } from "./escalas/SeletorModeloDialog";
+import { calcularBalancoCarga, cargaPorColaborador, gerarOcorrencias, sugerirSubstituicaoCliente } from "./escalas/geradorEscala";
+import {
+  Afastamento,
+  Atividade,
+  AtribuicaoAdmin,
+  BalancoCarga,
+  ConfigUnidade,
+  DuplaCobertura,
+  EscalaMensal,
+  Habilitacao,
+  ModeloSemanal,
+  Ocorrencia,
+  Profile,
+  Unidade,
+  STATUS_COLORS,
+  SITUACAO_COLORS,
+  TIPOS_ADMIN,
+  TIPOS_AFASTAMENTO,
+  addDays,
+  dateStr,
+  formatDate,
+  formatarHoras,
+  getDaysInMonth,
+  getDayOfWeek,
+  getEffortLabel,
+  getMonthName,
+  estaAfastado,
+  pertenceAUnidade,
+  toError,
+} from "./escalas/escalaTypes";
 
 // ============================================================
-// CONSTANTS
+// CONSTANTES
 // ============================================================
 
-const TURNOS = ["manha", "tarde"] as const;
 const DIAS_SEMANA = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
-const TIPOS_AFASTAMENTO = [
-  { value: "ferias", label: "Férias" },
-  { value: "licenca", label: "Licença" },
-  { value: "folga", label: "Folga" },
-  { value: "indisponivel", label: "Indisponível" },
-  { value: "outro", label: "Outro" },
-];
-const TIPOS_ADMIN = [
-  { value: "agendamentos", label: "Agendamentos" },
-  { value: "ordens_servico", label: "Ordens de Serviço" },
-  { value: "relatorios", label: "Relatórios" },
-  { value: "controle_lanches", label: "Controle de Lanches/Revistas" },
-  { value: "registro_imagens", label: "Registro de Imagens" },
-  { value: "apoio_geral", label: "Apoio Geral" },
-];
-const STATUS_COLORS: Record<string, string> = {
-  rascunho: "bg-gray-100 text-gray-700",
-  publicada: "bg-green-100 text-green-800",
-  encerrada: "bg-blue-100 text-blue-800",
-};
-const SITUACAO_COLORS: Record<string, string> = {
-  pendente: "bg-yellow-100 text-yellow-700",
-  confirmado: "bg-green-100 text-green-700",
-  cancelado: "bg-red-100 text-red-700",
-  substituido: "bg-purple-100 text-purple-700",
-};
 
 // ============================================================
 // HELPERS
 // ============================================================
-
-function formatDate(d: string | Date) {
-  if (!d) return "";
-  const dt = typeof d === "string" ? new Date(d + "T00:00:00") : d;
-  return dt.toLocaleDateString("pt-BR");
-}
-
-function getMonthName(m: number) {
-  return ["","Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"][m];
-}
-
-function getDaysInMonth(year: number, month: number) {
-  return new Date(year, month, 0).getDate();
-}
-
-function getDayOfWeek(year: number, month: number, day: number) {
-  return new Date(year, month - 1, day).getDay();
-}
-
-function dateKey(d: string) { return d; }
-
-function parseDateBR(s: string): Date | null {
-  if (!s) return null;
-  // DD/MM/YYYY
-  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (m) return new Date(+m[3], +m[2] - 1, +m[1]);
-  // YYYY-MM-DD
-  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (iso) return new Date(+iso[1], +iso[2] - 1, +iso[3]);
-  return null;
-}
-
-function addDays(d: Date, n: number) {
-  const r = new Date(d); r.setDate(r.getDate() + n); return r;
-}
-
-function dateStr(d: Date) {
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-}
-
-function formatarHoras(min: number) {
-  const h = Math.floor(min / 60), m = min % 60;
-  return h > 0 ? `${h}h${m > 0 ? m + "m" : ""}` : `${m}m`;
-}
-
-function getEffortLabel(score: number) {
-  if (score < 0.4) return { label: "Leve", color: "text-green-600" };
-  if (score < 0.7) return { label: "Moderada", color: "text-yellow-600" };
-  if (score < 0.9) return { label: "Intensa", color: "text-orange-600" };
-  return { label: "Sobrecarga", color: "text-red-600 font-bold" };
-}
 
 // ============================================================
 // COMPONENT
@@ -177,6 +82,9 @@ export function EscalasTab() {
   const [ocorrencias, setOcorrencias] = useState<Ocorrencia[]>([]);
   const [atribAdmin, setAtribAdmin] = useState<AtribuicaoAdmin[]>([]);
   const [balancoCarga, setBalancoCarga] = useState<BalancoCarga[]>([]);
+  const [modelos, setModelos] = useState<ModeloSemanal[]>([]);
+  const [configUnidade, setConfigUnidade] = useState<ConfigUnidade | null>(null);
+  const [erroCarregamento, setErroCarregamento] = useState<string | null>(null);
 
   // -- UI state
   const [unidadeSel, setUnidadeSel] = useState<string>("");
@@ -197,6 +105,8 @@ export function EscalasTab() {
   const [dlgSubstituir, setDlgSubstituir] = useState(false);
   const [dlgOcorrencia, setDlgOcorrencia] = useState<Ocorrencia | null>(null);
   const [dlgBalanco, setDlgBalanco] = useState(false);
+  const [dlgSeletorModelo, setDlgSeletorModelo] = useState(false);
+  const [avisosGeracao, setAvisosGeracao] = useState<string[]>([]);
 
   // -- Forms
   const [formAtividade, setFormAtividade] = useState({ nome: "", tipo: "palestra", duracao_min: 60, profissionais_minimos: 1, exige_2_pessoas: false });
@@ -205,76 +115,157 @@ export function EscalasTab() {
   const [formAtribAdmin, setFormAtribAdmin] = useState({ perfil_id: "", tipo: "agendamentos", data_inicio: "", data_fim: "", dedicacao_semanal_horas: 0 });
   const [formSubstituicao, setFormSubstituicao] = useState({ substituto_id: "", motivo_operacional: "" });
   const [substituirOcorrencia, setSubstituirOcorrencia] = useState<Ocorrencia | null>(null);
-  const [sugestoes, setSugestoes] = useState<any[]>([]);
+  const [sugestoes, setSugestoes] = useState<{ profile_id: string; nome: string }[]>([]);
 
   // ============================================================
   // DATA LOADING
   // ============================================================
 
   const loadUnidades = useCallback(async () => {
-    const { data } = await db.rpc("rpc_unidades_list").then(r => r).catch(() => ({ data: null }));
-    if (data && Array.isArray(data)) setUnidades(data as Unidade[]);
+    try {
+      const { data, error } = await db.rpc("rpc_unidades_list").then(r => r).catch((e: unknown) => ({ data: null, error: e }));
+      if (error) { setErroCarregamento(`Não foi possível carregar as unidades: ${error.message}`); return; }
+      if (data && Array.isArray(data)) {
+        setUnidades(data as Unidade[]);
+        setErroCarregamento(null);
+      }
+    } catch (e: unknown) {
+      setErroCarregamento(`Não foi possível carregar as unidades: ${toError(e).message ?? "erro desconhecido"}`);
+    }
   }, []);
 
   const loadAtividades = useCallback(async (uid: string) => {
     if (!uid) return;
-    const { data } = await db.from("escala_atividades").select("*").eq("unidade_id", uid).eq("ativo", true).order("ordem");
-    if (data) setAtividades(data as Atividade[]);
+    const { data, error } = await db.from("escala_atividades").select("*").eq("unidade_id", uid).eq("ativo", true).order("ordem").then(r => r).catch((e: unknown) => ({ data: null, error: e }));
+    if (error) { setErroCarregamento(`Não foi possível carregar as atividades: ${error.message}`); return; }
+    setAtividades((data ?? []) as Atividade[]);
   }, []);
 
+  // Afastamentos: escopados nos colaboradores da unidade (lotacao OU unidades_adicionais).
   const loadAfastamentos = useCallback(async (uid: string) => {
-    if (!uid) return;
-    const { data } = await db.from("escala_afastamentos")
+    if (!uid) { setAfastamentos([]); return; }
+    const { data: colaboradoresUnidade, error: errColab } = await db
+      .from("profiles")
+      .select("id")
+      .or(`lotacao_unidade_id.eq.${uid},unidades_adicionais.cs.${uid}`)
+      .then(r => r)
+      .catch((e: unknown) => ({ data: null, error: e }));
+    if (errColab) { setErroCarregamento(`Não foi possível carregar os afastamentos: ${errColab.message}`); return; }
+
+    const ids = (colaboradoresUnidade ?? []).map((c: { id: string }) => c.id);
+    if (ids.length === 0) { setAfastamentos([]); return; }
+
+    const { data, error } = await db.from("escala_afastamentos")
       .select("*, profiles!escala_afastamentos_profile_id_fkey(nome)")
       .eq("ativo", true)
-      .gte("data_fim", new Date().toISOString().split("T")[0]);
-    if (data) setAfastamentos(data as Afastamento[]);
+      .in("profile_id", ids)
+      .gte("data_fim", new Date().toISOString().split("T")[0])
+      .then(r => r)
+      .catch((e: unknown) => ({ data: null, error: e }));
+    if (error) { setErroCarregamento(`Não foi possível carregar os afastamentos: ${error.message}`); return; }
+    setAfastamentos((data ?? []) as Afastamento[]);
   }, []);
 
   const loadDuplas = useCallback(async (uid: string) => {
     if (!uid) return;
-    const { data } = await db.from("escala_duplas_cobertura")
+    const { data, error } = await db.from("escala_duplas_cobertura")
       .select("*, escala_atividades(nome)")
       .eq("unidade_id", uid).eq("ativo", true)
-      .order("ordem");
-    if (data) setDuplas(data as DuplaCobertura[]);
+      .order("ordem")
+      .then(r => r)
+      .catch((e: unknown) => ({ data: null, error: e }));
+    if (error) { setErroCarregamento(`Não foi possível carregar as duplas de cobertura: ${error.message}`); return; }
+    setDuplas((data ?? []) as DuplaCobertura[]);
   }, []);
 
   const loadColaboradores = useCallback(async (uid: string) => {
-    if (!uid) return;
-    const { data } = await db.from("profiles")
-      .select("id, nome, email, telefone, lotacao_unidade_id, unidades_adicionais")
+    if (!uid) { setColaboradores([]); return; }
+    // `email` nao existe na tabela `profiles` em producao (schemas criados antes
+    // de 20261026_complete_deploy.sql) e o PostgREST rejeita o select INTEIRO
+    // quando uma unica coluna e desconhecida. `email`/`telefone` nao sao usados
+    // em nenhum ponto do modulo de Escalas, entao ficam de fora do select.
+    const { data, error } = await db.from("profiles")
+      .select("id, nome, lotacao_unidade_id, unidades_adicionais")
       .or(`lotacao_unidade_id.eq.${uid},unidades_adicionais.cs.${uid}`)
-      .order("nome");
-    if (data) setColaboradores(data as Profile[]);
+      .order("nome")
+      .then(r => r)
+      .catch((e: unknown) => ({ data: null, error: e }));
+    if (error) { setErroCarregamento(`Não foi possível carregar os colaboradores: ${error.message}`); return; }
+    setColaboradores((data ?? []) as Profile[]);
+  }, []);
+
+  const loadConfig = useCallback(async (uid: string) => {
+    if (!uid) { setConfigUnidade(null); return; }
+    const { data, error } = await db.from("escala_config_unidade")
+      .select("*").eq("unidade_id", uid).maybeSingle()
+      .then(r => r)
+      .catch((e: unknown) => ({ data: null, error: e }));
+    if (error) { setErroCarregamento(`Não foi possível carregar a configuração da unidade: ${error.message}`); return; }
+    setConfigUnidade((data ?? null) as ConfigUnidade | null);
+  }, []);
+
+  const loadModelos = useCallback(async (uid: string) => {
+    if (!uid) { setModelos([]); return; }
+    const { data, error } = await db.from("escala_modelo_semanal")
+      .select("*").eq("unidade_id", uid).order("nome")
+      .then(r => r)
+      .catch((e: unknown) => ({ data: null, error: e }));
+    if (error) { setModelos([]); return; }
+    setModelos((data ?? []) as ModeloSemanal[]);
   }, []);
 
   const loadEscala = useCallback(async (uid: string, ano: number, mes: number) => {
     if (!uid) return;
     setLoading(true);
+    setErroCarregamento(null);
     try {
-      const { data: escalas } = await db.rpc("rpc_escala_listar", { p_unidade_id: uid, p_ano: ano, p_mes: mes });
-      if (escalas && Array.isArray(escalas) && escalas.length > 0) {
-        const escala = escalas[0] as EscalaMensal;
-        setEscalaAtual(escala);
-        // Load ocorrencias
-        const { data: occ } = await db.from("escala_ocorrencia")
-          .select("*").eq("escala_mensal_id", escala.id)
-          .order("data").order("turno");
-        setOcorrencias(occ || []);
-        // Load atrib admin
-        const { data: atb } = await db.from("escala_atribuicao_admin")
-          .select("*").eq("escala_mensal_id", escala.id);
-        setAtribAdmin(atb || []);
-        // Load balanco
-        const { data: bal } = await db.rpc("rpc_escala_balanco_carga", { p_unidade_id: uid, p_ano: ano, p_mes: mes });
-        setBalancoCarga(bal || []);
-      } else {
+      const { data: escalas, error: errEscala } = await db
+        .rpc("rpc_escala_listar", { p_unidade_id: uid, p_ano: ano, p_mes: mes })
+        .then(r => r)
+        .catch((e: unknown) => ({ data: null, error: e }));
+
+      if (errEscala) {
+        setErroCarregamento(`Não foi possível carregar a escala: ${errEscala.message}`);
         setEscalaAtual(null);
         setOcorrencias([]);
         setAtribAdmin([]);
         setBalancoCarga([]);
+        return;
       }
+
+      if (escalas && Array.isArray(escalas) && escalas.length > 0) {
+        const escala = escalas[0] as EscalaMensal;
+        setEscalaAtual(escala);
+
+        const { data: occ, error: errOcc } = await db.from("escala_ocorrencia")
+          .select("*").eq("escala_mensal_id", escala.id)
+          .order("data").order("turno")
+          .then(r => r)
+          .catch((e: unknown) => ({ data: null, error: e }));
+        if (errOcc) {
+          setErroCarregamento(`Ocorrências carregadas com falha: ${errOcc.message}`);
+          setOcorrencias([]);
+        } else {
+          setOcorrencias((occ ?? []) as Ocorrencia[]);
+        }
+
+        const { data: atb, error: errAtb } = await db.from("escala_atribuicao_admin")
+          .select("*").eq("escala_mensal_id", escala.id)
+          .then(r => r)
+          .catch((e: unknown) => ({ data: null, error: e }));
+        if (errAtb) {
+          setErroCarregamento(`Atribuições administrativas carregadas com falha: ${errAtb.message}`);
+          setAtribAdmin([]);
+        } else {
+          setAtribAdmin((atb ?? []) as AtribuicaoAdmin[]);
+        }
+      } else {
+        setEscalaAtual(null);
+        setOcorrencias([]);
+        setAtribAdmin([]);
+      }
+    } catch (e: unknown) {
+      setErroCarregamento(`Não foi possível carregar a escala: ${toError(e).message ?? "erro desconhecido"}`);
     } finally { setLoading(false); }
   }, []);
 
@@ -286,8 +277,18 @@ export function EscalasTab() {
     loadAfastamentos(unidadeSel);
     loadDuplas(unidadeSel);
     loadColaboradores(unidadeSel);
+    loadConfig(unidadeSel);
+    loadModelos(unidadeSel);
     loadEscala(unidadeSel, anoSel, mesSel);
-  }, [unidadeSel, anoSel, mesSel, loadAtividades, loadAfastamentos, loadDuplas, loadColaboradores, loadEscala]);
+  }, [unidadeSel, anoSel, mesSel, loadAtividades, loadAfastamentos, loadDuplas, loadColaboradores, loadConfig, loadModelos, loadEscala]);
+
+  // Balanco de carga calculado no cliente (corrige a divisao inteira da RPC de producao
+  // e inclui colaboradores reached via unidades_adicionais).
+  useEffect(() => {
+    if (!unidadeSel) { setBalancoCarga([]); return; }
+    if (!escalaAtual) { setBalancoCarga([]); return; }
+    setBalancoCarga(calcularBalancoCarga(colaboradores, ocorrencias, unidadeSel, anoSel, mesSel, configUnidade));
+  }, [unidadeSel, escalaAtual, ocorrencias, colaboradores, anoSel, mesSel, configUnidade]);
 
   // ============================================================
   // HELPERS
@@ -338,19 +339,114 @@ export function EscalasTab() {
     } finally { setSaving(false); }
   }
 
+  /**
+   * Gera as ocorrencias do mes no cliente (motor em `geradorEscala`).
+   *
+   * NAO chamamos `rpc_escala_gerar_do_modelo` aqui de proposito: a versao de
+   * producao atribui apenas o primeiro responsavel, ignora `profissionais_minimos`,
+   * `exige_2_pessoas`, afastamentos, lotacao e as colunas de admin do modelo.
+   * Gerar no cliente evita escrita dupla (RPC + inserts).
+   */
   async function gerarDoModelo(modeloId: string) {
     if (!escalaAtual) return;
+    const modelo = modelos.find((m) => m.id === modeloId);
+    if (!modelo) {
+      toast({ title: "Modelo não encontrado", description: "Selecione um modelo semanal válido.", variant: "destructive" });
+      return;
+    }
+
     setSaving(true);
     try {
-      const { data, error } = await db.rpc("rpc_escala_gerar_do_modelo", {
-        p_escala_mensal_id: escalaAtual.id, p_modelo_id: modeloId, p_ano: anoSel, p_mes: mesSel,
+      const resultado = gerarOcorrencias({
+        escalaMensalId: escalaAtual.id,
+        unidadeId: unidadeSel,
+        ano: anoSel,
+        mes: mesSel,
+        modelo,
+        atividades,
+        colaboradores,
+        afastamentos,
+        config: configUnidade,
+        existentes: ocorrencias,
       });
-      if (error || (data && (data as any).error)) {
-        toast({ title: "Erro ao gerar", description: (error?.message || (data as any)?.error), variant: "destructive" });
-      } else {
-        toast({ title: "Gerado!", description: (data as any)?.message });
-        loadEscala(unidadeSel, anoSel, mesSel);
+
+      if (resultado.ocorrencias.length === 0) {
+        toast({
+          title: "Nada a gerar",
+          description: resultado.avisos[0] || "O modelo não produziu nenhuma ocorrência nova para este mês.",
+          variant: "destructive",
+        });
+        if (resultado.avisos.length > 0) setAvisosGeracao(resultado.avisos);
+        return;
       }
+
+      const linhasOcorrencia = resultado.ocorrencias.map((oc) => ({
+        escala_mensal_id: oc.escala_mensal_id,
+        escala_mensal_unidade_id: oc.escala_mensal_unidade_id,
+        data: oc.data,
+        turno: oc.turno,
+        atividade_id: oc.atividade_id,
+        atividade_nome: oc.atividade_nome,
+        horario_inicio: oc.horario_inicio,
+        duracao_min: oc.duracao_min,
+        responsavel_id: oc.responsavel_id,
+        responsavel_nome: oc.responsavel_nome,
+        apoiantes_ids: oc.apoiantes_ids ?? [],
+        apoiantes_nomes: oc.apoiantes_nomes ?? [],
+        fixa: oc.fixa,
+        situacao: oc.situacao,
+        observacao: oc.observacao,
+      }));
+
+      const { error: errOcc } = await db
+        .from("escala_ocorrencia")
+        .insert(linhasOcorrencia)
+        .then(r => r)
+        .catch((e: unknown) => ({ data: null, error: e }));
+
+      if (errOcc) {
+        toast({ title: "Erro ao inserir ocorrências", description: errOcc.message, variant: "destructive" });
+        return;
+      }
+
+      // Atribuicoes administrativas definidas no modelo semanal.
+      if (resultado.atribuicoesAdmin.length > 0) {
+        const linhasAdmin = resultado.atribuicoesAdmin.map((a) => ({
+          escala_mensal_id: a.escala_mensal_id,
+          escala_mensal_unidade_id: a.escala_mensal_unidade_id,
+          perfil_id: a.perfil_id,
+          tipo: a.tipo,
+          data_inicio: a.data_inicio,
+          data_fim: a.data_fim,
+          dedicacao_semanal_horas: a.dedicacao_semanal_horas ?? 0,
+          fixa: a.fixa,
+          observacao: a.observacao,
+        }));
+        const { error: errAdmin } = await db
+          .from("escala_atribuicao_admin")
+          .insert(linhasAdmin)
+          .then(r => r)
+          .catch((e: unknown) => ({ data: null, error: e }));
+        if (errAdmin) {
+          toast({ title: "Ocorrências geradas", description: `Mas as atribuições administrativas falharam: ${errAdmin.message}`, variant: "destructive" });
+        }
+      }
+
+      // Atualiza os contadores da escala mensal.
+      const totalOcorrencias = resultado.ocorrencias.length + ocorrencias.length;
+      await db.from("escala_mensal").update({
+        modelo_usado: modelo.id,
+        total_ocorrencias: totalOcorrencias,
+      }).eq("id", escalaAtual.id);
+
+      setAvisosGeracao(resultado.avisos);
+      toast({
+        title: "Escala gerada!",
+        description: `${resultado.totalInseridas} ocorrência(s) criada(s) a partir de "${modelo.nome}".`,
+      });
+      loadEscala(unidadeSel, anoSel, mesSel);
+    } catch (e: unknown) {
+      toast({ title: "Erro ao gerar", description: toError(e).message ?? "Falha inesperada.", variant: "destructive" });
     } finally { setSaving(false); }
   }
 
@@ -362,8 +458,41 @@ export function EscalasTab() {
       const { error } = await db.from("escala_mensal").update({
         status: "publicada", publicados_por: user?.id, publicado_em: new Date().toISOString(),
       }).eq("id", escalaAtual.id);
-      if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); }
-      else { toast({ title: "Publicada!", description: "Colaboradores serão notificados." }); loadEscala(unidadeSel, anoSel, mesSel); }
+      if (error) {
+        toast({ title: "Erro", description: error.message, variant: "destructive" });
+        return;
+      }
+
+      // Registra a versao publicada em escala_versoes (auditoria).
+      const { data: versoes, error: errVersoes } = await db
+        .from("escala_versoes")
+        .select("id")
+        .eq("escala_mensal_id", escalaAtual.id)
+        .then(r => r)
+        .catch((e: unknown) => ({ data: null, error: e }));
+      if (!errVersoes) {
+        const proxima = (versoes ?? []).length + 1;
+        const { error: errIns } = await db.from("escala_versoes").insert({
+          escala_mensal_id: escalaAtual.id,
+          versao: proxima,
+          status: "publicada",
+          alterado_por: user?.id,
+          alteracoes: {
+            publicacao: true,
+            total_ocorrencias: ocorrencias.length,
+            ano: escalaAtual.ano,
+            mes: escalaAtual.mes,
+          },
+        }).then(r => r).catch((e: unknown) => ({ data: null, error: e }));
+        if (errIns) {
+          toast({ title: "Publicada", description: `Escala publicada, mas o registro de versão falhou: ${errIns.message}`, variant: "destructive" });
+          loadEscala(unidadeSel, anoSel, mesSel);
+          return;
+        }
+      }
+
+      toast({ title: "Publicada!", description: "Colaboradores serão notificados." });
+      loadEscala(unidadeSel, anoSel, mesSel);
     } finally { setSaving(false); }
   }
 
@@ -560,11 +689,47 @@ export function EscalasTab() {
     setFormSubstituicao({ substituto_id: "", motivo_operacional: "" });
     setSugestoes([]);
     setDlgSubstituir(true);
-    // Load suggestions
-    const { data } = await db.rpc("rpc_escala_sugerir_substituicao", {
+
+    // Sugestoes: tenta a RPC de producao e cai para o calculo local quando
+    // ela falha ou nao devolve candidatos (ex.: sem habilitacoes cadastradas).
+    const { data, error } = await db.rpc("rpc_escala_sugerir_substituicao", {
       p_ocorrencia_id: oc.id, p_excluir_profile_id: oc.responsavel_id,
-    }).then(r => r).catch(() => ({ data: null }));
-    if (data && (data as any).candidates) setSugestoes((data as any).candidates);
+    }).then(r => r).catch((e: unknown) => ({ data: null, error: e }));
+
+    const resposta = data as {
+      candidates?: { profile_id: string; nome: string }[];
+      success?: boolean;
+      error?: string;
+    } | null;
+    const candidatosRpc = resposta?.candidates;
+    const sucessoRpc = resposta?.success;
+
+    if (candidatosRpc && Array.isArray(candidatosRpc) && candidatosRpc.length > 0) {
+      setSugestoes(candidatosRpc);
+      return;
+    }
+
+    // Fallback local.
+    const { data: habs } = await db.from("escala_habilitacoes")
+      .select("atividade_id, profile_id")
+      .then(r => r)
+      .catch(() => ({ data: null }));
+    const locais = sugerirSubstituicaoCliente(
+      oc,
+      colaboradores,
+      (habs ?? []) as Habilitacao[],
+      afastamentos,
+      unidadeSel,
+      cargaPorColaborador(ocorrencias),
+      ocorrencias,
+    );
+    setSugestoes(locais);
+
+    if (locais.length === 0 && error) {
+      toast({ title: "Sem sugestões", description: `A RPC falhou (${error.message}) e não há candidatos locais.`, variant: "destructive" });
+    } else if (locais.length === 0 && sucessoRpc === false) {
+      toast({ title: "Sem sugestões", description: "Nenhum colaborador habilitado e disponível para esta ocorrência.", variant: "destructive" });
+    }
   }
 
   async function confirmarSubstituicao() {
@@ -920,12 +1085,34 @@ export function EscalasTab() {
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList className="h-auto flex-wrap">
             <TabsTrigger value="escala">Escala</TabsTrigger>
+            <TabsTrigger value="modelos">Modelos</TabsTrigger>
             <TabsTrigger value="atividades">Atividades</TabsTrigger>
+            <TabsTrigger value="habilitacoes">Habilitações</TabsTrigger>
             <TabsTrigger value="afastamentos">Afastamentos</TabsTrigger>
             <TabsTrigger value="cobertura">Coberturas</TabsTrigger>
             <TabsTrigger value="admin">Atrib. Admin</TabsTrigger>
             {isAdmin && <TabsTrigger value="config">Config</TabsTrigger>}
           </TabsList>
+
+          {/* Erro de carregamento (banner) */}
+          {erroCarregamento && (
+            <div className="mt-3 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800 flex items-start justify-between gap-3">
+              <span>{erroCarregamento}</span>
+              <Button size="sm" variant="outline" onClick={() => {
+                setErroCarregamento(null);
+                loadUnidades();
+                if (unidadeSel) {
+                  loadAtividades(unidadeSel);
+                  loadAfastamentos(unidadeSel);
+                  loadDuplas(unidadeSel);
+                  loadColaboradores(unidadeSel);
+                  loadConfig(unidadeSel);
+                  loadModelos(unidadeSel);
+                  loadEscala(unidadeSel, anoSel, mesSel);
+                }
+              }}>Tentar novamente</Button>
+            </div>
+          )}
 
           {/* TAB: ESCALA */}
           <TabsContent value="escala" className="mt-4 space-y-4">
@@ -957,12 +1144,20 @@ export function EscalasTab() {
                 {isAdmin && escalaAtual.status === "rascunho" && (
                   <div className="flex gap-2 items-center">
                     <span className="text-sm text-muted-foreground">Gerar de modelo:</span>
-                    <Button size="sm" variant="outline" onClick={() => {
-                      const modeloId = window.prompt("ID do modelo semanal (ou deixe vazio para apenas criar vazia):");
-                      if (modeloId !== null) gerarDoModelo(modeloId || "00000000-0000-0000-0000-000000000000");
-                    }} disabled={saving}>
+                    <Button size="sm" variant="outline" onClick={() => setDlgSeletorModelo(true)} disabled={saving}>
                       <RefreshCw className="h-4 w-4 mr-1" /> Gerar do modelo
                     </Button>
+                  </div>
+                )}
+                {avisosGeracao.length > 0 && (
+                  <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+                    <div className="font-medium mb-1">Avisos da geração ({avisosGeracao.length})</div>
+                    <ul className="list-disc pl-4 space-y-0.5">
+                      {avisosGeracao.slice(0, 8).map((a, i) => <li key={i}>{a}</li>)}
+                    </ul>
+                    {avisosGeracao.length > 8 && (
+                      <div className="mt-1 italic">… e mais {avisosGeracao.length - 8} aviso(s).</div>
+                    )}
                   </div>
                 )}
                 {viewMode === "mensal" && renderMonthlyView()}
@@ -970,6 +1165,18 @@ export function EscalasTab() {
                 {viewMode === "colaborador" && renderColaboradorView()}
               </>
             )}
+          </TabsContent>
+
+          {/* TAB: MODELOS SEMANAIS */}
+          <TabsContent value="modelos" className="mt-4">
+            <ModelosSemanaisTab
+              unidadeId={unidadeSel}
+              unidadeNome={unidadeNome}
+              atividades={atividades}
+              colaboradores={colaboradores}
+              isAdmin={isAdmin}
+              onModelosCarregados={(lista) => setModelos(lista)}
+            />
           </TabsContent>
 
           {/* TAB: ATIVIDADES */}
@@ -1000,6 +1207,17 @@ export function EscalasTab() {
                 </div>
               ))}
             </div>
+          </TabsContent>
+
+          {/* TAB: HABILITACOES */}
+          <TabsContent value="habilitacoes" className="mt-4">
+            <HabilitacoesTab
+              unidadeId={unidadeSel}
+              unidadeNome={unidadeNome}
+              atividades={atividades}
+              colaboradores={colaboradores}
+              isAdmin={isAdmin}
+            />
           </TabsContent>
 
           {/* TAB: AFASTAMENTOS */}
@@ -1098,21 +1316,11 @@ export function EscalasTab() {
 
           {/* TAB: CONFIG */}
           <TabsContent value="config" className="mt-4">
-            <Card>
-              <CardHeader><CardTitle>Configuração da Unidade</CardTitle></CardHeader>
-              <CardContent className="text-sm text-muted-foreground space-y-2">
-                <p>Configure horários de funcionamento, tolerância, limites de cobertura e carga máxima semanal.</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><strong>Manhã:</strong> 08:00 — 12:00</div>
-                  <div><strong>Tarde:</strong> 13:00 — 17:00</div>
-                  <div><strong>Dias de funcionamento:</strong> Seg-Sex</div>
-                  <div><strong>Tolerância:</strong> 5 minutos</div>
-                  <div><strong>Máx. coberturas/mês:</strong> 5 por pessoa</div>
-                  <div><strong>Carga máx. semanal:</strong> 40h</div>
-                </div>
-                <p className="text-xs italic pt-2">Configuração completa via migration (escala_config_unidade). Interface de edição completa em breve.</p>
-              </CardContent>
-            </Card>
+            <ConfigEscalasTab
+              unidadeId={unidadeSel}
+              unidadeNome={unidadeNome}
+              isAdmin={isAdmin}
+            />
           </TabsContent>
         </Tabs>
       )}
@@ -1492,6 +1700,18 @@ export function EscalasTab() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog: Seletor de modelo semanal (substitui o prompt de UUID) */}
+      <SeletorModeloDialog
+        open={dlgSeletorModelo}
+        onOpenChange={setDlgSeletorModelo}
+        modelos={modelos}
+        onRecarregar={() => loadModelos(unidadeSel)}
+        onSelecionar={(modelo) => {
+          setDlgSeletorModelo(false);
+          gerarDoModelo(modelo.id);
+        }}
+      />
     </div>
   );
 }

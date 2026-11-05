@@ -15,6 +15,7 @@ import { LilyProvider } from "./components/lily/LilyContext";
 import { LilyFloat } from "./components/lily/LilyFloat";
 import { LilyChat } from "./components/lily/LilyChat";
 import { LilyTutorialManager } from "./components/lily/LilyTutorialManager";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const queryClient = new QueryClient();
 
@@ -25,17 +26,19 @@ const App = () => (
       <Sonner />
       <LilyProvider>
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/agendar" element={<Agendar />} />
-            <Route path="/minha-escola" element={<MinhaEscola />} />
-            <Route path="/perfil" element={<Perfil />} />
-            <Route path="/admin" element={<Admin />} />
-            <Route path="/ajuda" element={<Ajuda />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <ErrorBoundary label="a aplicação">
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/agendar" element={<Agendar />} />
+              <Route path="/minha-escola" element={<MinhaEscola />} />
+              <Route path="/perfil" element={<Perfil />} />
+              <Route path="/admin" element={<Admin />} />
+              <Route path="/ajuda" element={<Ajuda />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </ErrorBoundary>
           <LilyFloat />
           <LilyChat />
           <LilyTutorialManager />

@@ -22,6 +22,7 @@ import { AccessRequestsTab } from "@/components/admin/AccessRequestsTab";
 import { MensagensTab } from "@/components/admin/MensagensTab";
 import { EscalasTab } from "@/components/admin/EscalasTab";
 import { ScreenHelpButton } from "@/components/lily/ScreenHelpButton";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export default function Admin() {
   const { user, loading, isAdmin, isOperador, isLogistica, isStaff, isPendingUser, roles } = useRoles();
@@ -84,64 +85,94 @@ export default function Admin() {
               <TabsTrigger value="mensagens">Mensagens</TabsTrigger>
             </TabsList>
             <TabsContent value="dashboard" className="mt-4">
-              <div className="flex justify-end mb-2"><ScreenHelpButton screenName="Dashboard" /></div>
-              <DashboardTab />
+              <ErrorBoundary label="Dashboard">
+                <div className="flex justify-end mb-2"><ScreenHelpButton screenName="Dashboard" /></div>
+                <DashboardTab />
+              </ErrorBoundary>
             </TabsContent>
             <TabsContent value="agendamentos" className="mt-4">
-              <div className="flex justify-end mb-2"><ScreenHelpButton screenName="Agendamentos" /></div>
-              <AgendamentosTab podeEditar={isOperador} />
+              <ErrorBoundary label="Agendamentos">
+                <div className="flex justify-end mb-2"><ScreenHelpButton screenName="Agendamentos" /></div>
+                <AgendamentosTab podeEditar={isOperador} />
+              </ErrorBoundary>
             </TabsContent>
             <TabsContent value="disponibilidade" className="mt-4">
-              <div className="flex justify-end mb-2"><ScreenHelpButton screenName="Disponibilidade" /></div>
-              <DisponibilidadeTab />
+              <ErrorBoundary label="Disponibilidade">
+                <div className="flex justify-end mb-2"><ScreenHelpButton screenName="Disponibilidade" /></div>
+                <DisponibilidadeTab />
+              </ErrorBoundary>
             </TabsContent>
             <TabsContent value="regras" className="mt-4">
-              <div className="flex justify-end mb-2"><ScreenHelpButton screenName="Regras" /></div>
-              <DisponibilidadeAdminTab />
+              <ErrorBoundary label="Regras">
+                <div className="flex justify-end mb-2"><ScreenHelpButton screenName="Regras" /></div>
+                <DisponibilidadeAdminTab />
+              </ErrorBoundary>
             </TabsContent>
             <TabsContent value="noticias" className="mt-4">
-              <div className="flex justify-end mb-2"><ScreenHelpButton screenName="Notícias" /></div>
-              <NoticiasTab podeEditar={isOperador} />
+              <ErrorBoundary label="Notícias">
+                <div className="flex justify-end mb-2"><ScreenHelpButton screenName="Notícias" /></div>
+                <NoticiasTab podeEditar={isOperador} />
+              </ErrorBoundary>
             </TabsContent>
             <TabsContent value="logs" className="mt-4">
-              <div className="flex justify-end mb-2"><ScreenHelpButton screenName="Logs" /></div>
-              <LogsTab />
+              <ErrorBoundary label="Logs">
+                <div className="flex justify-end mb-2"><ScreenHelpButton screenName="Logs" /></div>
+                <LogsTab />
+              </ErrorBoundary>
             </TabsContent>
             <TabsContent value="os" className="mt-4">
-              <div className="flex justify-end mb-2"><ScreenHelpButton screenName="Ordens de Serviço" /></div>
-              <OrdensTab podeOperar={isOperador} podeLogistica={isLogistica} />
+              <ErrorBoundary label="Ordens de Serviço">
+                <div className="flex justify-end mb-2"><ScreenHelpButton screenName="Ordens de Serviço" /></div>
+                <OrdensTab podeOperar={isOperador} podeLogistica={isLogistica} />
+              </ErrorBoundary>
             </TabsContent>
             <TabsContent value="transporte" className="mt-4">
-              <div className="flex justify-end mb-2"><ScreenHelpButton screenName="OS Transporte" /></div>
-              <OSTransporteTab podeEditar={isLogistica} />
+              <ErrorBoundary label="OS Transporte">
+                <div className="flex justify-end mb-2"><ScreenHelpButton screenName="OS Transporte" /></div>
+                <OSTransporteTab podeEditar={isLogistica} />
+              </ErrorBoundary>
             </TabsContent>
             <TabsContent value="escolas" className="mt-4">
-              <div className="flex justify-end mb-2"><ScreenHelpButton screenName="Instituições" /></div>
-              <EscolasTab podeEditar={isOperador} />
+              <ErrorBoundary label="Instituições">
+                <div className="flex justify-end mb-2"><ScreenHelpButton screenName="Instituições" /></div>
+                <EscolasTab podeEditar={isOperador} />
+              </ErrorBoundary>
             </TabsContent>
             <TabsContent value="estoque" className="mt-4">
-              <div className="flex justify-end mb-2"><ScreenHelpButton screenName="Estoque" /></div>
-              <EstoqueTab podeEditar={isOperador} />
+              <ErrorBoundary label="Estoque">
+                <div className="flex justify-end mb-2"><ScreenHelpButton screenName="Estoque" /></div>
+                <EstoqueTab podeEditar={isOperador} />
+              </ErrorBoundary>
             </TabsContent>
             <TabsContent value="relatorios" className="mt-4">
-              <div className="flex justify-end mb-2"><ScreenHelpButton screenName="Relatórios" /></div>
-              <RelatoriosTab />
+              <ErrorBoundary label="Relatórios">
+                <div className="flex justify-end mb-2"><ScreenHelpButton screenName="Relatórios" /></div>
+                <RelatoriosTab />
+              </ErrorBoundary>
             </TabsContent>
             {isAdmin && <TabsContent value="solicitacoes" className="mt-4">
-              <div className="flex justify-end mb-2"><ScreenHelpButton screenName="Solicitações" /></div>
-              <AccessRequestsTab />
+              <ErrorBoundary label="Solicitações">
+                <div className="flex justify-end mb-2"><ScreenHelpButton screenName="Solicitações" /></div>
+                <AccessRequestsTab />
+              </ErrorBoundary>
             </TabsContent>}
             {isAdmin && <TabsContent value="usuarios" className="mt-4">
-              <div className="flex justify-end mb-2"><ScreenHelpButton screenName="Usuários" /></div>
-              <UsuariosTab meuId={user?.id} />
+              <ErrorBoundary label="Usuários">
+                <div className="flex justify-end mb-2"><ScreenHelpButton screenName="Usuários" /></div>
+                <UsuariosTab meuId={user?.id} />
+              </ErrorBoundary>
             </TabsContent>}
             {isAdmin && <TabsContent value="escalas" className="mt-4">
-              <div className="flex justify-end mb-2"><ScreenHelpButton screenName="Escalas" /></div>
-              <EscalasTab />
+              <ErrorBoundary label="Escalas">
+                <div className="flex justify-end mb-2"><ScreenHelpButton screenName="Escalas" /></div>
+                <EscalasTab />
+              </ErrorBoundary>
             </TabsContent>}
             <TabsContent value="mensagens" className="mt-4">
-              <div className="flex justify-end mb-2"><ScreenHelpButton screenName="Mensagens" /></div>
-              <MensagensTab />
+              <ErrorBoundary label="Mensagens">
+                <div className="flex justify-end mb-2"><ScreenHelpButton screenName="Mensagens" /></div>
+                <MensagensTab />
+              </ErrorBoundary>
             </TabsContent>
           </Tabs>
         </div>

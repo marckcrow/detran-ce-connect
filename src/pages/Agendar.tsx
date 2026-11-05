@@ -208,10 +208,20 @@ export default function Agendar() {
         isStaff
           ? (supabase as any).from("instituicoes").select("*").order("nome")
           : (async () => {
-              // innerJoin not supported in Supabase JS v2 — use 2-step: fetch IDs first, then rows
+              // innerJoin not supported in Supabase JS v2 — use 2-step: fetch IDs first, then rows.
+              // A tabela instituicao_access (multi-escola) pode nao existir em producao:
+              // nesse caso caimos para o vinculo unico profiles.instituicao_id.
               const accessRows = await (supabase as any)
                 .from("instituicao_access").select("instituicao_id")
                 .eq("user_id", user.id);
+              if (accessRows.error) {
+                const perfil = await (supabase as any)
+                  .from("profiles").select("instituicao_id").eq("id", user.id).maybeSingle();
+                const instId = perfil.data?.instituicao_id;
+                if (!instId) return { data: [], error: null };
+                return (supabase as any).from("instituicoes")
+                  .select("instituicoes.*").eq("id", instId).order("nome");
+              }
               if (!accessRows.data?.length) return { data: [], error: null };
               const ids = accessRows.data.map((r: any) => r.instituicao_id);
               return (supabase as any).from("instituicoes")
@@ -423,14 +433,26 @@ export default function Agendar() {
           p_data: dateStr,
         });
         if (!limiteErr && limiteData) {
-          const result = limiteData as { pode_agendar: boolean; contagem_atual: number; limite: number };
-          if (!result.pode_agendar) {
+          // A funcao de producao retorna OUT params: dentro_limite / agendamentos_atuais /
+          // maximo_permitido. Versoes antigas retornavam pode_agendar / contagem_atual / limite.
+          // Aceitamos ambos os contratos para nao bloquear o agendamento indevidamente.
+          const bruto = limiteData as Record<string, unknown>;
+          const podeAgendar =
+            typeof bruto.pode_agendar === "boolean"
+              ? bruto.pode_agendar
+              : typeof bruto.dentro_limite === "boolean"
+                ? bruto.dentro_limite
+                : true;
+          const contagemAtual = Number(bruto.contagem_atual ?? bruto.agendamentos_atuais ?? 0);
+          const limite = Number(bruto.limite ?? bruto.maximo_permitido ?? 0);
+
+          if (!podeAgendar) {
             errors.push(
-              `Sua instituição já atingiu o limite de ${result.limite} agendamento(s) por ${centroConfig.periodo_limite === 'mes' ? 'mês' : 'semana'} neste centro. (Atual: ${result.contagem_atual})`
+              `Sua instituição já atingiu o limite de ${limite || "?"} agendamento(s) por ${centroConfig.periodo_limite === 'mes' ? 'mês' : 'semana'} neste centro. (Atual: ${contagemAtual})`
             );
-          } else if (result.contagem_atual > 0) {
+          } else if (contagemAtual > 0) {
             warnings.push(
-              `Sua instituição tem ${result.contagem_atual}/${result.limite} agendamento(s) usado(s) neste período.`
+              `Sua instituição tem ${contagemAtual}/${limite || "?"} agendamento(s) usado(s) neste período.`
             );
           }
         }

@@ -81,7 +81,7 @@ export default function Auth() {
           // Update profile (whatsapp column may not exist yet — ignore error)
           const profileUpdate: any = { nome, telefone };
           if (isWhatsApp && telefone) profileUpdate.whatsapp = telefone;
-          await (supabase as any).from("profiles").update(profileUpdate).eq("id", existingUser.user.id).catch((e: any) => {
+          await (supabase as any).from("profiles").update(profileUpdate).eq("id", existingUser.user.id).then(r => r).catch((e: any) => {
             console.warn('Profile update failed (whatsapp col may not exist):', e.message);
           });
 
@@ -140,7 +140,7 @@ export default function Auth() {
     if (data.user) {
       const profileUpdate: any = { nome, telefone };
       if (isWhatsApp && telefone) profileUpdate.whatsapp = telefone;
-      await (supabase as any).from("profiles").update(profileUpdate).eq("id", data.user.id).catch((e: any) => {
+      await (supabase as any).from("profiles").update(profileUpdate).eq("id", data.user.id).then(r => r).catch((e: any) => {
         console.warn('Profile update warning:', e.message);
       });
 

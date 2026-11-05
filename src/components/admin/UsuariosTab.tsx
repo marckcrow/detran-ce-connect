@@ -30,6 +30,39 @@ type UserRow = {
   unidades_adicionais: string[];
 };
 
+// Production `profiles` may be missing optional columns (e.g. `email` on schemas
+// created before 20261026_complete_deploy.sql). PostgREST rejects the WHOLE
+// select with "column does not exist" if a single column is unknown, which used
+// to blank out the entire user list. Try progressively narrower column sets so
+// the admin screen always renders, preferring the richest one that works.
+const PROFILES_SELECT_CANDIDATES = [
+  "id, nome, email, telefone, whatsapp, instituicoes(nome), lotacao_unidade_id, unidades_adicionais",
+  "id, nome, email, telefone, whatsapp, lotacao_unidade_id, unidades_adicionais",
+  "id, nome, telefone, whatsapp, instituicoes(nome), lotacao_unidade_id, unidades_adicionais",
+  "id, nome, telefone, whatsapp, lotacao_unidade_id, unidades_adicionais",
+  "id, nome, telefone, lotacao_unidade_id",
+  "id, nome",
+];
+
+const isMissingColumnError = (message: string) =>
+  /column|does not exist|PGRST204|42703/i.test(message);
+
+async function loadProfilesRows(): Promise<{ rows: UserRow[] | null; error: string | null }> {
+  let lastError = "Erro desconhecido ao carregar usuarios.";
+  for (const cols of PROFILES_SELECT_CANDIDATES) {
+    try {
+      const { data, error } = await db.from("profiles").select(cols).order("nome");
+      if (!error) return { rows: (data ?? []) as UserRow[], error: null };
+      lastError = error.message;
+      if (!isMissingColumnError(error.message)) break;
+    } catch (e: any) {
+      lastError = e?.message ?? lastError;
+      break;
+    }
+  }
+  return { rows: null, error: lastError };
+}
+
 export function UsuariosTab({ meuId }: { meuId?: string }) {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [usersLoaded, setUsersLoaded] = useState(false);
@@ -64,46 +97,28 @@ export function UsuariosTab({ meuId }: { meuId?: string }) {
   const load = useCallback(async () => {
     // Load all data in parallel — with fallback for missing RPCs
     const [profilesResult, rolesResult, unidadesResult, unidadesResult2, cfgResult] = await Promise.allSettled([
-      db.from("profiles")
-        .select("id, nome, email, telefone, whatsapp, instituicoes(nome), lotacao_unidade_id, unidades_adicionais")
-        .order("nome"),
+      loadProfilesRows(),
       db.from("user_roles").select("*"),
       db.rpc("rpc_unidades_list").then(r => r).catch(() => null), // fallback: returns null if RPC doesn't exist
       db.from("unidades").select("id, nome, sigla, cidade, macrorregiao").order("nome").then(r => r).catch(() => null), // direct table fallback
       db.from("config_sistema").select("*").eq("id", 1).maybeSingle(),
     ]);
 
-    // Profiles — try main query, fallback without instituicoes join if it fails
-    let usersLoadedSuccessfully = false;
-    
-    if (profilesResult.status === 'fulfilled' && profilesResult.value?.data && Array.isArray(profilesResult.value.data) && profilesResult.value.data.length > 0) {
-      setUsers(profilesResult.value.data as UserRow[]);
-      usersLoadedSuccessfully = true;
-      console.log(`[UsuariosTab] Main query loaded ${profilesResult.value.data.length} users`);
-    } else {
-      // Fallback: load profiles WITHOUT the instituicoes join (may fail due to RLS on instituicoes table)
-      console.warn('[UsuariosTab] Main profiles query failed/empty, trying fallback without instituicoes join...');
-      console.warn('[UsuariosTab] Main query status:', profilesResult.status, 'error:', (profilesResult as any).reason?.message ?? 'N/A');
-      try {
-        const { data: fallbackProfiles, error: fallbackError } = await db.from("profiles")
-          .select("id, nome, email, telefone, whatsapp, lotacao_unidade_id, unidades_adicionais")
-          .order("nome");
-        if (fallbackError) {
-          console.error('[UsuariosTab] Fallback profiles query also failed:', fallbackError.message, fallbackError.code, fallbackError.hint);
-          setUsersError(`Erro DB: ${fallbackError.message}`);
-        }
-        if (fallbackProfiles && Array.isArray(fallbackProfiles) && fallbackProfiles.length > 0) {
-          console.log(`[UsuariosTab] Fallback loaded ${fallbackProfiles.length} users`);
-          setUsers(fallbackProfiles as UserRow[]);
-          usersLoadedSuccessfully = true;
-        } else {
-          setUsers([]);
-        }
-      } catch (e: any) {
-        console.error('[UsuariosTab] Error in fallback profiles load:', e);
-        setUsersError(`Exception: ${e.message}`);
+    // Profiles — resilient loader already tried narrower column sets on failure
+    if (profilesResult.status === 'fulfilled') {
+      const { rows, error } = profilesResult.value;
+      if (rows) {
+        setUsers(rows);
+        setUsersError(null);
+      } else {
+        console.error('[UsuariosTab] profiles query failed:', error);
+        setUsersError(`Erro ao carregar usuarios: ${error}`);
         setUsers([]);
       }
+    } else {
+      console.error('[UsuariosTab] profiles loader threw:', profilesResult.reason);
+      setUsersError(`Erro ao carregar usuarios: ${(profilesResult.reason as any)?.message ?? 'falha inesperada'}`);
+      setUsers([]);
     }
     
     setUsersLoaded(true);
@@ -141,33 +156,42 @@ export function UsuariosTab({ meuId }: { meuId?: string }) {
 
   useEffect(() => { load(); }, [load]);
 
+  // Re-fetch unidades when the create dialog opens (in case the initial load failed).
+  // NOTE: this MUST live at the component top level — a hook inside an event
+  // handler breaks the Rules of Hooks and crashes React on every role toggle.
+  useEffect(() => {
+    if (!createOpen) return;
+    if (unidadesLoaded && unidades.length > 0) return;
+
+    (async () => {
+      try {
+        const { data: rpcData } = await db
+          .rpc("rpc_unidades_list")
+          .then(r => r)
+          .catch(() => ({ data: null }));
+        if (rpcData && Array.isArray(rpcData) && rpcData.length > 0) {
+          setUnidades(rpcData as Unidade[]);
+          setUnidadesLoaded(true);
+          return;
+        }
+        const { data: tableData } = await db
+          .from("unidades")
+          .select("id, nome, sigla, cidade, macrorregiao")
+          .order("nome");
+        if (tableData && Array.isArray(tableData) && tableData.length > 0) {
+          setUnidades(tableData as Unidade[]);
+          setUnidadesLoaded(true);
+        }
+      } catch (e) {
+        console.error('[UsuariosTab] Error re-fetching unidades:', e);
+      }
+    })();
+  }, [createOpen, unidadesLoaded, unidades.length]);
+
   const toggle = async (uid: string, role: string, tem: boolean) => {
     if (uid === meuId && role === "admin" && tem) {
       return toast({ title: "Você não pode remover seu próprio acesso de administrador", variant: "destructive" });
     }
-
-  // Re-fetch unidades when create dialog opens (in case initial load failed)
-  useEffect(() => {
-    if (createOpen && (!unidadesLoaded || unidades.length === 0)) {
-      (async () => {
-        try {
-          const { data: rpcData } = await db.rpc("rpc_unidades_list").catch(() => ({ data: null }));
-          if (rpcData && Array.isArray(rpcData) && rpcData.length > 0) {
-            setUnidades(rpcData as Unidade[]);
-            setUnidadesLoaded(true);
-            return;
-          }
-          const { data: tableData } = await db.from("unidades").select("id, nome, sigla, cidade, macrorregiao").order("nome");
-          if (tableData && Array.isArray(tableData) && tableData.length > 0) {
-            setUnidades(tableData as Unidade[]);
-            setUnidadesLoaded(true);
-          }
-        } catch (e) {
-          console.error('[UsuariosTab] Error re-fetching unidades:', e);
-        }
-      })();
-    }
-  }, [createOpen]);
     if (tem && role === "admin") {
       const { data: allAdminRoles } = await db.from("user_roles").select("user_id").eq("role", "admin");
       if ((allAdminRoles ?? []).length <= 1) {
@@ -247,7 +271,7 @@ export function UsuariosTab({ meuId }: { meuId?: string }) {
           unidades_adicionais_anteriores: lotacaoUser.unidades_adicionais ?? [],
           unidades_adicionais_novas: lotacaoForm.unidades_adicionais,
           motivo: 'Fallback direct update',
-        }).catch(() => {}); // ignore audit errors
+        }).then(r => r).catch(() => {}); // ignore audit errors
       } catch {}
     }
 

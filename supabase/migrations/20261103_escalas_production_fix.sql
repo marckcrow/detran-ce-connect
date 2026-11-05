@@ -17,7 +17,7 @@
 --   2. Paste this ENTIRE file
 --   3. Click "Run" (or Ctrl+Enter)
 --   4. Wait for "Success" or "Query executed successfully"
---   5. Refresh https://detran-ce-connect.vercel.app → Admin → Escalas
+--   5. Refresh https://detran-ce-connect.vercel.app -> Admin -> Escalas
 -- ============================================================
 
 BEGIN;
@@ -29,7 +29,7 @@ DO $$ BEGIN CREATE TYPE public.app_role AS ENUM ('admin','instituicao','operador
 DO $$ BEGIN CREATE TYPE public.os_status AS ENUM ('rascunho','solicitado','confirmado','programado','em_andamento','realizado','cancelado','nao_realizado'); EXCEPTION WHEN OTHERS THEN RAISE NOTICE 'enum os_status exists'; END $$;
 
 -- ============================================================
--- PHASE 2: CORE FUNCTIONS (idempotent — used by RPCs and RLS)
+-- PHASE 2: CORE FUNCTIONS (idempotent -- used by RPCs and RLS)
 -- ============================================================
 
 CREATE OR REPLACE FUNCTION public.is_admin(uid uuid)
@@ -38,17 +38,17 @@ DECLARE v_is_admin boolean;
 BEGIN SELECT exists(SELECT 1 FROM public.user_roles WHERE user_id = uid AND role = 'admin') INTO v_is_admin; RETURN coalesce(v_is_admin, false); END;
 $$;
 
-CREATE OR REPLACE FUNCTION public.is_staff(_uid uuid)
+CREATE OR REPLACE FUNCTION public.is_staff(uid uuid)
 RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN RETURN exists(SELECT 1 FROM public.user_roles WHERE user_id = _uid AND role IN ('admin','logistica')); END;
+BEGIN RETURN exists(SELECT 1 FROM public.user_roles WHERE user_id = uid AND role IN ('admin','logistica')); END;
 $$;
 
-CREATE OR REPLACE FUNCTION public.is_operador(_uid uuid)
+CREATE OR REPLACE FUNCTION public.is_operador(uid uuid)
 RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN RETURN exists(SELECT 1 FROM public.user_roles WHERE user_id = _uid AND role IN ('admin','operador','logistica')); END;
+BEGIN RETURN exists(SELECT 1 FROM public.user_roles WHERE user_id = uid AND role IN ('admin','operador','logistica')); END;
 $$;
 
-CREATE OR REPLACE FUNCTION public.is_logistica(_uid uuid)
+CREATE OR REPLACE FUNCTION public.is_logistica(uid uuid)
 RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN RETURN exists(SELECT 1 FROM public.user_roles WHERE user_id = _uid AND role = 'logistica'); END;
 $$;
@@ -59,6 +59,7 @@ RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 CREATE OR REPLACE FUNCTION public.handle_noticias_updated_at()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$ BEGIN NEW.updated_at = now(); RETURN NEW; END; $$;
 
+DROP FUNCTION IF EXISTS public.get_user_unidades(uuid);
 CREATE OR REPLACE FUNCTION public.get_user_unidades(uid UUID)
 RETURNS uuid[] LANGUAGE sql SECURITY DEFINER SET search_path = public AS $$
   SELECT ARRAY(
@@ -67,6 +68,7 @@ RETURNS uuid[] LANGUAGE sql SECURITY DEFINER SET search_path = public AS $$
   )::uuid[] WHERE uid IS NOT NULL;
 $$;
 
+DROP FUNCTION IF EXISTS public.get_user_lotacao_unidade_id(uuid);
 CREATE OR REPLACE FUNCTION public.get_user_lotacao_unidade_id(uid UUID)
 RETURNS uuid LANGUAGE sql SECURITY DEFINER SET search_path = public AS $$
   SELECT lotacao_unidade_id FROM public.profiles WHERE id = uid LIMIT 1;
@@ -78,13 +80,14 @@ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN RETURN QUERY SELECT u.id, u.nome, u.sigla, u.cidade, u.macrorregiao, u.aceita_solicitacoes FROM public.unidades u ORDER BY u.nome; END;
 $$;
 
+DROP FUNCTION IF EXISTS public.rpc_set_lotacao(uuid, uuid);
 CREATE OR REPLACE FUNCTION public.rpc_set_lotacao(p_profile_id uuid, p_lotacao_unidade_id uuid)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN UPDATE public.profiles SET lotacao_unidade_id = p_lotacao_unidade_id WHERE id = p_profile_id; RETURN jsonb_build_object('success',true); END;
 $$;
 
 -- ============================================================
--- PHASE 3: ESCALA TABLES (11 tables — all IF NOT EXISTS)
+-- PHASE 3: ESCALA TABLES (11 tables -- all IF NOT EXISTS)
 -- ============================================================
 
 DO $$ BEGIN
@@ -266,10 +269,10 @@ DO $$ BEGIN
 EXCEPTION WHEN OTHERS THEN RAISE NOTICE 'escala_config_unidade: %', SQLERRM;
 END $$;
 
--- Seed config padrão para cada unidade
+-- Seed config padrao para cada unidade
 INSERT INTO public.escala_config_unidade (unidade_id) SELECT id FROM public.unidades ON CONFLICT (unidade_id) DO NOTHING;
 
--- Seed atividades padrão para cada unidade
+-- Seed atividades padrao para cada unidade
 INSERT INTO public.escala_atividades (unidade_id, nome, tipo, duracao_min, profissionais_minimos, exige_2_pessoas, ordem)
 SELECT u.id, a.nome, a.tipo, a.duracao_min, a.profissionais_minimos, a.exige_2_pessoas, a.ordem
 FROM public.unidades u
@@ -280,7 +283,7 @@ CROSS JOIN (VALUES
   ('Atividade 1','atividade_1',60,1,false,4),
   ('Atividade 2','atividade_2',60,1,false,5),
   ('Apoio operacional','apoio',60,1,false,6),
-  ('Triagem/Recepcão','triagem',60,true,7),
+  ('Triagem/Recepcao','triagem',60,true,7),
   ('Registro de imagens','registro_imagens',60,1,false,8)
 ) AS a(nome, tipo, duracao_min, profissionais_minimos, exige_2_pessoas, ordem)
 ON CONFLICT (unidade_id, nome) DO NOTHING;
@@ -316,7 +319,7 @@ DROP POLICY IF EXISTS escala_afastamentos_insert_own ON public.escala_afastament
 DROP POLICY IF EXISTS escala_afastamentos_manage_staff ON public.escala_afastamentos;
 CREATE POLICY escala_afastamentos_select_staff ON public.escala_afastamentos FOR SELECT USING (public.is_staff(auth.uid()) OR profile_id = auth.uid());
 CREATE POLICY escala_afastamentos_insert_own ON public.escala_afastamentos FOR INSERT WITH CHECK (profile_id = auth.uid() OR public.is_staff(auth.uid()));
-CREATE POLICY escala_afastamentos_manage_staff ON public.escala_afastamentos FOR UPDATE DELETE USING (public.is_staff(auth.uid()));
+CREATE POLICY escala_afastamentos_manage_staff ON public.escala_afastamentos FOR ALL USING (public.is_staff(auth.uid()));
 
 DROP POLICY IF EXISTS escala_modelo_select_staff ON public.escala_modelo_semanal;
 DROP POLICY IF EXISTS escala_modelo_manage_staff ON public.escala_modelo_semanal;

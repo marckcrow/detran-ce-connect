@@ -28,3 +28,16 @@ dist-ssr
 *.sln
 *.sw?
 .vercel
+
+# Supabase CLI local state - contains DB connection strings (NEVER commit)
+supabase/.temp/
+
+# QA / debug artifacts
+__*.cjs
+__*.json
+__*.txt
+_qa_*.ps1
+_qa_*.js
+_anon.txt
+_tok.txt
+screenshots/
