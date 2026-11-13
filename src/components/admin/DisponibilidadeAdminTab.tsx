@@ -131,7 +131,7 @@ export function DisponibilidadeAdminTab() {
       db.from("centro_bloqueios").select("*").eq("centro", activeCentro).order("data"),
       db.from("centro_dias_funcionamento").select("*").eq("centro", activeCentro).order("dia_semana"),
       db.from("config_historico")
-        .select("*, profile:nome(nome)")
+        .select("*, profile:profiles!config_historico_admin_id_fkey(nome)")
         .eq("centro", activeCentro)
         .order("created_at", { ascending: false })
         .limit(30),
