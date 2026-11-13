@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      access_requests: {
+        Row: {
+          cidade: string | null
+          created_at: string
+          email: string
+          id: string
+          instituicao_nome: string | null
+          motivo_rejeicao: string | null
+          nome: string
+          perfil_solicitado: Database["public"]["Enums"]["app_role"] | null
+          reviewed_at: string | null
+          revisor_id: string | null
+          revisor_nome: string | null
+          status: string
+          telefone: string | null
+          updated_at: string
+          user_id: string
+          whatsapp: string | null
+        }
+        Insert: {
+          cidade?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          instituicao_nome?: string | null
+          motivo_rejeicao?: string | null
+          nome: string
+          perfil_solicitado?: Database["public"]["Enums"]["app_role"] | null
+          reviewed_at?: string | null
+          revisor_id?: string | null
+          revisor_nome?: string | null
+          status?: string
+          telefone?: string | null
+          updated_at?: string
+          user_id: string
+          whatsapp?: string | null
+        }
+        Update: {
+          cidade?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          instituicao_nome?: string | null
+          motivo_rejeicao?: string | null
+          nome?: string
+          perfil_solicitado?: Database["public"]["Enums"]["app_role"] | null
+          reviewed_at?: string | null
+          revisor_id?: string | null
+          revisor_nome?: string | null
+          status?: string
+          telefone?: string | null
+          updated_at?: string
+          user_id?: string
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
       agendamentos: {
         Row: {
           created_at: string | null
@@ -215,6 +272,134 @@ export type Database = {
           },
         ]
       }
+      centro_bloqueios: {
+        Row: {
+          centro: string
+          created_at: string
+          created_by: string | null
+          data: string
+          descricao: string | null
+          id: string
+          motivo: string
+        }
+        Insert: {
+          centro: string
+          created_at?: string
+          created_by?: string | null
+          data: string
+          descricao?: string | null
+          id?: string
+          motivo: string
+        }
+        Update: {
+          centro?: string
+          created_at?: string
+          created_by?: string | null
+          data?: string
+          descricao?: string | null
+          id?: string
+          motivo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "centro_bloqueios_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      centro_config: {
+        Row: {
+          antecedencia_maxima_dias: number
+          antecedencia_minima_dias: number
+          ativo: boolean
+          centro: string
+          created_at: string
+          id: string
+          maxima_agendamentos_inst: number | null
+          maxima_visitantes: number
+          observacoes: string | null
+          periodo_limite: string
+          updated_at: string
+        }
+        Insert: {
+          antecedencia_maxima_dias?: number
+          antecedencia_minima_dias?: number
+          ativo?: boolean
+          centro: string
+          created_at?: string
+          id?: string
+          maxima_agendamentos_inst?: number | null
+          maxima_visitantes?: number
+          observacoes?: string | null
+          periodo_limite?: string
+          updated_at?: string
+        }
+        Update: {
+          antecedencia_maxima_dias?: number
+          antecedencia_minima_dias?: number
+          ativo?: boolean
+          centro?: string
+          created_at?: string
+          id?: string
+          maxima_agendamentos_inst?: number | null
+          maxima_visitantes?: number
+          observacoes?: string | null
+          periodo_limite?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      centro_dias_funcionamento: {
+        Row: {
+          ativo: boolean
+          centro: string
+          dia_semana: number
+          id: string
+        }
+        Insert: {
+          ativo?: boolean
+          centro: string
+          dia_semana: number
+          id?: string
+        }
+        Update: {
+          ativo?: boolean
+          centro?: string
+          dia_semana?: number
+          id?: string
+        }
+        Relationships: []
+      }
+      centro_horarios: {
+        Row: {
+          ativo: boolean
+          capacidade_max: number
+          centro: string
+          created_at: string
+          horario: string
+          id: string
+        }
+        Insert: {
+          ativo?: boolean
+          capacidade_max?: number
+          centro: string
+          created_at?: string
+          horario: string
+          id?: string
+        }
+        Update: {
+          ativo?: boolean
+          capacidade_max?: number
+          centro?: string
+          created_at?: string
+          horario?: string
+          id?: string
+        }
+        Relationships: []
+      }
       certificados: {
         Row: {
           created_at: string | null
@@ -266,6 +451,47 @@ export type Database = {
           },
         ]
       }
+      config_historico: {
+        Row: {
+          admin_id: string
+          campo: string
+          centro: string | null
+          created_at: string
+          id: string
+          tabela: string
+          valor_anterior: string | null
+          valor_novo: string | null
+        }
+        Insert: {
+          admin_id: string
+          campo: string
+          centro?: string | null
+          created_at?: string
+          id?: string
+          tabela: string
+          valor_anterior?: string | null
+          valor_novo?: string | null
+        }
+        Update: {
+          admin_id?: string
+          campo?: string
+          centro?: string | null
+          created_at?: string
+          id?: string
+          tabela?: string
+          valor_anterior?: string | null
+          valor_novo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "config_historico_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       config_sistema: {
         Row: {
           id: number
@@ -286,6 +512,53 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      disponibilidade: {
+        Row: {
+          capacidade: number
+          created_at: string
+          criado_por: string | null
+          data: string
+          id: string
+          observacoes: string | null
+          status: string
+          turno: string
+          updated_at: string
+          vagas_ocupadas: number
+        }
+        Insert: {
+          capacidade?: number
+          created_at?: string
+          criado_por?: string | null
+          data: string
+          id?: string
+          observacoes?: string | null
+          status?: string
+          turno: string
+          updated_at?: string
+          vagas_ocupadas?: number
+        }
+        Update: {
+          capacidade?: number
+          created_at?: string
+          criado_por?: string | null
+          data?: string
+          id?: string
+          observacoes?: string | null
+          status?: string
+          turno?: string
+          updated_at?: string
+          vagas_ocupadas?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disponibilidade_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       estoque_itens: {
         Row: {
@@ -382,6 +655,113 @@ export type Database = {
         }
         Relationships: []
       }
+      instituicao_access: {
+        Row: {
+          granted_at: string
+          granted_by: string | null
+          id: string
+          instituicao_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          instituicao_id: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          instituicao_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instituicao_access_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "instituicao_access_instituicao_id_fkey"
+            columns: ["instituicao_id"]
+            isOneToOne: false
+            referencedRelation: "instituicoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "instituicao_access_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      instituicao_access_requests: {
+        Row: {
+          id: string
+          instituicao_id: string
+          motivo: string | null
+          requested_at: string
+          responded_at: string | null
+          responded_by: string | null
+          responsavel_nota: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          instituicao_id: string
+          motivo?: string | null
+          requested_at?: string
+          responded_at?: string | null
+          responded_by?: string | null
+          responsavel_nota?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          instituicao_id?: string
+          motivo?: string | null
+          requested_at?: string
+          responded_at?: string | null
+          responded_by?: string | null
+          responsavel_nota?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instituicao_access_requests_instituicao_id_fkey"
+            columns: ["instituicao_id"]
+            isOneToOne: false
+            referencedRelation: "instituicoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "instituicao_access_requests_responded_by_fkey"
+            columns: ["responded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "instituicao_access_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       instituicoes: {
         Row: {
           alunos_estimados: number | null
@@ -451,6 +831,132 @@ export type Database = {
           responsavel_telefone?: string | null
           telefone?: string | null
           tipo?: Database["public"]["Enums"]["tipo_instituicao"]
+        }
+        Relationships: []
+      }
+      logs_sistema: {
+        Row: {
+          acao: string
+          created_at: string | null
+          detalhes: Json | null
+          id: string
+          ip_address: string | null
+          registro_id: string | null
+          tabela: string | null
+          usuario_id: string | null
+          usuario_nome: string | null
+        }
+        Insert: {
+          acao: string
+          created_at?: string | null
+          detalhes?: Json | null
+          id?: string
+          ip_address?: string | null
+          registro_id?: string | null
+          tabela?: string | null
+          usuario_id?: string | null
+          usuario_nome?: string | null
+        }
+        Update: {
+          acao?: string
+          created_at?: string | null
+          detalhes?: Json | null
+          id?: string
+          ip_address?: string | null
+          registro_id?: string | null
+          tabela?: string | null
+          usuario_id?: string | null
+          usuario_nome?: string | null
+        }
+        Relationships: []
+      }
+      mensagens_templates: {
+        Row: {
+          assunto: string | null
+          ativo: boolean
+          canal: string
+          chave: string
+          corpo: string
+          created_at: string
+          gatilho: string | null
+          id: string
+          ordem: number | null
+          titulo: string
+          updated_at: string
+          variaveis: string[] | null
+        }
+        Insert: {
+          assunto?: string | null
+          ativo?: boolean
+          canal: string
+          chave: string
+          corpo: string
+          created_at?: string
+          gatilho?: string | null
+          id?: string
+          ordem?: number | null
+          titulo: string
+          updated_at?: string
+          variaveis?: string[] | null
+        }
+        Update: {
+          assunto?: string | null
+          ativo?: boolean
+          canal?: string
+          chave?: string
+          corpo?: string
+          created_at?: string
+          gatilho?: string | null
+          id?: string
+          ordem?: number | null
+          titulo?: string
+          updated_at?: string
+          variaveis?: string[] | null
+        }
+        Relationships: []
+      }
+      noticias: {
+        Row: {
+          autor_id: string | null
+          categoria: string | null
+          conteudo: string | null
+          created_at: string | null
+          data_publicacao: string | null
+          id: string
+          imagem_url: string | null
+          resumo: string | null
+          status: string | null
+          tags: string[] | null
+          titulo: string
+          updated_at: string | null
+        }
+        Insert: {
+          autor_id?: string | null
+          categoria?: string | null
+          conteudo?: string | null
+          created_at?: string | null
+          data_publicacao?: string | null
+          id?: string
+          imagem_url?: string | null
+          resumo?: string | null
+          status?: string | null
+          tags?: string[] | null
+          titulo: string
+          updated_at?: string | null
+        }
+        Update: {
+          autor_id?: string | null
+          categoria?: string | null
+          conteudo?: string | null
+          created_at?: string | null
+          data_publicacao?: string | null
+          id?: string
+          imagem_url?: string | null
+          resumo?: string | null
+          status?: string | null
+          tags?: string[] | null
+          titulo?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -572,6 +1078,56 @@ export type Database = {
           },
         ]
       }
+      os_ocorrencias: {
+        Row: {
+          created_at: string
+          data_hora: string
+          descricao: string
+          gravidade: string
+          id: string
+          os_transporte_id: string
+          reportado_por: string | null
+          resolucao: string | null
+          resolvido: boolean
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data_hora?: string
+          descricao: string
+          gravidade?: string
+          id?: string
+          os_transporte_id: string
+          reportado_por?: string | null
+          resolucao?: string | null
+          resolvido?: boolean
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data_hora?: string
+          descricao?: string
+          gravidade?: string
+          id?: string
+          os_transporte_id?: string
+          reportado_por?: string | null
+          resolucao?: string | null
+          resolvido?: boolean
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "os_ocorrencias_os_transporte_id_fkey"
+            columns: ["os_transporte_id"]
+            isOneToOne: false
+            referencedRelation: "os_transporte"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       os_transporte: {
         Row: {
           ano: number
@@ -671,6 +1227,7 @@ export type Database = {
           instituicao_id: string | null
           nome: string
           telefone: string | null
+          whatsapp: string | null
         }
         Insert: {
           created_at?: string | null
@@ -678,6 +1235,7 @@ export type Database = {
           instituicao_id?: string | null
           nome: string
           telefone?: string | null
+          whatsapp?: string | null
         }
         Update: {
           created_at?: string | null
@@ -685,6 +1243,7 @@ export type Database = {
           instituicao_id?: string | null
           nome?: string
           telefone?: string | null
+          whatsapp?: string | null
         }
         Relationships: [
           {
@@ -848,6 +1407,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_manage_roles: {
+        Args: { _operator_uid: string; _target_uid: string }
+        Returns: boolean
+      }
+      check_instituicao_limite: {
+        Args: { p_centro: string; p_data: string; p_instituicao_id: string }
+        Returns: Record<string, unknown>
+      }
       get_user_instituicao_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
@@ -858,7 +1425,10 @@ export type Database = {
       }
       is_logistica: { Args: { _uid: string }; Returns: boolean }
       is_operador: { Args: { _uid: string }; Returns: boolean }
-      is_staff: { Args: { _uid: string }; Returns: boolean }
+      is_pending_user: { Args: { _uid: string }; Returns: boolean }
+      is_staff:
+        | { Args: never; Returns: boolean }
+        | { Args: { _uid: string }; Returns: boolean }
       registrar_atendimento: { Args: { p: Json }; Returns: string }
     }
     Enums: {
