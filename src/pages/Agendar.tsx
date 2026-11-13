@@ -209,10 +209,9 @@ export default function Agendar() {
           ? (supabase as any).from("instituicoes").select("*").order("nome")
           : (supabase as any)
               .from("instituicoes")
-              .select("instituicoes.*")
-              .innerJoin("instituicao_access", "instituicao_access.instituicao_id", "instituicoes.id")
+              .select("*, instituicao_access!inner(user_id)")
               .eq("instituicao_access.user_id", user.id)
-              .order("instituicoes.nome"),
+              .order("nome"),
       ]);
 
       setUnidades((unidadesData as Unidade[]) ?? []);
@@ -237,7 +236,7 @@ export default function Agendar() {
     setRulesLoading(true);
 
     const unidade = unidades.find((u) => u.id === selectedUnidadeId);
-    const centroName = unidade?.cidade ?? null;
+    const centroName = unidade ? (unidade.sigla === "CARIRI" || /juazeiro|cariri|crato/i.test(unidade.cidade ?? "") ? "Cariri" : unidade.cidade) : null;
 
     (async () => {
       if (!centroName) {
