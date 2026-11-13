@@ -16,7 +16,7 @@ import { gerarListaPresencaPdf } from "@/lib/listaPresencaPdf";
 const PAGE_SIZE = 50;
 
 const STATUS_OPTIONS = [
-  { value: "", label: "Todos" },
+  { value: "todos", label: "Todos" },
   { value: "pendente", label: "Pendente" },
   { value: "confirmado", label: "Confirmado" },
   { value: "cancelado", label: "Cancelado" },
@@ -459,7 +459,7 @@ export function AgendamentosTab({ podeEditar, onChange }: { podeEditar: boolean;
           </div>
           <div className="space-y-1">
             <Label className="text-xs">Status</Label>
-            <Select value={filters.status} onValueChange={(v) => { setFilters((f) => ({ ...f, status: v })); setPage(0); }}>
+            <Select value={filters.status || "todos"} onValueChange={(v) => { setFilters((f) => ({ ...f, status: v === "todos" ? "" : v })); setPage(0); }}>
               <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {STATUS_OPTIONS.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
