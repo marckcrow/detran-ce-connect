@@ -447,10 +447,10 @@ export function AgendamentosTab({ podeEditar, onChange }: { podeEditar: boolean;
         <div className="flex flex-wrap gap-2 items-end">
           <div className="space-y-1">
             <Label className="text-xs">Unidade</Label>
-            <Select value={filters.unidade_id} onValueChange={(v) => { setFilters((f) => ({ ...f, unidade_id: v })); setPage(0); }}>
+            <Select value={filters.unidade_id || "todas"} onValueChange={(v) => { setFilters((f) => ({ ...f, unidade_id: v === "todas" ? "" : v })); setPage(0); }}>
               <SelectTrigger className="w-44"><SelectValue placeholder="Todas" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todas as unidades</SelectItem>
+                <SelectItem value="todas">Todas as unidades</SelectItem>
                 {unidades.map((u) => (
                   <SelectItem key={u.id} value={u.id}>{u.nome}</SelectItem>
                 ))}
