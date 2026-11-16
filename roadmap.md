@@ -5,3 +5,5 @@
 - [x] OS consolidada: alterar/cancelar rotas, reenviar OS atualizada (PDF) por e-mail e/ou WhatsApp
 - [x] Tipo de público: escola, universidade, empresa, ONG, igreja, órgão público, outros
 - [ ] Envio automático de e-mail com PDF anexo (precisa de domínio de e-mail configurado)
+- [x] Banco alinhado com as telas vindas do GitHub (acessos, vagas, notícias, logs, modelos, unidades, regras, estoque)
+- [ ] Revisar/importar escolas e apagar duplicadas (aguarda aprovação do usuário)
